@@ -9,6 +9,7 @@ import { Plus, Pencil } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Contact {
   id: number;
@@ -27,7 +28,6 @@ interface Contact {
 }
 
 const Contacts = () => {
-  // This is a placeholder implementation - we'll add real data management later
   const [contacts, setContacts] = useState<Contact[]>([
     {
       id: 1,
@@ -63,6 +63,7 @@ const Contacts = () => {
 
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<Contact>({
     defaultValues: editingContact || {
@@ -88,11 +89,35 @@ const Contacts = () => {
     setIsDialogOpen(true);
   };
 
+  const checkDuplicateContact = (data: Contact) => {
+    return contacts.some(contact => 
+      contact.email === data.email && 
+      (editingContact ? contact.id !== editingContact.id : true)
+    );
+  };
+
   const onSubmit = (data: Contact) => {
+    if (checkDuplicateContact(data)) {
+      toast({
+        variant: "destructive",
+        title: "Duplicate Contact",
+        description: "A contact with this email already exists.",
+      });
+      return;
+    }
+
     if (editingContact) {
       setContacts(contacts.map(c => c.id === editingContact.id ? { ...data, id: editingContact.id } : c));
+      toast({
+        title: "Contact Updated",
+        description: "The contact has been successfully updated.",
+      });
     } else {
       setContacts([...contacts, { ...data, id: contacts.length + 1 }]);
+      toast({
+        title: "Contact Added",
+        description: "The new contact has been successfully added.",
+      });
     }
     setIsDialogOpen(false);
     setEditingContact(null);
