@@ -10,7 +10,8 @@ import { ContactList } from "@/components/contacts/ContactList";
 
 interface Contact {
   id: number;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   address: string;
