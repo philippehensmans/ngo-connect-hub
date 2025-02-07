@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState } from "react";
 
 interface Contact {
   id: number;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   address: string;
@@ -29,7 +30,8 @@ export function ContactsProvider({ children }: { children: React.ReactNode }) {
   const [contacts, setContacts] = useState<Contact[]>([
     {
       id: 1,
-      name: "John Doe",
+      firstName: "John",
+      lastName: "Doe",
       email: "john@example.com",
       phone: "+1 234 567 890",
       address: "123 Main St",
@@ -44,7 +46,8 @@ export function ContactsProvider({ children }: { children: React.ReactNode }) {
     },
     {
       id: 2,
-      name: "Jane Smith",
+      firstName: "Jane",
+      lastName: "Smith",
       email: "jane@example.com",
       phone: "+1 234 567 891",
       address: "456 Oak Avenue",

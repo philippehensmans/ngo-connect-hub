@@ -8,7 +8,8 @@ import { useContacts } from "@/contexts/ContactsContext";
 
 interface Contact {
   id: number;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   address: string;
@@ -33,7 +34,8 @@ export function ContactForm({ editingContact, onClose }: ContactFormProps) {
 
   const form = useForm<Omit<Contact, "id">>({
     defaultValues: editingContact ? {
-      name: editingContact.name,
+      firstName: editingContact.firstName,
+      lastName: editingContact.lastName,
       email: editingContact.email,
       phone: editingContact.phone,
       address: editingContact.address,
@@ -46,7 +48,8 @@ export function ContactForm({ editingContact, onClose }: ContactFormProps) {
       category: editingContact.category,
       lastContact: editingContact.lastContact
     } : {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phone: "",
       address: "",
@@ -94,10 +97,22 @@ export function ContactForm({ editingContact, onClose }: ContactFormProps) {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="name"
+            name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Name</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>

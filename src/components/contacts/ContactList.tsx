@@ -14,7 +14,8 @@ export function ContactList({ onEdit }: ContactListProps) {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
+          <TableHead>First Name</TableHead>
+          <TableHead>Last Name</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Phone</TableHead>
           <TableHead>Address</TableHead>
@@ -31,7 +32,8 @@ export function ContactList({ onEdit }: ContactListProps) {
       <TableBody>
         {contacts.map((contact) => (
           <TableRow key={contact.id}>
-            <TableCell>{contact.name}</TableCell>
+            <TableCell>{contact.firstName}</TableCell>
+            <TableCell>{contact.lastName}</TableCell>
             <TableCell>{contact.email}</TableCell>
             <TableCell>{contact.phone}</TableCell>
             <TableCell>{contact.address}</TableCell>
