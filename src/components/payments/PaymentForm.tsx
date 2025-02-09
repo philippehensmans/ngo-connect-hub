@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ export function PaymentForm({ editingPayment, onClose }: PaymentFormProps) {
       method: editingPayment.method,
       reference: editingPayment.reference,
       description: editingPayment.description,
-      donorId: editingPayment.donorId
+      donor_id: editingPayment.donor_id
     } : {
       amount: 0,
       date: new Date().toISOString().split('T')[0],
@@ -31,7 +32,7 @@ export function PaymentForm({ editingPayment, onClose }: PaymentFormProps) {
       method: "",
       reference: "",
       description: "",
-      donorId: undefined
+      donor_id: null
     }
   });
 
@@ -57,7 +58,7 @@ export function PaymentForm({ editingPayment, onClose }: PaymentFormProps) {
             <FormItem>
               <FormLabel>Reference Number</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value || ''} />
               </FormControl>
             </FormItem>
           )}
@@ -70,7 +71,7 @@ export function PaymentForm({ editingPayment, onClose }: PaymentFormProps) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea {...field} value={field.value || ''} />
               </FormControl>
             </FormItem>
           )}
