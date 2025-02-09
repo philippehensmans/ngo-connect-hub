@@ -111,6 +111,36 @@ export type Database = {
         }
         Relationships: []
       }
+      gdpr_consents: {
+        Row: {
+          consent_date: string | null
+          consent_given: boolean
+          consent_type: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_ip: string | null
+        }
+        Insert: {
+          consent_date?: string | null
+          consent_given?: boolean
+          consent_type: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_ip?: string | null
+        }
+        Update: {
+          consent_date?: string | null
+          consent_given?: boolean
+          consent_type?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_ip?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
