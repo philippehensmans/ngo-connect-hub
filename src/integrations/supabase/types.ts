@@ -9,7 +9,155 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      contacts: {
+        Row: {
+          address: string | null
+          category: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          last_contact: string | null
+          last_name: string
+          notes: string | null
+          organization: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          category?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_contact?: string | null
+          last_name: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_contact?: string | null
+          last_name?: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      donors: {
+        Row: {
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          last_donation: string | null
+          last_name: string
+          notes: string | null
+          phone: string | null
+          preferred_cause: string | null
+          status: string | null
+          total_donated: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_donation?: string | null
+          last_name: string
+          notes?: string | null
+          phone?: string | null
+          preferred_cause?: string | null
+          status?: string | null
+          total_donated?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_donation?: string | null
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          preferred_cause?: string | null
+          status?: string | null
+          total_donated?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          description: string | null
+          donor_id: string | null
+          id: string
+          method: string
+          reference: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date: string
+          description?: string | null
+          donor_id?: string | null
+          id?: string
+          method: string
+          reference?: string | null
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          donor_id?: string | null
+          id?: string
+          method?: string
+          reference?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
