@@ -10,7 +10,7 @@ interface DonorNotesSectionProps {
 export function DonorNotesSection({ control }: DonorNotesSectionProps) {
   return (
     <FormField
-      control={form.control}
+      control={control}
       name="notes"
       render={({ field }) => (
         <FormItem>
