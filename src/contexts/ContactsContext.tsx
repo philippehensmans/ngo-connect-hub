@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState } from "react";
+
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Contact {
   id: number;
@@ -19,62 +21,117 @@ interface Contact {
 
 interface ContactsContextType {
   contacts: Contact[];
-  addContact: (contact: Omit<Contact, "id">) => void;
-  updateContact: (id: number, contact: Omit<Contact, "id">) => void;
-  checkDuplicateContact: (email: string, excludeId?: number) => boolean;
+  addContact: (contact: Omit<Contact, "id">) => Promise<void>;
+  updateContact: (id: number, contact: Omit<Contact, "id">) => Promise<void>;
+  checkDuplicateContact: (email: string, excludeId?: number) => Promise<boolean>;
 }
 
 const ContactsContext = createContext<ContactsContextType | undefined>(undefined);
 
 export function ContactsProvider({ children }: { children: React.ReactNode }) {
-  const [contacts, setContacts] = useState<Contact[]>([
-    {
-      id: 1,
-      firstName: "John",
-      lastName: "Doe",
-      email: "john@example.com",
-      phone: "+1 234 567 890",
-      address: "123 Main St",
-      zipCode: "12345",
-      city: "Springfield",
-      state: "IL",
-      country: "United States",
-      organization: "Local Charity",
-      notes: "Regular donor",
-      category: "Donor",
-      lastContact: "2024-01-15"
-    },
-    {
-      id: 2,
-      firstName: "Jane",
-      lastName: "Smith",
-      email: "jane@example.com",
-      phone: "+1 234 567 891",
-      address: "456 Oak Avenue",
-      zipCode: "67890",
-      city: "Rivertown",
-      state: "CA",
-      country: "United States",
-      organization: "Community Center",
-      notes: "Volunteer coordinator",
-      category: "Partner",
-      lastContact: "2024-02-01"
-    },
-  ]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
-  const addContact = (contact: Omit<Contact, "id">) => {
-    setContacts(prev => [...prev, { ...contact, id: prev.length + 1 }]);
+  const addContact = async (contact: Omit<Contact, "id">) => {
+    const isDuplicate = await checkDuplicateContact(contact.email);
+    if (isDuplicate) {
+      throw new Error("A contact with this email already exists");
+    }
+
+    const { data, error } = await supabase
+      .from('contacts')
+      .insert([{
+        first_name: contact.firstName,
+        last_name: contact.lastName,
+        email: contact.email,
+        phone: contact.phone,
+        address: contact.address,
+        zip_code: contact.zipCode,
+        city: contact.city,
+        state: contact.state,
+        country: contact.country,
+        organization: contact.organization,
+        notes: contact.notes,
+        category: contact.category,
+        last_contact: contact.lastContact
+      }])
+      .select();
+
+    if (error) throw error;
+    if (data) {
+      setContacts(prev => [...prev, { ...contact, id: data[0].id }]);
+    }
   };
 
-  const updateContact = (id: number, contact: Omit<Contact, "id">) => {
+  const updateContact = async (id: number, contact: Omit<Contact, "id">) => {
+    const isDuplicate = await checkDuplicateContact(contact.email, id);
+    if (isDuplicate) {
+      throw new Error("A contact with this email already exists");
+    }
+
+    const { error } = await supabase
+      .from('contacts')
+      .update({
+        first_name: contact.firstName,
+        last_name: contact.lastName,
+        email: contact.email,
+        phone: contact.phone,
+        address: contact.address,
+        zip_code: contact.zipCode,
+        city: contact.city,
+        state: contact.state,
+        country: contact.country,
+        organization: contact.organization,
+        notes: contact.notes,
+        category: contact.category,
+        last_contact: contact.lastContact
+      })
+      .eq('id', id);
+
+    if (error) throw error;
     setContacts(prev => prev.map(c => c.id === id ? { ...contact, id } : c));
   };
 
-  const checkDuplicateContact = (email: string, excludeId?: number) => {
-    return contacts.some(contact => 
-      contact.email === email && contact.id !== excludeId
-    );
+  const checkDuplicateContact = async (email: string, excludeId?: number) => {
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('id')
+      .eq('email', email)
+      .neq('id', excludeId || null)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data !== null;
   };
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*');
+      
+      if (error) throw error;
+      if (data) {
+        setContacts(data.map(c => ({
+          id: c.id,
+          firstName: c.first_name,
+          lastName: c.last_name,
+          email: c.email,
+          phone: c.phone,
+          address: c.address,
+          zipCode: c.zip_code,
+          city: c.city,
+          state: c.state,
+          country: c.country,
+          organization: c.organization,
+          notes: c.notes,
+          category: c.category,
+          lastContact: c.last_contact
+        })));
+      }
+    };
+
+    fetchContacts();
+  }, []);
 
   return (
     <ContactsContext.Provider value={{ contacts, addContact, updateContact, checkDuplicateContact }}>
