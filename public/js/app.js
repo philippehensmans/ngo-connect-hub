@@ -239,6 +239,7 @@ window.ONG = {
             ONG.fillFilters();
             ONG.renderView();
             ONG.fillTeamSelects();
+            ONG.checkConflicts();
         }
     },
 
@@ -347,13 +348,13 @@ window.ONG = {
         `;
 
         tasks.forEach(t => {
-            const conflict = (t.owner_id && t.end_date && tasks.some(x =>
-                x.id != t.id && x.owner_id == t.owner_id && x.end_date == t.end_date
-            )) ? 'bg-yellow-50' : 'hover:bg-gray-50';
+            const hasConflict = ONG.hasConflict(t);
+            const rowClass = hasConflict ? 'bg-red-100 border-l-4 border-red-500' : 'hover:bg-gray-50';
+            const conflictIcon = hasConflict ? '<span title="Conflit de date détecté">⚠️</span> ' : '';
 
             html += `
-                <tr class="border-b ${conflict}">
-                    <td class="compact-td font-medium">${ONG.escape(t.title)}</td>
+                <tr class="border-b ${rowClass}">
+                    <td class="compact-td font-medium">${conflictIcon}${ONG.escape(t.title)}</td>
                     <td class="compact-td text-gray-600">${ONG.getMemberName(t.owner_id)}</td>
                     <td class="compact-td text-gray-500">${t.end_date || ''}</td>
                     <td class="compact-td">
@@ -401,16 +402,22 @@ window.ONG = {
                         ${cols[status]} (${colTasks.length})
                     </h3>
                     <div class="space-y-3">
-                        ${colTasks.map(t => `
-                            <div class="bg-white p-3 rounded shadow cursor-pointer hover:shadow-md border-l-4 border-blue-500"
+                        ${colTasks.map(t => {
+                            const hasConflict = ONG.hasConflict(t);
+                            const borderColor = hasConflict ? 'border-red-500' : 'border-blue-500';
+                            const bgColor = hasConflict ? 'bg-red-50' : 'bg-white';
+                            const conflictIcon = hasConflict ? '<span title="Conflit de date">⚠️</span> ' : '';
+                            return `
+                            <div class="${bgColor} p-3 rounded shadow cursor-pointer hover:shadow-md border-l-4 ${borderColor}"
                                  onclick="ONG.editTask(${t.id})">
-                                <div class="text-sm font-medium mb-1">${ONG.escape(t.title)}</div>
+                                <div class="text-sm font-medium mb-1">${conflictIcon}${ONG.escape(t.title)}</div>
                                 <div class="text-xs text-gray-500 flex justify-between">
                                     <span>${t.end_date || ''}</span>
                                     ${t.link ? '🔗' : ''}
                                 </div>
                             </div>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </div>
                 </div>
             `;
@@ -1078,6 +1085,170 @@ window.ONG = {
         const div = document.createElement('div');
         div.textContent = str;
         return div.innerHTML;
+    },
+
+    /**
+     * Détecte les conflits de dates (plusieurs tâches pour la même personne le même jour)
+     */
+    detectConflicts: () => {
+        const conflicts = [];
+        const tasks = ONG.data.tasks || [];
+
+        // Grouper les tâches par responsable et date de fin
+        const tasksByPersonAndDate = {};
+
+        tasks.forEach(task => {
+            if (!task.owner_id || !task.end_date) return;
+
+            const key = `${task.owner_id}_${task.end_date}`;
+            if (!tasksByPersonAndDate[key]) {
+                tasksByPersonAndDate[key] = [];
+            }
+            tasksByPersonAndDate[key].push(task);
+        });
+
+        // Identifier les conflits (plus d'une tâche pour la même personne le même jour)
+        for (const key in tasksByPersonAndDate) {
+            const tasksGroup = tasksByPersonAndDate[key];
+            if (tasksGroup.length > 1) {
+                conflicts.push({
+                    person_id: tasksGroup[0].owner_id,
+                    person_name: ONG.getMemberName(tasksGroup[0].owner_id),
+                    date: tasksGroup[0].end_date,
+                    tasks: tasksGroup
+                });
+            }
+        }
+
+        return conflicts;
+    },
+
+    /**
+     * Vérifie s'il y a des conflits et affiche une notification
+     */
+    checkConflicts: () => {
+        const conflicts = ONG.detectConflicts();
+
+        // Mettre à jour le badge de notification
+        ONG.updateConflictBadge(conflicts.length);
+
+        // Afficher le pop-up seulement s'il y a des conflits et que c'est le premier chargement
+        if (conflicts.length > 0 && !ONG.state.conflictsChecked) {
+            ONG.state.conflictsChecked = true;
+            ONG.showConflictModal(conflicts);
+        }
+    },
+
+    /**
+     * Met à jour le badge de notification des conflits
+     */
+    updateConflictBadge: (count) => {
+        let badge = document.getElementById('conflictBadge');
+
+        if (count > 0) {
+            if (!badge) {
+                // Créer le badge s'il n'existe pas
+                const header = document.querySelector('header .flex.items-center.gap-3');
+                if (header) {
+                    badge = document.createElement('div');
+                    badge.id = 'conflictBadge';
+                    badge.className = 'bg-red-500 text-white text-xs px-2 py-1 rounded-full cursor-pointer hover:bg-red-600';
+                    badge.title = 'Conflits de dates détectés - Cliquez pour voir';
+                    badge.onclick = () => ONG.showConflictModal(ONG.detectConflicts());
+                    header.appendChild(badge);
+                }
+            }
+            if (badge) {
+                badge.textContent = `⚠️ ${count} conflit${count > 1 ? 's' : ''}`;
+            }
+        } else {
+            // Supprimer le badge s'il n'y a plus de conflits
+            if (badge) badge.remove();
+        }
+    },
+
+    /**
+     * Affiche le modal des conflits
+     */
+    showConflictModal: (conflicts) => {
+        if (conflicts.length === 0) {
+            alert('Aucun conflit de dates détecté ! ✅');
+            return;
+        }
+
+        let html = `
+            <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" id="conflictModal">
+                <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full m-4 max-h-[80vh] overflow-hidden flex flex-col">
+                    <div class="bg-red-500 text-white px-6 py-4 flex justify-between items-center">
+                        <h3 class="text-xl font-bold">⚠️ Conflits de Dates Détectés</h3>
+                        <button onclick="document.getElementById('conflictModal').remove()" class="text-white hover:text-gray-200 text-2xl">×</button>
+                    </div>
+                    <div class="p-6 overflow-y-auto flex-1">
+                        <p class="mb-4 text-gray-700">Les personnes suivantes ont <strong>plusieurs tâches</strong> se terminant le <strong>même jour</strong> :</p>
+                        <div class="space-y-4">
+        `;
+
+        conflicts.forEach(conflict => {
+            html += `
+                <div class="border-l-4 border-red-500 bg-red-50 p-4 rounded">
+                    <div class="font-bold text-red-800 mb-2">
+                        👤 ${ONG.escape(conflict.person_name)} - 📅 ${conflict.date}
+                    </div>
+                    <div class="text-sm text-gray-700 mb-2">
+                        ${conflict.tasks.length} tâches à terminer le même jour :
+                    </div>
+                    <ul class="list-disc list-inside space-y-1 text-sm">
+            `;
+
+            conflict.tasks.forEach(task => {
+                const project = ONG.data.projects.find(p => p.id == task.project_id);
+                html += `
+                    <li class="text-gray-600">
+                        <strong>${ONG.escape(task.title)}</strong>
+                        ${project ? `<span class="text-xs text-gray-500">(${ONG.escape(project.name)})</span>` : ''}
+                    </li>
+                `;
+            });
+
+            html += `
+                    </ul>
+                </div>
+            `;
+        });
+
+        html += `
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 px-6 py-4 flex justify-end">
+                        <button onclick="document.getElementById('conflictModal').remove()"
+                                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            Compris
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Ajouter le modal au DOM
+        const existingModal = document.getElementById('conflictModal');
+        if (existingModal) existingModal.remove();
+
+        document.body.insertAdjacentHTML('beforeend', html);
+    },
+
+    /**
+     * Vérifie si une tâche a un conflit de date
+     */
+    hasConflict: (task) => {
+        if (!task.owner_id || !task.end_date) return false;
+
+        const conflicts = ONG.data.tasks.filter(t =>
+            t.id !== task.id &&
+            t.owner_id === task.owner_id &&
+            t.end_date === task.end_date
+        );
+
+        return conflicts.length > 0;
     }
 };
 
