@@ -365,6 +365,38 @@ window.ONG = {
      * Rend la vue en liste
      */
     renderListView: (container, tasks) => {
+        // Calculer les niveaux de hiérarchie basés sur les dépendances
+        const taskMap = new Map(tasks.map(t => [t.id, t]));
+        const taskLevels = new Map();
+
+        const calculateLevel = (task, visited = new Set()) => {
+            if (taskLevels.has(task.id)) return taskLevels.get(task.id);
+            if (visited.has(task.id)) return 0; // Éviter les boucles infinies
+
+            visited.add(task.id);
+
+            if (!task.dependencies || task.dependencies.trim() === '') {
+                taskLevels.set(task.id, 0);
+                return 0;
+            }
+
+            const deps = task.dependencies.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+            let maxLevel = 0;
+
+            deps.forEach(depId => {
+                const depTask = taskMap.get(depId);
+                if (depTask) {
+                    const depLevel = calculateLevel(depTask, new Set(visited));
+                    maxLevel = Math.max(maxLevel, depLevel + 1);
+                }
+            });
+
+            taskLevels.set(task.id, maxLevel);
+            return maxLevel;
+        };
+
+        tasks.forEach(t => calculateLevel(t));
+
         let html = `
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left bg-white shadow rounded">
@@ -374,6 +406,7 @@ window.ONG = {
                             <th class="px-3 py-2" onclick="ONG.sortData('owner_id')">Responsable</th>
                             <th class="px-3 py-2" onclick="ONG.sortData('end_date')">Fin</th>
                             <th class="px-3 py-2" onclick="ONG.sortData('status')">Statut</th>
+                            <th class="px-3 py-2">Dépendances</th>
                             <th class="px-3 py-2"></th>
                         </tr>
                     </thead>
@@ -385,9 +418,31 @@ window.ONG = {
             const rowClass = hasConflict ? 'bg-red-100 border-l-4 border-red-500' : 'hover:bg-gray-50';
             const conflictIcon = hasConflict ? '<span title="Conflit de date détecté">⚠️</span> ' : '';
 
+            const level = taskLevels.get(t.id) || 0;
+            const indent = level * 20;
+            const hierarchyIcon = level > 0 ? '└─ ' : '';
+
+            // Récupérer les noms des tâches dépendantes
+            let depsInfo = '';
+            if (t.dependencies && t.dependencies.trim() !== '') {
+                const deps = t.dependencies.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+                const depNames = deps.map(depId => {
+                    const depTask = taskMap.get(depId);
+                    return depTask ? ONG.escape(depTask.title) : `#${depId}`;
+                });
+                if (depNames.length > 0) {
+                    depsInfo = `<span class="text-xs text-gray-500" title="${depNames.join(', ')}">🔗 ${depNames.length}</span>`;
+                }
+            }
+
             html += `
                 <tr class="border-b ${rowClass}">
-                    <td class="compact-td font-medium">${conflictIcon}${ONG.escape(t.title)}</td>
+                    <td class="compact-td font-medium">
+                        <div style="padding-left: ${indent}px;">
+                            ${level > 0 ? '<span class="text-gray-400">└─</span> ' : ''}
+                            ${conflictIcon}${ONG.escape(t.title)}
+                        </div>
+                    </td>
                     <td class="compact-td text-gray-600">${ONG.getMemberName(t.owner_id)}</td>
                     <td class="compact-td text-gray-500">${t.end_date || ''}</td>
                     <td class="compact-td">
@@ -395,6 +450,7 @@ window.ONG = {
                             ${ONG.dict[ONG.state.lang][t.status] || t.status}
                         </span>
                     </td>
+                    <td class="compact-td">${depsInfo}</td>
                     <td class="compact-td text-right">
                         ${t.link ? `<a href="${ONG.escape(t.link)}" target="_blank" class="text-blue-500 mr-2">🔗</a>` : ''}
                         <button onclick="ONG.editTask(${t.id})" class="text-blue-600 mr-2">✏️</button>
@@ -614,24 +670,90 @@ window.ONG = {
         const groups = ONG.data.groups.filter(g => g.project_id == ONG.state.pid);
         const orphans = tasks.filter(t => !t.group_id);
 
-        let html = '<div class="bg-white p-6 rounded shadow space-y-4">';
+        // Créer une map des tâches pour faciliter la recherche
+        const taskMap = new Map(tasks.map(t => [t.id, t]));
+
+        // Fonction récursive pour afficher une tâche et ses dépendants
+        const renderTaskWithDependents = (t, renderedTasks = new Set(), level = 0) => {
+            if (renderedTasks.has(t.id)) return ''; // Éviter les doublons
+            renderedTasks.add(t.id);
+
+            const indent = level * 16;
+            const statusIcon = t.status === 'done' ? '✅' : t.status === 'wip' ? '🔄' : '⭕';
+            const statusClass = t.status === 'done' ? 'line-through text-gray-400' : '';
+
+            // Trouver les tâches qui dépendent de cette tâche
+            const dependents = tasks.filter(task => {
+                if (!task.dependencies) return false;
+                const deps = task.dependencies.split(',').map(d => parseInt(d.trim()));
+                return deps.includes(t.id);
+            });
+
+            // Informations sur les dépendances
+            let depsInfo = '';
+            if (t.dependencies && t.dependencies.trim() !== '') {
+                const deps = t.dependencies.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+                if (deps.length > 0) {
+                    depsInfo = ` <span class="text-xs text-gray-400">(dépend de ${deps.length} tâche${deps.length > 1 ? 's' : ''})</span>`;
+                }
+            }
+
+            let html = `
+                <div class="py-1 hover:bg-gray-50 group text-sm" style="padding-left: ${indent}px;">
+                    <div class="flex justify-between items-center border-l-2 pl-3 ${level > 0 ? 'border-blue-200' : 'border-gray-200'}">
+                        <span class="${statusClass}">
+                            ${statusIcon} ${ONG.escape(t.title)}${depsInfo}
+                        </span>
+                        <button onclick="ONG.editTask(${t.id})" class="opacity-0 group-hover:opacity-100 text-blue-500 mr-2">✏️</button>
+                    </div>
+                </div>
+            `;
+
+            // Afficher récursivement les tâches dépendantes
+            if (dependents.length > 0) {
+                dependents.forEach(depTask => {
+                    html += renderTaskWithDependents(depTask, renderedTasks, level + 1);
+                });
+            }
+
+            return html;
+        };
 
         const renderTask = (t) => `
             <div class="pl-6 py-1 border-l-2 hover:bg-gray-50 flex justify-between group text-sm">
                 <span class="${t.status == 'done' ? 'line-through text-gray-400' : ''}">
-                    ${ONG.escape(t.title)}
+                    ${t.status === 'done' ? '✅' : t.status === 'wip' ? '🔄' : '⭕'} ${ONG.escape(t.title)}
                 </span>
                 <button onclick="ONG.editTask(${t.id})" class="opacity-0 group-hover:opacity-100 text-blue-500">✏️</button>
             </div>
         `;
 
+        let html = '<div class="bg-white p-6 rounded shadow space-y-4">';
+
+        // Section pour les tâches avec hiérarchie de dépendances
+        const rootTasks = tasks.filter(t => !t.dependencies || t.dependencies.trim() === '');
+        if (rootTasks.length > 0) {
+            html += `
+                <details open>
+                    <summary class="font-bold cursor-pointer p-2 bg-blue-50 rounded mb-1 select-none flex items-center gap-2">
+                        <span class="text-lg">🔗</span>
+                        Hiérarchie des dépendances (${rootTasks.length} tâche${rootTasks.length > 1 ? 's' : ''} racine${rootTasks.length > 1 ? 's' : ''})
+                    </summary>
+                    <div class="pl-2">
+                        ${rootTasks.map(t => renderTaskWithDependents(t, new Set())).join('')}
+                    </div>
+                </details>
+            `;
+        }
+
+        // Section pour les groupes
         groups.forEach(g => {
             const gTasks = tasks.filter(t => t.group_id == g.id);
             html += `
                 <details open>
                     <summary class="font-bold cursor-pointer p-2 bg-gray-50 rounded mb-1 select-none flex items-center gap-2">
                         <span class="w-3 h-3 rounded-full" style="background:${g.color}"></span>
-                        ${ONG.escape(g.name)}
+                        ${ONG.escape(g.name)} (${gTasks.length})
                     </summary>
                     <div class="pl-2">
                         ${gTasks.map(renderTask).join('')}
@@ -640,10 +762,11 @@ window.ONG = {
             `;
         });
 
+        // Section pour les tâches sans groupe
         if (orphans.length) {
             html += `
                 <details open>
-                    <summary class="font-bold cursor-pointer p-2 text-gray-500">Aucun Groupe</summary>
+                    <summary class="font-bold cursor-pointer p-2 text-gray-500">Aucun Groupe (${orphans.length})</summary>
                     <div class="pl-2">
                         ${orphans.map(renderTask).join('')}
                     </div>
