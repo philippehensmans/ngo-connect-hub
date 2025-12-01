@@ -1,0 +1,91 @@
+<?php
+
+namespace App;
+
+use PDO;
+use App\Controllers\AuthController;
+use App\Controllers\DataController;
+use App\Controllers\ProjectController;
+use App\Controllers\TaskController;
+use App\Controllers\MemberController;
+use App\Controllers\GroupController;
+use App\Controllers\MilestoneController;
+use App\Controllers\DeleteController;
+
+/**
+ * Routeur de l'application
+ */
+class Router
+{
+    private PDO $db;
+    private array $routes = [];
+
+    public function __construct(PDO $db)
+    {
+        $this->db = $db;
+        $this->registerRoutes();
+    }
+
+    /**
+     * Enregistre toutes les routes de l'API
+     */
+    private function registerRoutes(): void
+    {
+        // Routes d'authentification
+        $this->routes['login'] = [AuthController::class, 'login'];
+        $this->routes['logout'] = [AuthController::class, 'logout'];
+        $this->routes['update_settings'] = [AuthController::class, 'updateSettings'];
+
+        // Route pour charger toutes les données
+        $this->routes['load_all'] = [DataController::class, 'loadAll'];
+
+        // Routes pour les projets
+        $this->routes['save_project'] = [ProjectController::class, 'save'];
+
+        // Routes pour les tâches
+        $this->routes['save_task'] = [TaskController::class, 'save'];
+
+        // Routes pour les membres
+        $this->routes['save_member'] = [MemberController::class, 'save'];
+
+        // Routes pour les groupes
+        $this->routes['save_group'] = [GroupController::class, 'save'];
+
+        // Routes pour les jalons
+        $this->routes['save_milestone'] = [MilestoneController::class, 'save'];
+
+        // Route pour la suppression
+        $this->routes['delete_item'] = [DeleteController::class, 'delete'];
+    }
+
+    /**
+     * Dispatch une requête vers le bon contrôleur
+     */
+    public function dispatch(string $action, array $data): void
+    {
+        if (!isset($this->routes[$action])) {
+            $this->sendError('Action not found', 404);
+            return;
+        }
+
+        [$controllerClass, $method] = $this->routes[$action];
+
+        try {
+            $controller = new $controllerClass($this->db);
+            $controller->$method($data);
+        } catch (\Exception $e) {
+            $this->sendError($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Envoie une erreur JSON
+     */
+    private function sendError(string $message, int $code = 400): void
+    {
+        http_response_code($code);
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => false, 'msg' => $message]);
+        exit;
+    }
+}

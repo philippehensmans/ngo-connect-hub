@@ -1,0 +1,23 @@
+{
+    "name": "ong/manager",
+    "description": "ONG Manager - Application de gestion de projets pour organisations",
+    "type": "project",
+    "version": "10.0.0",
+    "require": {
+        "php": ">=7.4",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

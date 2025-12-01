@@ -1,0 +1,293 @@
+<?php
+
+namespace App\Services;
+
+/**
+ * Service de gestion des traductions
+ */
+class Translation
+{
+    private const TRANSLATIONS = [
+        'fr' => [
+            'settings' => 'Paramètres',
+            'org_name' => 'Nom Organisation',
+            'current_pass' => 'Mot de passe actuel',
+            'new_pass' => 'Nouveau mot de passe',
+            'save_settings' => 'Mettre à jour',
+            'app' => 'ONG Manager',
+            'login' => 'Connexion',
+            'pass' => 'Mot de passe',
+            'team' => 'Équipe',
+            'proj' => 'Projets',
+            'view_all' => 'Voir tout',
+            'search' => 'Rechercher',
+            'reset' => 'Reset',
+            'new_proj' => 'Nouveau Projet',
+            'edit_proj' => 'Éditer Projet',
+            'new_task' => 'Nouvelle Tâche',
+            'new_milestone' => 'Nouveau Jalon',
+            'new_group' => 'Nouveau Groupe',
+            'groups' => 'Groupes',
+            'edit' => 'Éditer',
+            'del' => 'Supprimer',
+            'save' => 'Enregistrer',
+            'cancel' => 'Annuler',
+            'create' => 'Créer',
+            'title' => 'Titre',
+            'desc' => 'Description',
+            'resp' => 'Responsable',
+            'status' => 'Statut',
+            'prio' => 'Priorité',
+            'start' => 'Début',
+            'end' => 'Fin',
+            'link' => 'Lien',
+            'tags' => 'Tags',
+            'deps' => 'Dépendances',
+            'no_grp' => 'Aucun Groupe',
+            'global' => 'Vue Globale',
+            'list' => 'Liste',
+            'kanban' => 'Kanban',
+            'gantt' => 'Gantt',
+            'milestones' => 'Jalons',
+            'tree' => 'Arbo',
+            'confirm' => 'Sûr ?',
+            'no_task' => 'Aucune tâche',
+            'todo' => 'À faire',
+            'wip' => 'En cours',
+            'done' => 'Terminé',
+            'err_login' => 'Erreur login',
+            'conflict' => 'Conflit',
+            'backup' => 'Backup',
+            'ms_dep' => 'Dépend du Jalon',
+            't_dep' => 'Dépend des Tâches',
+            'select_project' => 'Sélectionnez un projet',
+            'no_date' => 'Pas de dates',
+            'tasks_count' => 'tâches',
+            'filter_resp' => 'Resp: Tous',
+            'filter_status' => 'Statut: Tous',
+            'filter_tags' => 'Tags: Tous',
+            'reset_db' => 'Réinitialiser l\'application (Efface TOUT)',
+        ],
+        'en' => [
+            'settings' => 'Settings',
+            'org_name' => 'Organization Name',
+            'current_pass' => 'Current Password',
+            'new_pass' => 'New Password',
+            'save_settings' => 'Update',
+            'app' => 'NGO Manager',
+            'login' => 'Login',
+            'pass' => 'Password',
+            'team' => 'Team',
+            'proj' => 'Projects',
+            'view_all' => 'View All',
+            'search' => 'Search',
+            'reset' => 'Reset',
+            'new_proj' => 'New Project',
+            'edit_proj' => 'Edit Project',
+            'new_task' => 'New Task',
+            'new_milestone' => 'New Milestone',
+            'new_group' => 'New Group',
+            'groups' => 'Groups',
+            'edit' => 'Edit',
+            'del' => 'Delete',
+            'save' => 'Save',
+            'cancel' => 'Cancel',
+            'create' => 'Create',
+            'title' => 'Title',
+            'desc' => 'Description',
+            'resp' => 'Assignee',
+            'status' => 'Status',
+            'prio' => 'Priority',
+            'start' => 'Start',
+            'end' => 'End',
+            'link' => 'Link',
+            'tags' => 'Tags',
+            'deps' => 'Dependencies',
+            'no_grp' => 'No Group',
+            'global' => 'Global',
+            'list' => 'List',
+            'kanban' => 'Kanban',
+            'gantt' => 'Gantt',
+            'milestones' => 'Milestones',
+            'tree' => 'Tree',
+            'confirm' => 'Sure?',
+            'no_task' => 'No tasks',
+            'todo' => 'To Do',
+            'wip' => 'In Progress',
+            'done' => 'Done',
+            'err_login' => 'Login error',
+            'conflict' => 'Conflict',
+            'backup' => 'Backup',
+            'ms_dep' => 'Depends Milestone',
+            't_dep' => 'Depends Tasks',
+            'select_project' => 'Select project',
+            'no_date' => 'No dates',
+            'tasks_count' => 'tasks',
+            'filter_resp' => 'Resp: All',
+            'filter_status' => 'Status: All',
+            'filter_tags' => 'Tags: All',
+            'reset_db' => 'Reset App (Wipe ALL)',
+        ],
+        'es' => [
+            'settings' => 'Ajustes',
+            'org_name' => 'Nombre Org.',
+            'current_pass' => 'Contraseña actual',
+            'new_pass' => 'Nueva contraseña',
+            'save_settings' => 'Actualizar',
+            'app' => 'Gestor ONG',
+            'login' => 'Entrar',
+            'pass' => 'Contraseña',
+            'team' => 'Equipo',
+            'proj' => 'Proyectos',
+            'view_all' => 'Ver todo',
+            'search' => 'Buscar',
+            'reset' => 'Reset',
+            'new_proj' => 'Nuevo Proy.',
+            'edit_proj' => 'Editar Proy.',
+            'new_task' => 'Nueva Tarea',
+            'new_milestone' => 'Nuevo Hito',
+            'new_group' => 'Nuevo Grupo',
+            'groups' => 'Grupos',
+            'edit' => 'Editar',
+            'del' => 'Eliminar',
+            'save' => 'Guardar',
+            'cancel' => 'Cancelar',
+            'create' => 'Crear',
+            'title' => 'Título',
+            'desc' => 'Descripción',
+            'resp' => 'Responsable',
+            'status' => 'Estado',
+            'prio' => 'Prioridad',
+            'start' => 'Inicio',
+            'end' => 'Fin',
+            'link' => 'Enlace',
+            'tags' => 'Tags',
+            'deps' => 'Dependencias',
+            'no_grp' => 'Sin Grupo',
+            'global' => 'Global',
+            'list' => 'Lista',
+            'kanban' => 'Kanban',
+            'gantt' => 'Gantt',
+            'milestones' => 'Hitos',
+            'tree' => 'Árbol',
+            'confirm' => 'Seguro?',
+            'no_task' => 'Sin tareas',
+            'todo' => 'Pendiente',
+            'wip' => 'En curso',
+            'done' => 'Hecho',
+            'err_login' => 'Error login',
+            'conflict' => 'Conflicto',
+            'backup' => 'Backup',
+            'ms_dep' => 'Depende Hito',
+            't_dep' => 'Depende Tareas',
+            'select_project' => 'Seleccionar proyecto',
+            'no_date' => 'Sin fechas',
+            'tasks_count' => 'tareas',
+            'filter_resp' => 'Resp: Todos',
+            'filter_status' => 'Est: Todos',
+            'filter_tags' => 'Tags: Todos',
+            'reset_db' => 'Reiniciar App (Borrar TODO)',
+        ],
+        'sl' => [
+            'settings' => 'Nastavitve',
+            'org_name' => 'Ime organizacije',
+            'current_pass' => 'Trenutno geslo',
+            'new_pass' => 'Novo geslo',
+            'save_settings' => 'Posodobi',
+            'app' => 'Upravitelj NVO',
+            'login' => 'Prijava',
+            'pass' => 'Geslo',
+            'team' => 'Ekipa',
+            'proj' => 'Projekti',
+            'view_all' => 'Poglej vse',
+            'search' => 'Iskanje',
+            'reset' => 'Ponastavi',
+            'new_proj' => 'Nov projekt',
+            'edit_proj' => 'Uredi projekt',
+            'new_task' => 'Nova naloga',
+            'new_milestone' => 'Nov mejnik',
+            'new_group' => 'Nova skupina',
+            'groups' => 'Skupine',
+            'edit' => 'Uredi',
+            'del' => 'Izbriši',
+            'save' => 'Shrani',
+            'cancel' => 'Prekliči',
+            'create' => 'Ustvari',
+            'title' => 'Naslov',
+            'desc' => 'Opis',
+            'resp' => 'Odgovorni',
+            'status' => 'Status',
+            'prio' => 'Prioriteta',
+            'start' => 'Začetek',
+            'end' => 'Konec',
+            'link' => 'Povezava',
+            'tags' => 'Oznake',
+            'deps' => 'Odvisnosti',
+            'no_grp' => 'Brez skupine',
+            'global' => 'Globalno',
+            'list' => 'Seznam',
+            'kanban' => 'Kanban',
+            'gantt' => 'Gantt',
+            'milestones' => 'Mejniki',
+            'tree' => 'Drevo',
+            'confirm' => 'Prepričani?',
+            'no_task' => 'Ni nalog',
+            'todo' => 'Za narediti',
+            'wip' => 'V teku',
+            'done' => 'Končano',
+            'err_login' => 'Napaka',
+            'conflict' => 'Konflikt',
+            'backup' => 'Varnostna kopija',
+            'ms_dep' => 'Odvisno mejnik',
+            't_dep' => 'Odvisno naloge',
+            'select_project' => 'Izberi projekt',
+            'no_date' => 'Ni datumov',
+            'tasks_count' => 'nalog',
+            'filter_resp' => 'Odg: Vsi',
+            'filter_status' => 'St: Vsi',
+            'filter_tags' => 'Ozn: Vse',
+            'reset_db' => 'Ponastavi App (Izbriši VSE)',
+        ],
+    ];
+
+    private string $currentLang;
+
+    public function __construct(string $lang = 'fr')
+    {
+        $this->currentLang = $lang;
+    }
+
+    /**
+     * Traduit une clé
+     */
+    public function translate(string $key): string
+    {
+        return self::TRANSLATIONS[$this->currentLang][$key] ?? $key;
+    }
+
+    /**
+     * Définit la langue courante
+     */
+    public function setLanguage(string $lang): void
+    {
+        if (isset(self::TRANSLATIONS[$lang])) {
+            $this->currentLang = $lang;
+        }
+    }
+
+    /**
+     * Obtient la langue courante
+     */
+    public function getLanguage(): string
+    {
+        return $this->currentLang;
+    }
+
+    /**
+     * Obtient toutes les traductions pour la langue courante
+     */
+    public function getAll(): array
+    {
+        return self::TRANSLATIONS[$this->currentLang] ?? [];
+    }
+}

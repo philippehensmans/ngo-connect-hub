@@ -1,0 +1,39 @@
+# ONG Manager - Git Ignore
+
+# Base de données
+data/
+*.db
+*.sqlite
+
+# Configuration locale
+config/local.php
+
+# Logs
+*.log
+
+# Cache
+cache/
+tmp/
+
+# Uploads
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Composer
+/vendor/
+composer.lock
+
+# Backup files
+*.bak
+*.backup
+backup_*.db
