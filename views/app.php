@@ -9,11 +9,31 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #2563EB;
+            --primary-light: #DBEAFE;
+            --primary-dark: #1E40AF;
+            --accent-color: #10B981;
+        }
+
+        /* Thèmes */
+        [data-theme="blue"] { --primary-color: #2563EB; --primary-light: #DBEAFE; --primary-dark: #1E40AF; --accent-color: #10B981; }
+        [data-theme="green"] { --primary-color: #10B981; --primary-light: #D1FAE5; --primary-dark: #047857; --accent-color: #3B82F6; }
+        [data-theme="purple"] { --primary-color: #8B5CF6; --primary-light: #EDE9FE; --primary-dark: #6D28D9; --accent-color: #EC4899; }
+        [data-theme="orange"] { --primary-color: #F97316; --primary-light: #FFEDD5; --primary-dark: #C2410C; --accent-color: #EAB308; }
+        [data-theme="red"] { --primary-color: #EF4444; --primary-light: #FEE2E2; --primary-dark: #B91C1C; --accent-color: #F59E0B; }
+
         body { font-family: 'Segoe UI', sans-serif; background-color: #f3f4f6; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; justify-content: center; align-items: center; }
         .modal.active { display: flex; }
-        .tab-active { border-bottom: 2px solid #2563EB; color: #2563EB; font-weight: 600; }
+        .tab-active { border-bottom: 2px solid var(--primary-color); color: var(--primary-color); font-weight: 600; }
         .compact-td { padding: 4px 12px !important; font-size: 0.875rem; }
+        .btn-primary { background-color: var(--primary-color) !important; }
+        .btn-primary:hover { background-color: var(--primary-dark) !important; }
+        .bg-primary { background-color: var(--primary-color) !important; }
+        .bg-primary-light { background-color: var(--primary-light) !important; }
+        .text-primary { color: var(--primary-color) !important; }
+        .border-primary { border-color: var(--primary-color) !important; }
     </style>
 </head>
 <body class="h-screen flex flex-col">

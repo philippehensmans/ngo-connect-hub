@@ -6,6 +6,15 @@
             <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('org_name') ?></label>
             <input name="org_name" class="w-full border p-2 mb-3 rounded" value="<?= htmlspecialchars($teamName) ?>" required>
 
+            <label class="block text-xs font-bold text-gray-500 mb-1">🎨 Thème de couleur</label>
+            <div class="grid grid-cols-5 gap-2 mb-3">
+                <button type="button" onclick="ONG.setTheme('blue')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #2563EB 0%, #DBEAFE 100%)" title="Bleu"></button>
+                <button type="button" onclick="ONG.setTheme('green')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #10B981 0%, #D1FAE5 100%)" title="Vert"></button>
+                <button type="button" onclick="ONG.setTheme('purple')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #8B5CF6 0%, #EDE9FE 100%)" title="Violet"></button>
+                <button type="button" onclick="ONG.setTheme('orange')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #F97316 0%, #FFEDD5 100%)" title="Orange"></button>
+                <button type="button" onclick="ONG.setTheme('red')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #EF4444 0%, #FEE2E2 100%)" title="Rouge"></button>
+            </div>
+
             <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('new_pass') ?></label>
             <input type="password" name="new_password" class="w-full border p-2 mb-3 rounded">
 

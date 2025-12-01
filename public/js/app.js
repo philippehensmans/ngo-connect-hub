@@ -81,6 +81,9 @@ window.ONG = {
      * Initialise l'application
      */
     init: async () => {
+        // Charger le thème sauvegardé
+        ONG.loadTheme();
+
         // Si on est sur la page de login, initialiser le formulaire de login
         const loginForm = document.getElementById('loginForm');
         if (loginForm) {
@@ -1039,6 +1042,24 @@ window.ONG = {
      */
     setLang: (lang) => {
         location.href = "?lang=" + lang;
+    },
+
+    /**
+     * Change le thème de couleur
+     */
+    setTheme: (theme) => {
+        document.body.setAttribute('data-theme', theme);
+        localStorage.setItem('ong_theme', theme);
+    },
+
+    /**
+     * Charge le thème sauvegardé
+     */
+    loadTheme: () => {
+        const savedTheme = localStorage.getItem('ong_theme');
+        if (savedTheme) {
+            document.body.setAttribute('data-theme', savedTheme);
+        }
     },
 
     /**
