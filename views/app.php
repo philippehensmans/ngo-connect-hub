@@ -57,6 +57,9 @@
         <button id="btnTeam" class="hover:text-blue-600">
             <i class="fas fa-users"></i> <?= $t->translate('team') ?>
         </button>
+        <button id="btnTemplates" class="hover:text-purple-600">
+            <i class="fas fa-copy"></i> Modèles
+        </button>
         <button id="btnSettings" class="hover:text-gray-800 text-lg text-gray-500" title="<?= $t->translate('settings') ?>">
             <i class="fas fa-cog"></i>
         </button>

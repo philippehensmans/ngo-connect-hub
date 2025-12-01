@@ -134,6 +134,19 @@ class Database
             FOREIGN KEY(owner_id) REFERENCES members(id) ON DELETE SET NULL
         )");
 
+        // Table des templates de projets
+        $db->exec("CREATE TABLE IF NOT EXISTS project_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            desc TEXT,
+            category TEXT DEFAULT 'custom',
+            template_data TEXT NOT NULL,
+            is_predefined BOOLEAN DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
+        )");
+
         // Créer des données de démo si la base est vide
         $this->createDemoDataIfNeeded();
     }

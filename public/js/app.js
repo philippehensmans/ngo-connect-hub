@@ -18,7 +18,9 @@ window.ONG = {
         pid: null,
         view: 'dashboard',
         lang: 'fr',
-        sort: { col: 'end_date', dir: 'asc' }
+        sort: { col: 'end_date', dir: 'asc' },
+        templates: [],
+        currentTemplateTab: 'list'
     },
 
     // Dictionnaire de traductions
@@ -124,6 +126,7 @@ window.ONG = {
         // Boutons principaux
         ONG.on('btnLogout', 'click', () => ONG.post('logout').then(() => location.reload()));
         ONG.on('btnTeam', 'click', () => ONG.openModal('modalTeam'));
+        ONG.on('btnTemplates', 'click', () => ONG.openTemplatesModal());
         ONG.on('btnSettings', 'click', () => ONG.openModal('modalSettings'));
         ONG.on('btnAddProject', 'click', () => ONG.openModalProject());
         ONG.on('btnAddTask', 'click', () => ONG.openTaskModal());
@@ -195,6 +198,26 @@ window.ONG = {
             await ONG.post('save_task', fd);
             ONG.closeModal('modalTask');
             ONG.loadData();
+        });
+
+        // Formulaire de création de template
+        ONG.onSubmit('formCreateTemplate', async (fd) => {
+            const r = await ONG.post('save_template', fd);
+            if (r.ok) {
+                alert('Modèle créé avec succès !');
+                ONG.loadTemplates();
+                ONG.switchTemplateTab('list');
+            }
+        });
+
+        // Formulaire d'utilisation de template
+        ONG.onSubmit('formUseTemplate', async (fd) => {
+            const r = await ONG.post('create_from_template', fd);
+            if (r.ok) {
+                alert('Projet créé avec succès depuis le modèle !');
+                ONG.closeModal('modalTemplates');
+                await ONG.loadData();
+            }
         });
     },
 
@@ -1503,6 +1526,162 @@ window.ONG = {
         );
 
         return conflicts.length > 0;
+    },
+
+    /**
+     * Ouvre le modal des templates
+     */
+    openTemplatesModal: async () => {
+        await ONG.loadTemplates();
+        ONG.fillTemplateProjectSelect();
+        ONG.switchTemplateTab('list');
+        ONG.openModal('modalTemplates');
+    },
+
+    /**
+     * Charge la liste des templates
+     */
+    loadTemplates: async () => {
+        const r = await ONG.post('list_templates');
+        if (r.ok) {
+            ONG.state.templates = r.data.templates || [];
+            ONG.renderTemplatesList();
+            ONG.fillTemplateSelects();
+        }
+    },
+
+    /**
+     * Remplit le select des projets dans le formulaire de création de template
+     */
+    fillTemplateProjectSelect: () => {
+        const sel = ONG.el('templateProjectSelect');
+        if (sel) {
+            sel.innerHTML = '<option value="">-- Sélectionnez un projet --</option>' +
+                ONG.data.projects.map(p => `<option value="${p.id}">${ONG.escape(p.name)}</option>`).join('');
+        }
+    },
+
+    /**
+     * Remplit les selects de templates
+     */
+    fillTemplateSelects: () => {
+        const sel = ONG.el('useTemplateSelect');
+        if (sel) {
+            sel.innerHTML = '<option value="">-- Sélectionnez un modèle --</option>' +
+                ONG.state.templates.map(t => `<option value="${t.id}">${ONG.escape(t.name)} (${t.category})</option>`).join('');
+        }
+    },
+
+    /**
+     * Rend la liste des templates
+     */
+    renderTemplatesList: () => {
+        const container = ONG.el('templatesList');
+        if (!container) return;
+
+        if (ONG.state.templates.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 py-8">Aucun modèle disponible. Créez-en un depuis l\'onglet "Créer un modèle".</p>';
+            return;
+        }
+
+        const categoryIcons = {
+            custom: '📋',
+            marketing: '📢',
+            it: '💻',
+            construction: '🏗️',
+            event: '🎉',
+            research: '🔬'
+        };
+
+        const categoryColors = {
+            custom: 'bg-gray-100 border-gray-300',
+            marketing: 'bg-blue-100 border-blue-300',
+            it: 'bg-purple-100 border-purple-300',
+            construction: 'bg-orange-100 border-orange-300',
+            event: 'bg-pink-100 border-pink-300',
+            research: 'bg-green-100 border-green-300'
+        };
+
+        container.innerHTML = ONG.state.templates.map(t => {
+            const icon = categoryIcons[t.category] || '📋';
+            const colorClass = categoryColors[t.category] || 'bg-gray-100 border-gray-300';
+
+            return `
+                <div class="border-2 ${colorClass} p-4 rounded-lg hover:shadow-md transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-2xl">${icon}</span>
+                                <h4 class="font-bold text-lg">${ONG.escape(t.name)}</h4>
+                            </div>
+                            <p class="text-sm text-gray-600">${ONG.escape(t.desc || 'Aucune description')}</p>
+                            <div class="text-xs text-gray-500 mt-1">
+                                Catégorie: ${t.category} • Créé le ${new Date(t.created_at).toLocaleDateString()}
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="ONG.useTemplate(${t.id})" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700" title="Utiliser ce modèle">
+                                🚀
+                            </button>
+                            ${!t.is_predefined ? `
+                                <button onclick="ONG.deleteTemplate(${t.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600" title="Supprimer">
+                                    🗑️
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    /**
+     * Change l'onglet du modal de templates
+     */
+    switchTemplateTab: (tab) => {
+        ONG.state.currentTemplateTab = tab;
+
+        // Cacher tous les tabs
+        document.querySelectorAll('.template-tab').forEach(t => t.classList.add('hidden'));
+
+        // Afficher le tab sélectionné
+        const tabContent = ONG.el(`templateTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+        if (tabContent) tabContent.classList.remove('hidden');
+
+        // Mettre à jour les boutons
+        ['list', 'create', 'use'].forEach(t => {
+            const btn = ONG.el(`btnTemplateTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+            if (btn) {
+                if (t === tab) {
+                    btn.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+                } else {
+                    btn.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+                    btn.classList.add('text-gray-500');
+                }
+            }
+        });
+    },
+
+    /**
+     * Utilise un template (pré-remplit le formulaire)
+     */
+    useTemplate: (templateId) => {
+        ONG.switchTemplateTab('use');
+        const sel = ONG.el('useTemplateSelect');
+        if (sel) sel.value = templateId;
+    },
+
+    /**
+     * Supprime un template
+     */
+    deleteTemplate: async (templateId) => {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer ce modèle ?')) return;
+
+        const r = await ONG.post('delete_template', { id: templateId });
+        if (r.ok) {
+            alert('Modèle supprimé avec succès');
+            ONG.loadTemplates();
+        }
     }
 };
 

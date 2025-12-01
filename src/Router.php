@@ -11,6 +11,7 @@ use App\Controllers\MemberController;
 use App\Controllers\GroupController;
 use App\Controllers\MilestoneController;
 use App\Controllers\DeleteController;
+use App\Controllers\TemplateController;
 
 /**
  * Routeur de l'application
@@ -53,6 +54,12 @@ class Router
 
         // Routes pour les jalons
         $this->routes['save_milestone'] = [MilestoneController::class, 'save'];
+
+        // Routes pour les templates
+        $this->routes['list_templates'] = [TemplateController::class, 'list'];
+        $this->routes['save_template'] = [TemplateController::class, 'saveFromProject'];
+        $this->routes['create_from_template'] = [TemplateController::class, 'createFromTemplate'];
+        $this->routes['delete_template'] = [TemplateController::class, 'delete'];
 
         // Route pour la suppression
         $this->routes['delete_item'] = [DeleteController::class, 'delete'];

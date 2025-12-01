@@ -194,3 +194,110 @@
         <button class="mt-4 w-full border p-2 rounded text-gray-600 btn-close">Fermer</button>
     </div>
 </div>
+
+<!-- Modal Templates -->
+<div id="modalTemplates" class="modal">
+    <div class="bg-white p-6 rounded w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-xl mb-4">📋 Modèles de Projets</h3>
+
+        <!-- Tabs -->
+        <div class="flex gap-4 border-b mb-4">
+            <button onclick="ONG.switchTemplateTab('list')" class="px-4 py-2 font-medium" id="btnTemplateTabList">
+                Parcourir les modèles
+            </button>
+            <button onclick="ONG.switchTemplateTab('create')" class="px-4 py-2 font-medium" id="btnTemplateTabCreate">
+                Créer un modèle
+            </button>
+            <button onclick="ONG.switchTemplateTab('use')" class="px-4 py-2 font-medium" id="btnTemplateTabUse">
+                Utiliser un modèle
+            </button>
+        </div>
+
+        <!-- Tab: Liste des templates -->
+        <div id="templateTabList" class="template-tab">
+            <div class="mb-3 text-sm text-gray-600">
+                Utilisez les modèles ci-dessous pour créer rapidement de nouveaux projets avec une structure prédéfinie.
+            </div>
+            <div id="templatesList" class="space-y-3">
+                <!-- Will be filled by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Tab: Créer un modèle -->
+        <div id="templateTabCreate" class="template-tab hidden">
+            <form id="formCreateTemplate">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sauvegarder le projet actuel comme modèle</label>
+                    <select name="project_id" id="templateProjectSelect" class="w-full border p-2 rounded mb-3" required>
+                        <option value="">-- Sélectionnez un projet --</option>
+                    </select>
+
+                    <input name="template_name" id="templateName" class="w-full border p-2 mb-2 rounded"
+                           placeholder="Nom du modèle (ex: Campagne Marketing Type)" required>
+
+                    <textarea name="template_desc" id="templateDesc" class="w-full border p-2 mb-2 rounded"
+                              placeholder="Description du modèle (optionnel)"></textarea>
+
+                    <select name="category" id="templateCategory" class="w-full border p-2 rounded">
+                        <option value="custom">Personnalisé</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="it">Informatique</option>
+                        <option value="construction">Construction</option>
+                        <option value="event">Événement</option>
+                        <option value="research">Recherche</option>
+                    </select>
+                </div>
+
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 text-sm">
+                    <strong>Note:</strong> Le modèle contiendra la structure du projet (groupes, jalons, tâches) mais pas les dates ni les responsables spécifiques.
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded font-medium">
+                    💾 Créer le modèle
+                </button>
+            </form>
+        </div>
+
+        <!-- Tab: Utiliser un modèle -->
+        <div id="templateTabUse" class="template-tab hidden">
+            <form id="formUseTemplate">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Créer un nouveau projet à partir d'un modèle</label>
+
+                    <select name="template_id" id="useTemplateSelect" class="w-full border p-2 rounded mb-3" required>
+                        <option value="">-- Sélectionnez un modèle --</option>
+                    </select>
+
+                    <input name="project_name" id="useTemplateName" class="w-full border p-2 mb-2 rounded"
+                           placeholder="Nom du nouveau projet" required>
+
+                    <textarea name="project_desc" id="useTemplateDesc" class="w-full border p-2 mb-3 rounded"
+                              placeholder="Description du projet (optionnel)"></textarea>
+
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="text-xs text-gray-500">Date de début</label>
+                            <input type="date" name="start_date" id="useTemplateStartDate" class="w-full border p-2 rounded">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Date de fin</label>
+                            <input type="date" name="end_date" id="useTemplateEndDate" class="w-full border p-2 rounded">
+                        </div>
+                    </div>
+
+                    <select name="owner_id" id="useTemplateOwner" class="w-full border p-2 rounded team-select">
+                        <option value="">Responsable du projet...</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-green-600 text-white p-2 rounded font-medium">
+                    🚀 Créer le projet depuis ce modèle
+                </button>
+            </form>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6">
+            <button class="px-4 py-2 border rounded text-gray-600 btn-close">Fermer</button>
+        </div>
+    </div>
+</div>
