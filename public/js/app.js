@@ -1012,19 +1012,28 @@ window.ONG = {
         // Créer le HTML
         let html = `
             <div class="gantt-container">
-                <div class="gantt-view-mode">
-                    <button class="mode-btn active" data-mode="Week">Semaine</button>
-                    <button class="mode-btn" data-mode="Month">Mois</button>
-                    <button class="mode-btn" data-mode="Day">Jour</button>
+                <div class="flex justify-between items-center mb-4">
+                    <div class="gantt-view-mode">
+                        <button class="mode-btn active" data-mode="Week">Semaine</button>
+                        <button class="mode-btn" data-mode="Month">Mois</button>
+                        <button class="mode-btn" data-mode="Day">Jour</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="gantt-today" class="px-3 py-1 text-sm border rounded hover:bg-gray-50" title="Aller à aujourd'hui">
+                            📅 Aujourd'hui
+                        </button>
+                    </div>
                 </div>
-                <div id="gantt-chart"></div>
+                <div id="gantt-chart" style="overflow-x: auto; cursor: grab;"></div>
                 <div class="mt-4 p-3 bg-gray-50 rounded text-xs space-y-1">
-                    <p><strong>💡 Astuce :</strong></p>
+                    <p><strong>💡 Navigation :</strong></p>
                     <ul class="list-disc list-inside space-y-1 text-gray-600">
-                        <li>Cliquez sur une tâche pour la modifier</li>
-                        <li>Glissez les barres pour changer les dates</li>
-                        <li>Les losanges (◆) représentent les jalons</li>
-                        <li>Les flèches montrent les dépendances</li>
+                        <li><strong>Défilement horizontal :</strong> Molette de souris ou trackpad (geste horizontal)</li>
+                        <li><strong>Aujourd'hui :</strong> Cliquez sur le bouton "📅 Aujourd'hui" ci-dessus</li>
+                        <li><strong>Modifier une tâche :</strong> Cliquez sur la barre de tâche</li>
+                        <li><strong>Changer les dates :</strong> Glissez les barres horizontalement</li>
+                        <li><strong>Jalons :</strong> Représentés par des losanges (◆)</li>
+                        <li><strong>Dépendances :</strong> Montrées par des flèches entre tâches</li>
                     </ul>
                 </div>
             </div>
@@ -1117,6 +1126,70 @@ window.ONG = {
                 initGantt(currentMode);
             });
         });
+
+        // Bouton "Aujourd'hui" - scroll vers la date du jour
+        const todayBtn = container.querySelector('#gantt-today');
+        if (todayBtn) {
+            todayBtn.addEventListener('click', () => {
+                const ganttChart = container.querySelector('#gantt-chart');
+                const todayMarker = ganttChart.querySelector('.today-highlight');
+                if (todayMarker) {
+                    // Scroll vers le marqueur du jour
+                    todayMarker.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } else {
+                    // Si pas de marqueur, scroll vers le milieu
+                    const scrollContainer = ganttChart.querySelector('.gantt-container');
+                    if (scrollContainer) {
+                        scrollContainer.scrollLeft = scrollContainer.scrollWidth / 2 - scrollContainer.clientWidth / 2;
+                    }
+                }
+            });
+        }
+
+        // Améliorer le scroll horizontal avec la molette
+        const ganttChart = container.querySelector('#gantt-chart');
+        if (ganttChart) {
+            ganttChart.addEventListener('wheel', (e) => {
+                // Si scroll vertical (molette standard), convertir en horizontal
+                if (e.deltaY !== 0 && e.deltaX === 0) {
+                    e.preventDefault();
+                    ganttChart.scrollLeft += e.deltaY;
+                }
+            }, { passive: false });
+
+            // Drag pour faire défiler
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+
+            ganttChart.addEventListener('mousedown', (e) => {
+                // Ne pas intercepter les clics sur les barres de tâches
+                if (e.target.closest('.bar-wrapper')) return;
+
+                isDown = true;
+                ganttChart.style.cursor = 'grabbing';
+                startX = e.pageX - ganttChart.offsetLeft;
+                scrollLeft = ganttChart.scrollLeft;
+            });
+
+            ganttChart.addEventListener('mouseleave', () => {
+                isDown = false;
+                ganttChart.style.cursor = 'grab';
+            });
+
+            ganttChart.addEventListener('mouseup', () => {
+                isDown = false;
+                ganttChart.style.cursor = 'grab';
+            });
+
+            ganttChart.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - ganttChart.offsetLeft;
+                const walk = (x - startX) * 2; // Vitesse de défilement
+                ganttChart.scrollLeft = scrollLeft - walk;
+            });
+        }
     },
 
     /**

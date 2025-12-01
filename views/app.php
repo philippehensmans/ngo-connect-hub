@@ -39,14 +39,20 @@
         .border-primary { border-color: var(--primary-color) !important; }
 
         /* Gantt Chart Customization */
-        .gantt-container { background: white; border-radius: 8px; padding: 20px; overflow-x: auto; }
+        .gantt-container { background: white; border-radius: 8px; padding: 20px; }
+        #gantt-chart { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+        #gantt-chart::-webkit-scrollbar { height: 12px; }
+        #gantt-chart::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 6px; }
+        #gantt-chart::-webkit-scrollbar-thumb { background: #888; border-radius: 6px; }
+        #gantt-chart::-webkit-scrollbar-thumb:hover { background: #555; }
         .gantt .bar { fill: var(--primary-color) !important; }
         .gantt .bar-progress { fill: var(--primary-dark) !important; }
         .gantt .bar-milestone { fill: var(--accent-color) !important; stroke: var(--accent-color) !important; }
         .gantt .bar-label { fill: #fff; font-size: 12px; }
         .gantt .today-highlight { fill: rgba(252, 211, 77, 0.2) !important; }
-        .gantt-view-mode { display: flex; gap: 8px; margin-bottom: 16px; }
-        .gantt-view-mode button { padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; }
+        .gantt-view-mode { display: flex; gap: 8px; }
+        .gantt-view-mode button { padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+        .gantt-view-mode button:hover { background: #f9fafb; }
         .gantt-view-mode button.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
     </style>
 </head>
