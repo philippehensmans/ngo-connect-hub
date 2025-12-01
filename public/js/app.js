@@ -365,6 +365,15 @@ window.ONG = {
      * Rend la vue en liste
      */
     renderListView: (container, tasks) => {
+        // Trier les tâches par date de départ
+        tasks.sort((a, b) => {
+            // Tâches sans date de départ vont à la fin
+            if (!a.start_date && !b.start_date) return 0;
+            if (!a.start_date) return 1;
+            if (!b.start_date) return -1;
+            return a.start_date.localeCompare(b.start_date);
+        });
+
         // Calculer les niveaux de hiérarchie basés sur les dépendances
         const taskMap = new Map(tasks.map(t => [t.id, t]));
         const taskLevels = new Map();
@@ -404,6 +413,7 @@ window.ONG = {
                         <tr>
                             <th class="px-3 py-2" onclick="ONG.sortData('title')">Titre</th>
                             <th class="px-3 py-2" onclick="ONG.sortData('owner_id')">Responsable</th>
+                            <th class="px-3 py-2" onclick="ONG.sortData('start_date')">Début</th>
                             <th class="px-3 py-2" onclick="ONG.sortData('end_date')">Fin</th>
                             <th class="px-3 py-2" onclick="ONG.sortData('status')">Statut</th>
                             <th class="px-3 py-2">Dépendances</th>
@@ -444,6 +454,7 @@ window.ONG = {
                         </div>
                     </td>
                     <td class="compact-td text-gray-600">${ONG.getMemberName(t.owner_id)}</td>
+                    <td class="compact-td text-gray-500">${t.start_date || ''}</td>
                     <td class="compact-td text-gray-500">${t.end_date || ''}</td>
                     <td class="compact-td">
                         <span class="px-2 rounded text-xs bg-gray-200">
