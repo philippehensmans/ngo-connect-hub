@@ -566,31 +566,112 @@ window.ONG = {
 
         container.className = "flex gap-4 h-full overflow-x-auto p-4";
 
+        // Récupérer les groupes du projet actuel
+        const groups = ONG.data.groups.filter(g =>
+            ONG.state.view === 'global' || g.project_id == ONG.state.pid
+        );
+
         let html = '';
         for (let status in cols) {
             const colTasks = tasks.filter(t => t.status === status);
+
+            // Grouper les tâches par groupe
+            const tasksByGroup = new Map();
+            const tasksWithoutGroup = [];
+
+            colTasks.forEach(t => {
+                if (t.group_id) {
+                    if (!tasksByGroup.has(t.group_id)) {
+                        tasksByGroup.set(t.group_id, []);
+                    }
+                    tasksByGroup.get(t.group_id).push(t);
+                } else {
+                    tasksWithoutGroup.push(t);
+                }
+            });
+
             html += `
-                <div class="w-80 bg-gray-100 rounded-lg p-3 flex-shrink-0">
+                <div class="w-80 bg-gray-100 rounded-lg p-3 flex-shrink-0 flex flex-col">
                     <h3 class="font-bold text-gray-700 mb-3 border-b pb-2">
                         ${cols[status]} (${colTasks.length})
                     </h3>
-                    <div class="space-y-3">
-                        ${colTasks.map(t => {
-                            const hasConflict = ONG.hasConflict(t);
-                            const borderColor = hasConflict ? 'border-red-500' : 'border-blue-500';
-                            const bgColor = hasConflict ? 'bg-red-50' : 'bg-white';
-                            const conflictIcon = hasConflict ? '<span title="Conflit de date">⚠️</span> ' : '';
-                            return `
-                            <div class="${bgColor} p-3 rounded shadow cursor-pointer hover:shadow-md border-l-4 ${borderColor}"
+                    <div class="space-y-3 overflow-y-auto flex-1">
+            `;
+
+            // Afficher les tâches groupées par groupe
+            groups.forEach(group => {
+                const groupTasks = tasksByGroup.get(group.id);
+                if (groupTasks && groupTasks.length > 0) {
+                    html += `
+                        <div class="mb-2">
+                            <div class="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-1 px-2">
+                                <span class="w-2 h-2 rounded-full" style="background:${group.color}"></span>
+                                <span>${ONG.escape(group.name)}</span>
+                                <span class="text-gray-400">(${groupTasks.length})</span>
+                            </div>
+                    `;
+
+                    groupTasks.forEach(t => {
+                        const hasConflict = ONG.hasConflict(t);
+                        const borderColor = hasConflict ? 'border-red-500' : `border-[${group.color}]`;
+                        const bgColor = hasConflict ? 'bg-red-50' : 'bg-white';
+                        const conflictIcon = hasConflict ? '<span title="Conflit de date">⚠️</span> ' : '';
+                        const ownerName = ONG.getMemberName(t.owner_id);
+
+                        html += `
+                            <div class="${bgColor} p-3 rounded shadow cursor-pointer hover:shadow-md border-l-4 mb-2" style="border-left-color: ${group.color}"
                                  onclick="ONG.editTask(${t.id})">
                                 <div class="text-sm font-medium mb-1">${conflictIcon}${ONG.escape(t.title)}</div>
-                                <div class="text-xs text-gray-500 flex justify-between">
+                                <div class="text-xs text-gray-500 flex justify-between items-center">
+                                    <span class="flex items-center gap-1">
+                                        <span>👤</span>
+                                        <span>${ownerName}</span>
+                                    </span>
                                     <span>${t.end_date || ''}</span>
-                                    ${t.link ? '🔗' : ''}
                                 </div>
+                                ${t.link ? '<div class="text-xs text-blue-500 mt-1">🔗 Lien</div>' : ''}
                             </div>
                         `;
-                        }).join('')}
+                    });
+
+                    html += `</div>`;
+                }
+            });
+
+            // Afficher les tâches sans groupe
+            if (tasksWithoutGroup.length > 0) {
+                html += `
+                    <div class="mb-2">
+                        <div class="text-xs font-semibold text-gray-400 mb-1 px-2">Sans groupe (${tasksWithoutGroup.length})</div>
+                `;
+
+                tasksWithoutGroup.forEach(t => {
+                    const hasConflict = ONG.hasConflict(t);
+                    const borderColor = hasConflict ? 'border-red-500' : 'border-gray-400';
+                    const bgColor = hasConflict ? 'bg-red-50' : 'bg-white';
+                    const conflictIcon = hasConflict ? '<span title="Conflit de date">⚠️</span> ' : '';
+                    const ownerName = ONG.getMemberName(t.owner_id);
+
+                    html += `
+                        <div class="${bgColor} p-3 rounded shadow cursor-pointer hover:shadow-md border-l-4 ${borderColor} mb-2"
+                             onclick="ONG.editTask(${t.id})">
+                            <div class="text-sm font-medium mb-1">${conflictIcon}${ONG.escape(t.title)}</div>
+                            <div class="text-xs text-gray-500 flex justify-between items-center">
+                                <span class="flex items-center gap-1">
+                                    <span>👤</span>
+                                    <span>${ownerName}</span>
+                                </span>
+                                <span>${t.end_date || ''}</span>
+                            </div>
+                            ${t.link ? '<div class="text-xs text-blue-500 mt-1">🔗 Lien</div>' : ''}
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            }
+
+            html += `
                     </div>
                 </div>
             `;
