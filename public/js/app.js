@@ -765,65 +765,6 @@ window.ONG = {
     },
 
     /**
-     * Rend la vue Gantt
-     */
-    renderGanttView: (container, tasks) => {
-        if (!ONG.state.pid) {
-            container.innerHTML = "<p class='text-center text-gray-400'>Sélectionnez un projet</p>";
-            return;
-        }
-
-        const valid = tasks.filter(t => t.start_date && t.end_date)
-            .sort((a, b) => a.start_date.localeCompare(b.start_date));
-
-        if (!valid.length) {
-            container.innerHTML = "<p class='text-center text-gray-400'>Pas de dates définies</p>";
-            return;
-        }
-
-        let min = new Date(valid[0].start_date);
-        let max = new Date(valid[0].end_date);
-
-        valid.forEach(t => {
-            const s = new Date(t.start_date);
-            const e = new Date(t.end_date);
-            if (s < min) min = s;
-            if (e > max) max = e;
-        });
-
-        const totalDuration = (max - min) / (1000 * 60 * 60 * 24) + 5;
-
-        let html = '<div class="overflow-x-auto"><div class="min-w-[800px] bg-white p-4 rounded shadow">';
-
-        valid.forEach(t => {
-            const start = new Date(t.start_date);
-            const end = new Date(t.end_date);
-            const duration = Math.max(1, (end - start) / (1000 * 60 * 60 * 24));
-            const offset = (start - min) / (1000 * 60 * 60 * 24);
-            const width = (duration / totalDuration) * 100;
-            const left = (offset / totalDuration) * 100;
-
-            html += `
-                <div class="flex items-center mb-2 h-8 group hover:bg-gray-50">
-                    <div class="w-48 text-sm truncate pr-2" title="${ONG.escape(t.title)}">
-                        ${ONG.escape(t.title)}
-                    </div>
-                    <div class="flex-1 relative h-6 bg-gray-100 rounded">
-                        <div class="absolute h-full bg-blue-500 rounded opacity-80 text-white text-xs flex items-center pl-1 overflow-hidden cursor-pointer"
-                             style="left:${left}%; width:${width}%;"
-                             onclick="ONG.editTask(${t.id})">
-                            ${width > 5 ? ONG.getMemberName(t.owner_id) : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        html += '</div></div>';
-        container.innerHTML = html;
-    },
-
-    /**
      * Rend la vue arborescente
      */
     renderTreeView: (container, tasks) => {
