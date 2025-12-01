@@ -406,31 +406,34 @@ window.ONG = {
 
         tasks.forEach(t => calculateLevel(t));
 
-        let html = `
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left bg-white shadow rounded">
-                    <thead class="bg-gray-100 border-b cursor-pointer select-none">
-                        <tr>
-                            <th class="px-3 py-2" onclick="ONG.sortData('title')">Titre</th>
-                            <th class="px-3 py-2" onclick="ONG.sortData('owner_id')">Responsable</th>
-                            <th class="px-3 py-2" onclick="ONG.sortData('start_date')">Début</th>
-                            <th class="px-3 py-2" onclick="ONG.sortData('end_date')">Fin</th>
-                            <th class="px-3 py-2" onclick="ONG.sortData('status')">Statut</th>
-                            <th class="px-3 py-2">Dépendances</th>
-                            <th class="px-3 py-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+        // Grouper les tâches par jalon
+        const tasksByMilestone = new Map();
+        const tasksWithoutMilestone = [];
 
         tasks.forEach(t => {
+            if (t.milestone_id) {
+                if (!tasksByMilestone.has(t.milestone_id)) {
+                    tasksByMilestone.set(t.milestone_id, []);
+                }
+                tasksByMilestone.get(t.milestone_id).push(t);
+            } else {
+                tasksWithoutMilestone.push(t);
+            }
+        });
+
+        // Récupérer et trier les jalons par date
+        const milestones = ONG.data.milestones
+            .filter(m => ONG.state.view === 'global' || m.project_id == ONG.state.pid)
+            .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+        // Fonction pour rendre une ligne de tâche
+        const renderTaskRow = (t) => {
             const hasConflict = ONG.hasConflict(t);
             const rowClass = hasConflict ? 'bg-red-100 border-l-4 border-red-500' : 'hover:bg-gray-50';
             const conflictIcon = hasConflict ? '<span title="Conflit de date détecté">⚠️</span> ' : '';
 
             const level = taskLevels.get(t.id) || 0;
             const indent = level * 20;
-            const hierarchyIcon = level > 0 ? '└─ ' : '';
 
             // Récupérer les noms des tâches dépendantes
             let depsInfo = '';
@@ -445,7 +448,7 @@ window.ONG = {
                 }
             }
 
-            html += `
+            return `
                 <tr class="border-b ${rowClass}">
                     <td class="compact-td font-medium">
                         <div style="padding-left: ${indent}px;">
@@ -469,7 +472,77 @@ window.ONG = {
                     </td>
                 </tr>
             `;
+        };
+
+        let html = `
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left bg-white shadow rounded">
+                    <thead class="bg-gray-100 border-b cursor-pointer select-none">
+                        <tr>
+                            <th class="px-3 py-2" onclick="ONG.sortData('title')">Titre</th>
+                            <th class="px-3 py-2" onclick="ONG.sortData('owner_id')">Responsable</th>
+                            <th class="px-3 py-2" onclick="ONG.sortData('start_date')">Début</th>
+                            <th class="px-3 py-2" onclick="ONG.sortData('end_date')">Fin</th>
+                            <th class="px-3 py-2" onclick="ONG.sortData('status')">Statut</th>
+                            <th class="px-3 py-2">Dépendances</th>
+                            <th class="px-3 py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        // Afficher les jalons avec leurs tâches
+        milestones.forEach(milestone => {
+            const milestoneTasks = tasksByMilestone.get(milestone.id) || [];
+            if (milestoneTasks.length > 0) {
+                const doneCount = milestoneTasks.filter(t => t.status === 'done').length;
+                const progress = Math.round((doneCount / milestoneTasks.length) * 100);
+
+                html += `
+                    <tr class="bg-indigo-50 border-t-2 border-indigo-300">
+                        <td colspan="7" class="px-3 py-2 font-bold">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-indigo-600">📍</span>
+                                    <span>${ONG.escape(milestone.name)}</span>
+                                    <span class="text-xs font-normal text-gray-600">(${milestone.date})</span>
+                                    <span class="text-xs font-normal text-gray-500">${milestoneTasks.length} tâche${milestoneTasks.length > 1 ? 's' : ''}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-32 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-indigo-600 h-2 rounded-full" style="width: ${progress}%"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-600">${progress}%</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                milestoneTasks.forEach(t => {
+                    html += renderTaskRow(t);
+                });
+            }
         });
+
+        // Afficher les tâches sans jalon
+        if (tasksWithoutMilestone.length > 0) {
+            html += `
+                <tr class="bg-gray-50 border-t-2 border-gray-300">
+                    <td colspan="7" class="px-3 py-2 font-bold text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <span>📋</span>
+                            <span>Tâches sans jalon</span>
+                            <span class="text-xs font-normal">${tasksWithoutMilestone.length} tâche${tasksWithoutMilestone.length > 1 ? 's' : ''}</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            tasksWithoutMilestone.forEach(t => {
+                html += renderTaskRow(t);
+            });
+        }
 
         html += `
                     </tbody>
