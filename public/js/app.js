@@ -1217,13 +1217,17 @@ window.ONG = {
                     <!-- Graphique par Statut -->
                     <div class="bg-white p-6 rounded-lg shadow">
                         <h3 class="text-lg font-bold mb-4">Tâches par Statut</h3>
-                        <canvas id="chartStatus" height="250"></canvas>
+                        <div style="height: 250px;">
+                            <canvas id="chartStatus"></canvas>
+                        </div>
                     </div>
 
                     <!-- Graphique par Projet -->
                     <div class="bg-white p-6 rounded-lg shadow">
                         <h3 class="text-lg font-bold mb-4">Tâches par Projet</h3>
-                        <canvas id="chartProjects" height="250"></canvas>
+                        <div style="height: 250px;">
+                            <canvas id="chartProjects"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -1253,7 +1257,9 @@ window.ONG = {
                     <!-- Graphique par Responsable -->
                     <div class="bg-white p-6 rounded-lg shadow">
                         <h3 class="text-lg font-bold mb-4">Tâches par Responsable</h3>
-                        <canvas id="chartMembers" height="250"></canvas>
+                        <div style="height: 250px;">
+                            <canvas id="chartMembers"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1278,7 +1284,7 @@ window.ONG = {
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
                         plugins: {
                             legend: { position: 'bottom' }
                         }
@@ -1307,7 +1313,7 @@ window.ONG = {
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
                         plugins: {
                             legend: { display: false }
                         },
@@ -1341,7 +1347,7 @@ window.ONG = {
                     options: {
                         indexAxis: 'y',
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
                         plugins: {
                             legend: { display: false }
                         },
