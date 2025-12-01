@@ -16,7 +16,7 @@ window.ONG = {
     // État de l'application
     state: {
         pid: null,
-        view: 'list',
+        view: 'dashboard',
         lang: 'fr',
         sort: { col: 'end_date', dir: 'asc' }
     },
@@ -27,6 +27,7 @@ window.ONG = {
             todo: 'À faire',
             wip: 'En cours',
             done: 'Terminé',
+            dashboard: 'Tableau de Bord',
             list: 'Liste',
             kanban: 'Kanban',
             groups: 'Groupes',
@@ -39,6 +40,7 @@ window.ONG = {
             todo: 'To Do',
             wip: 'In Progress',
             done: 'Done',
+            dashboard: 'Dashboard',
             list: 'List',
             kanban: 'Kanban',
             groups: 'Groups',
@@ -51,6 +53,7 @@ window.ONG = {
             todo: 'Pendiente',
             wip: 'En curso',
             done: 'Hecho',
+            dashboard: 'Panel',
             list: 'Lista',
             kanban: 'Kanban',
             groups: 'Grupos',
@@ -63,6 +66,7 @@ window.ONG = {
             todo: 'Za narediti',
             wip: 'V teku',
             done: 'Končano',
+            dashboard: 'Nadzorna plošča',
             list: 'Seznam',
             kanban: 'Kanban',
             groups: 'Skupine',
@@ -286,7 +290,7 @@ window.ONG = {
      */
     renderView: () => {
         const t = ONG.dict[ONG.state.lang];
-        const tabs = ['global', 'list', 'kanban', 'groups', 'gantt', 'milestones', 'tree'];
+        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'milestones', 'tree'];
 
         // Rendre les onglets
         const navTabs = ONG.el('navTabs');
@@ -306,6 +310,9 @@ window.ONG = {
 
         // Rendre la vue selon le type
         switch (ONG.state.view) {
+            case 'dashboard':
+                ONG.renderDashboardView(container);
+                break;
             case 'list':
             case 'global':
                 ONG.renderListView(container, tasks);
@@ -1075,6 +1082,232 @@ window.ONG = {
                 await handler(new FormData(form));
             };
         }
+    },
+
+    /**
+     * Rend la vue Dashboard avec statistiques et graphiques
+     */
+    renderDashboardView: (container) => {
+        const allTasks = ONG.data.tasks || [];
+        const allProjects = ONG.data.projects || [];
+        const allMembers = ONG.data.members || [];
+
+        // Calculer les statistiques
+        const stats = {
+            total: allTasks.length,
+            todo: allTasks.filter(t => t.status === 'todo').length,
+            wip: allTasks.filter(t => t.status === 'wip').length,
+            done: allTasks.filter(t => t.status === 'done').length,
+            projects: allProjects.length,
+            members: allMembers.length
+        };
+
+        stats.completion = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+
+        // Tâches à venir cette semaine
+        const today = new Date();
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
+        const upcomingTasks = allTasks.filter(t => {
+            if (!t.end_date) return false;
+            const endDate = new Date(t.end_date);
+            return endDate >= today && endDate <= nextWeek && t.status !== 'done';
+        }).slice(0, 5);
+
+        // HTML du Dashboard
+        let html = `
+            <div class="p-6 space-y-6">
+                <!-- Cartes de statistiques -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total Tâches</p>
+                                <p class="text-3xl font-bold text-gray-800">${stats.total}</p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-full">
+                                <i class="fas fa-tasks text-blue-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">En Cours</p>
+                                <p class="text-3xl font-bold text-orange-600">${stats.wip}</p>
+                            </div>
+                            <div class="bg-orange-100 p-3 rounded-full">
+                                <i class="fas fa-spinner text-orange-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Terminées</p>
+                                <p class="text-3xl font-bold text-green-600">${stats.done}</p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">Progression</p>
+                                <p class="text-3xl font-bold text-purple-600">${stats.completion}%</p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-full">
+                                <i class="fas fa-chart-line text-purple-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphiques -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Graphique par Statut -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-4">Tâches par Statut</h3>
+                        <canvas id="chartStatus" height="250"></canvas>
+                    </div>
+
+                    <!-- Graphique par Projet -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-4">Tâches par Projet</h3>
+                        <canvas id="chartProjects" height="250"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tâches à venir & Par responsable -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Tâches à venir -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-4">📅 À venir cette semaine</h3>
+                        ${upcomingTasks.length > 0 ? `
+                            <div class="space-y-2">
+                                ${upcomingTasks.map(t => {
+                                    const project = allProjects.find(p => p.id == t.project_id);
+                                    return `
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer" onclick="ONG.editTask(${t.id})">
+                                            <div class="flex-1">
+                                                <div class="font-medium">${ONG.escape(t.title)}</div>
+                                                <div class="text-xs text-gray-500">${project ? ONG.escape(project.name) : ''}</div>
+                                            </div>
+                                            <div class="text-sm text-gray-600">${t.end_date}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : '<p class="text-gray-400 text-center py-8">Aucune tâche à venir cette semaine</p>'}
+                    </div>
+
+                    <!-- Graphique par Responsable -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-bold mb-4">Tâches par Responsable</h3>
+                        <canvas id="chartMembers" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Créer les graphiques avec Chart.js
+        setTimeout(() => {
+            // Graphique par Statut (Doughnut)
+            const ctxStatus = document.getElementById('chartStatus');
+            if (ctxStatus) {
+                new Chart(ctxStatus, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['À faire', 'En cours', 'Terminé'],
+                        datasets: [{
+                            data: [stats.todo, stats.wip, stats.done],
+                            backgroundColor: ['#FCA5A5', '#FBBF24', '#34D399'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+
+            // Graphique par Projet (Bar)
+            const ctxProjects = document.getElementById('chartProjects');
+            if (ctxProjects) {
+                const projectStats = {};
+                allProjects.forEach(p => {
+                    projectStats[p.name] = allTasks.filter(t => t.project_id == p.id).length;
+                });
+
+                new Chart(ctxProjects, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(projectStats),
+                        datasets: [{
+                            label: 'Tâches',
+                            data: Object.values(projectStats),
+                            backgroundColor: '#3B82F6',
+                            borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                        }
+                    }
+                });
+            }
+
+            // Graphique par Responsable (Horizontal Bar)
+            const ctxMembers = document.getElementById('chartMembers');
+            if (ctxMembers) {
+                const memberStats = {};
+                allMembers.forEach(m => {
+                    const name = `${m.fname} ${m.lname}`;
+                    memberStats[name] = allTasks.filter(t => t.owner_id == m.id).length;
+                });
+
+                new Chart(ctxMembers, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(memberStats),
+                        datasets: [{
+                            label: 'Tâches assignées',
+                            data: Object.values(memberStats),
+                            backgroundColor: '#8B5CF6',
+                            borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { beginAtZero: true, ticks: { stepSize: 1 } }
+                        }
+                    }
+                });
+            }
+        }, 100);
     },
 
     /**
