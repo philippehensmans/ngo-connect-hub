@@ -8,6 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Frappe Gantt -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
     <style>
         :root {
             --primary-color: #2563EB;
@@ -34,6 +37,17 @@
         .bg-primary-light { background-color: var(--primary-light) !important; }
         .text-primary { color: var(--primary-color) !important; }
         .border-primary { border-color: var(--primary-color) !important; }
+
+        /* Gantt Chart Customization */
+        .gantt-container { background: white; border-radius: 8px; padding: 20px; overflow-x: auto; }
+        .gantt .bar { fill: var(--primary-color) !important; }
+        .gantt .bar-progress { fill: var(--primary-dark) !important; }
+        .gantt .bar-milestone { fill: var(--accent-color) !important; stroke: var(--accent-color) !important; }
+        .gantt .bar-label { fill: #fff; font-size: 12px; }
+        .gantt .today-highlight { fill: rgba(252, 211, 77, 0.2) !important; }
+        .gantt-view-mode { display: flex; gap: 8px; margin-bottom: 16px; }
+        .gantt-view-mode button { padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; }
+        .gantt-view-mode button.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
     </style>
 </head>
 <body class="h-screen flex flex-col">

@@ -944,6 +944,182 @@ window.ONG = {
     },
 
     /**
+     * Rend la vue Gantt
+     */
+    renderGanttView: (container, tasks) => {
+        if (!ONG.state.pid) {
+            container.innerHTML = "<p class='text-center text-gray-400'>Sélectionnez un projet</p>";
+            return;
+        }
+
+        // Vérifier que Frappe Gantt est chargé
+        if (typeof Gantt === 'undefined') {
+            container.innerHTML = "<p class='text-center text-red-500'>Erreur: Bibliothèque Gantt non chargée</p>";
+            return;
+        }
+
+        // Filtrer les tâches avec dates
+        const tasksWithDates = tasks.filter(t => t.start_date && t.end_date);
+
+        if (tasksWithDates.length === 0) {
+            container.innerHTML = "<div class='bg-white p-6 rounded shadow'><p class='text-center text-gray-400'>Aucune tâche avec dates de début et fin</p></div>";
+            return;
+        }
+
+        // Obtenir les jalons
+        const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid);
+
+        // Créer une map des groupes pour les couleurs
+        const groupColors = new Map();
+        ONG.data.groups.filter(g => g.project_id == ONG.state.pid).forEach(g => {
+            groupColors.set(g.id, g.color);
+        });
+
+        // Convertir les tâches au format Gantt
+        const ganttTasks = tasksWithDates.map(t => {
+            const groupColor = t.group_id ? groupColors.get(t.group_id) : '#2563EB';
+
+            return {
+                id: 't_' + t.id,
+                name: t.title,
+                start: t.start_date,
+                end: t.end_date,
+                progress: t.status === 'done' ? 100 : t.status === 'wip' ? 50 : 0,
+                dependencies: t.dependencies ? t.dependencies.split(',').map(d => 't_' + d.trim()).join(',') : '',
+                custom_class: 'task-bar',
+                task_data: t
+            };
+        });
+
+        // Ajouter les jalons
+        milestones.forEach(m => {
+            if (m.date) {
+                ganttTasks.push({
+                    id: 'm_' + m.id,
+                    name: '◆ ' + m.name,
+                    start: m.date,
+                    end: m.date,
+                    progress: 100,
+                    dependencies: '',
+                    custom_class: 'bar-milestone'
+                });
+            }
+        });
+
+        // Trier par date de début
+        ganttTasks.sort((a, b) => a.start.localeCompare(b.start));
+
+        // Créer le HTML
+        let html = `
+            <div class="gantt-container">
+                <div class="gantt-view-mode">
+                    <button class="mode-btn active" data-mode="Week">Semaine</button>
+                    <button class="mode-btn" data-mode="Month">Mois</button>
+                    <button class="mode-btn" data-mode="Day">Jour</button>
+                </div>
+                <div id="gantt-chart"></div>
+                <div class="mt-4 p-3 bg-gray-50 rounded text-xs space-y-1">
+                    <p><strong>💡 Astuce :</strong></p>
+                    <ul class="list-disc list-inside space-y-1 text-gray-600">
+                        <li>Cliquez sur une tâche pour la modifier</li>
+                        <li>Glissez les barres pour changer les dates</li>
+                        <li>Les losanges (◆) représentent les jalons</li>
+                        <li>Les flèches montrent les dépendances</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Initialiser le Gantt
+        let currentMode = 'Week';
+        let ganttInstance = null;
+
+        const initGantt = (viewMode) => {
+            try {
+                ganttInstance = new Gantt('#gantt-chart', ganttTasks, {
+                    view_mode: viewMode,
+                    language: ONG.state.lang === 'fr' ? 'fr' : 'en',
+                    bar_height: 30,
+                    bar_corner_radius: 3,
+                    arrow_curve: 5,
+                    padding: 18,
+                    date_format: 'YYYY-MM-DD',
+                    custom_popup_html: function(task) {
+                        const taskData = task.task_data;
+                        if (!taskData) {
+                            // C'est un jalon
+                            return `
+                                <div class="p-2">
+                                    <h5 class="font-bold">${ONG.escape(task.name)}</h5>
+                                    <p class="text-xs text-gray-500">Jalon: ${task.start}</p>
+                                </div>
+                            `;
+                        }
+
+                        const owner = ONG.getMemberName(taskData.owner_id);
+                        const statusLabel = taskData.status === 'done' ? '✅ Terminé' : taskData.status === 'wip' ? '🔄 En cours' : '⭕ À faire';
+
+                        return `
+                            <div class="p-2">
+                                <h5 class="font-bold">${ONG.escape(task.name)}</h5>
+                                <p class="text-xs text-gray-600 mt-1">${statusLabel}</p>
+                                <p class="text-xs text-gray-600">👤 ${ONG.escape(owner)}</p>
+                                <p class="text-xs text-gray-500 mt-1">${task.start} → ${task.end}</p>
+                                <p class="text-xs text-blue-500 mt-2">Cliquez pour modifier</p>
+                            </div>
+                        `;
+                    },
+                    on_click: function(task) {
+                        // Si c'est une tâche (pas un jalon)
+                        if (task.id.startsWith('t_')) {
+                            const taskId = parseInt(task.id.substring(2));
+                            ONG.editTask(taskId);
+                        }
+                    },
+                    on_date_change: function(task, start, end) {
+                        // Mise à jour de la tâche quand on drag & drop
+                        if (task.id.startsWith('t_')) {
+                            const taskId = parseInt(task.id.substring(2));
+                            const taskData = ONG.data.tasks.find(t => t.id === taskId);
+                            if (taskData) {
+                                taskData.start_date = start.toISOString().split('T')[0];
+                                taskData.end_date = end.toISOString().split('T')[0];
+
+                                // Sauvegarder via API
+                                ONG.api('update_task', {
+                                    id: taskId,
+                                    start_date: taskData.start_date,
+                                    end_date: taskData.end_date
+                                }).then(() => {
+                                    ONG.showToast('Dates mises à jour', 'success');
+                                });
+                            }
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error('Erreur Gantt:', err);
+                container.innerHTML = `<div class='bg-white p-6 rounded shadow'><p class='text-center text-red-500'>Erreur lors de l'affichage du Gantt: ${err.message}</p></div>`;
+            }
+        };
+
+        // Initialiser avec le mode par défaut
+        initGantt(currentMode);
+
+        // Gérer les changements de mode de vue
+        container.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                container.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentMode = this.dataset.mode;
+                initGantt(currentMode);
+            });
+        });
+    },
+
+    /**
      * Obtient et filtre les tâches
      */
     getProcessedTasks: () => {
