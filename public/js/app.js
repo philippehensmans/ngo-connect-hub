@@ -1352,7 +1352,17 @@ window.ONG = {
      * Change la langue
      */
     setLang: (lang) => {
-        location.href = "?lang=" + lang;
+        ONG.state.lang = lang;
+        const langSelect = ONG.el('langSelect');
+        if (langSelect) langSelect.value = lang;
+
+        // Re-rendre la vue actuelle avec la nouvelle langue
+        ONG.renderView();
+
+        // Mettre à jour l'URL sans recharger la page
+        const url = new URL(window.location);
+        url.searchParams.set('lang', lang);
+        window.history.pushState({}, '', url);
     },
 
     /**
@@ -1703,11 +1713,14 @@ window.ONG = {
         // Mettre à jour le badge de notification
         ONG.updateConflictBadge(conflicts.length);
 
-        // Afficher le pop-up seulement s'il y a des conflits et que c'est le premier chargement
+        // Note: Le pop-up de conflit a été désactivé à la demande de l'utilisateur
+        // Pour le réactiver, décommentez les lignes ci-dessous:
+        /*
         if (conflicts.length > 0 && !ONG.state.conflictsChecked) {
             ONG.state.conflictsChecked = true;
             ONG.showConflictModal(conflicts);
         }
+        */
     },
 
     /**
