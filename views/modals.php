@@ -170,10 +170,16 @@
     <div class="bg-white p-6 rounded w-full max-w-2xl">
         <h3 class="font-bold mb-4"><?= $t->translate('team') ?></h3>
         <form id="formMember" class="flex gap-2 mb-4 bg-gray-100 p-2 rounded">
-            <input name="fname" placeholder="Prénom" class="border p-1 rounded flex-1" required>
-            <input name="lname" placeholder="Nom" class="border p-1 rounded flex-1" required>
-            <input name="email" placeholder="Email" class="border p-1 rounded flex-1" required>
-            <button class="bg-green-600 text-white px-3 rounded">+</button>
+            <input type="hidden" name="id" id="memberId">
+            <input name="fname" id="memberFname" placeholder="Prénom" class="border p-1 rounded flex-1" required>
+            <input name="lname" id="memberLname" placeholder="Nom" class="border p-1 rounded flex-1" required>
+            <input name="email" id="memberEmail" placeholder="Email" class="border p-1 rounded flex-1" required>
+            <button type="submit" class="bg-green-600 text-white px-3 rounded" id="btnSaveMember">
+                <span id="memberBtnIcon">+</span>
+            </button>
+            <button type="button" class="bg-gray-400 text-white px-3 rounded hidden" id="btnCancelEditMember" onclick="ONG.cancelEditMember()">
+                ✕
+            </button>
         </form>
         <div id="teamList" class="space-y-1 max-h-60 overflow-y-auto"></div>
         <button class="mt-4 w-full border p-2 rounded text-gray-600 btn-close">Fermer</button>

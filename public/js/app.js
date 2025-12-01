@@ -175,7 +175,7 @@ window.ONG = {
         // Formulaire de membre
         ONG.onSubmit('formMember', async (fd) => {
             await ONG.post('save_member', fd);
-            document.getElementById('formMember').reset();
+            ONG.cancelEditMember();
             ONG.loadData();
         });
 
@@ -885,12 +885,53 @@ window.ONG = {
         const teamList = ONG.el('teamList');
         if (teamList) {
             teamList.innerHTML = ONG.data.members.map(m => `
-                <div class="flex justify-between p-2 border-b">
-                    <span>${ONG.escape(m.fname)} ${ONG.escape(m.lname)}</span>
-                    <button class="text-red-500" onclick="ONG.deleteItem('members', ${m.id})">x</button>
+                <div class="flex justify-between items-center p-2 border-b hover:bg-gray-50">
+                    <span>${ONG.escape(m.fname)} ${ONG.escape(m.lname)} - ${ONG.escape(m.email)}</span>
+                    <div class="flex gap-2">
+                        <button class="text-blue-500 hover:text-blue-700" onclick='ONG.editMember(${JSON.stringify(m)})' title="Éditer">✏️</button>
+                        <button class="text-red-500 hover:text-red-700" onclick="ONG.deleteItem('members', ${m.id})" title="Supprimer">🗑️</button>
+                    </div>
                 </div>
             `).join('');
         }
+    },
+
+    /**
+     * Édite un membre
+     */
+    editMember: (member) => {
+        ONG.setVal('memberId', member.id);
+        ONG.setVal('memberFname', member.fname);
+        ONG.setVal('memberLname', member.lname);
+        ONG.setVal('memberEmail', member.email);
+
+        // Changer le bouton en mode édition
+        const btnIcon = ONG.el('memberBtnIcon');
+        const btnCancel = ONG.el('btnCancelEditMember');
+        const btnSave = ONG.el('btnSaveMember');
+
+        if (btnIcon) btnIcon.textContent = '💾';
+        if (btnSave) btnSave.className = 'bg-blue-600 text-white px-3 rounded';
+        if (btnCancel) btnCancel.classList.remove('hidden');
+    },
+
+    /**
+     * Annule l'édition d'un membre
+     */
+    cancelEditMember: () => {
+        const form = ONG.el('formMember');
+        if (form) form.reset();
+
+        ONG.setVal('memberId', '');
+
+        // Réinitialiser le bouton en mode ajout
+        const btnIcon = ONG.el('memberBtnIcon');
+        const btnCancel = ONG.el('btnCancelEditMember');
+        const btnSave = ONG.el('btnSaveMember');
+
+        if (btnIcon) btnIcon.textContent = '+';
+        if (btnSave) btnSave.className = 'bg-green-600 text-white px-3 rounded';
+        if (btnCancel) btnCancel.classList.add('hidden');
     },
 
     /**

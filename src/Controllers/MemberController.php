@@ -11,7 +11,7 @@ use App\Services\Auth;
 class MemberController extends Controller
 {
     /**
-     * Sauvegarde un membre
+     * Sauvegarde un membre (création ou mise à jour)
      */
     public function save(array $data): void
     {
@@ -37,10 +37,17 @@ class MemberController extends Controller
         ];
 
         try {
-            $id = $memberModel->create($memberData);
-            $this->success(['id' => $id], 'Member added successfully');
+            if (empty($data['id'])) {
+                // Création
+                $id = $memberModel->create($memberData);
+                $this->success(['id' => $id], 'Member added successfully');
+            } else {
+                // Mise à jour
+                $memberModel->update((int)$data['id'], $memberData);
+                $this->success(null, 'Member updated successfully');
+            }
         } catch (\Exception $e) {
-            $this->error('Failed to add member: ' . $e->getMessage());
+            $this->error('Failed to save member: ' . $e->getMessage());
         }
     }
 }
