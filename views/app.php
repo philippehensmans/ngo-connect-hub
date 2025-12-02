@@ -40,16 +40,16 @@
 
         /* Gantt Chart Customization */
         #gantt-chart-wrapper {
-            overflow-x: auto;
+            overflow-x: scroll !important;
             overflow-y: hidden;
             width: 100%;
-            max-width: 100%;
+            max-width: calc(100vw - 350px);
             min-height: 500px;
             max-height: 600px;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             background: #fff;
-            position: relative;
+            flex-shrink: 0;
         }
         #gantt-chart-wrapper::-webkit-scrollbar { height: 14px; }
         #gantt-chart-wrapper::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 7px; margin: 0 10px; }
