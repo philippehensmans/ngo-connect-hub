@@ -1069,6 +1069,17 @@ window.ONG = {
         // Initialiser avec le mode par défaut
         initGantt(currentMode);
 
+        // FORCER la largeur du wrapper via JavaScript
+        const wrapper = container.querySelector('#gantt-chart-wrapper');
+        if (wrapper) {
+            // Calculer la largeur max (viewport - sidebar - padding)
+            const maxWidth = window.innerWidth - 350;
+            wrapper.style.maxWidth = maxWidth + 'px';
+            wrapper.style.width = '100%';
+            wrapper.style.overflowX = 'scroll';
+            console.log('🔧 Wrapper forcé à max-width:', maxWidth + 'px');
+        }
+
         // Debug scroll après initialisation
         setTimeout(() => {
             const wrapper = container.querySelector('#gantt-chart-wrapper');
@@ -1077,6 +1088,7 @@ window.ONG = {
                 console.log('Wrapper width:', wrapper.clientWidth);
                 console.log('Wrapper scrollWidth:', wrapper.scrollWidth);
                 console.log('Scrollable?', wrapper.scrollWidth > wrapper.clientWidth);
+                console.log('Max-width appliqué:', wrapper.style.maxWidth);
                 console.log('Wrapper element:', wrapper);
             }
         }, 500);
