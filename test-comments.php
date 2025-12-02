@@ -50,7 +50,7 @@ echo "✅ <span class='ok'>Autoloader personnalisé chargé</span><br>";
 // 3. Vérifier la base de données
 echo "<h2>3. Vérification de la base de données</h2>";
 try {
-    $dbPath = 'data/db.sqlite';
+    $dbPath = 'data/ong_manager.db';
     if (!file_exists($dbPath)) {
         echo "⚠️ <span class='error'>Base de données non trouvée à $dbPath</span><br>";
         echo "Création de la base de données...<br>";

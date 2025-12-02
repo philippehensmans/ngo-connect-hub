@@ -47,7 +47,7 @@ foreach ($files as $file => $description) {
 
 // Test 2: Base de données
 echo "<h2>2️⃣ Vérification de la base de données</h2>";
-$dbPath = 'data/db.sqlite';
+$dbPath = 'data/ong_manager.db';
 if (!file_exists($dbPath)) {
     echo "<div class='test-item'>❌ <span class='error'>Base de données non trouvée à $dbPath</span></div>";
     echo "<p><strong>Action requise :</strong> Connectez-vous à l'application pour initialiser la base de données.</p>";
