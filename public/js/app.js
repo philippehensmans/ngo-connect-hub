@@ -316,7 +316,7 @@ window.ONG = {
      */
     renderView: () => {
         const t = ONG.dict[ONG.state.lang];
-        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'milestones', 'tree'];
+        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones', 'tree'];
 
         // Rendre les onglets
         const navTabs = ONG.el('navTabs');
