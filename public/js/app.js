@@ -355,6 +355,9 @@ window.ONG = {
             case 'gantt':
                 ONG.renderGanttView(container, tasks);
                 break;
+            case 'calendar':
+                ONG.renderCalendarView(container, tasks);
+                break;
             case 'tree':
                 ONG.renderTreeView(container, tasks);
                 break;
@@ -1161,6 +1164,158 @@ window.ONG = {
                 wrapper.scrollLeft = scrollLeft - walk;
             });
         }
+    },
+
+    /**
+     * Rend la vue Calendrier
+     */
+    renderCalendarView: (container, tasks) => {
+        if (!ONG.state.pid) {
+            container.innerHTML = "<p class='text-center text-gray-400'>Sélectionnez un projet</p>";
+            return;
+        }
+
+        // Vérifier que FullCalendar est chargé
+        if (typeof FullCalendar === 'undefined') {
+            container.innerHTML = "<p class='text-center text-red-500'>❌ Erreur: Bibliothèque FullCalendar non chargée</p>";
+            return;
+        }
+
+        // Créer le conteneur du calendrier
+        container.innerHTML = '<div id="calendar-wrapper" class="h-full bg-white rounded-lg shadow p-4"></div>';
+
+        const calendarEl = container.querySelector('#calendar-wrapper');
+
+        // Convertir les tâches en événements calendar
+        const events = [];
+
+        // Ajouter les tâches
+        tasks.forEach(task => {
+            if (task.start_date && task.end_date) {
+                const group = ONG.data.groups.find(g => g.id == task.group_id);
+                const groupColor = group ? group.color : '#2563EB';
+
+                events.push({
+                    id: 't_' + task.id,
+                    title: task.title,
+                    start: task.start_date,
+                    end: task.end_date,
+                    backgroundColor: groupColor,
+                    borderColor: groupColor,
+                    extendedProps: {
+                        type: 'task',
+                        taskData: task,
+                        owner: ONG.getMemberName(task.owner_id),
+                        status: task.status
+                    }
+                });
+            }
+        });
+
+        // Ajouter les jalons
+        const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid);
+        milestones.forEach(milestone => {
+            if (milestone.date) {
+                events.push({
+                    id: 'm_' + milestone.id,
+                    title: '◆ ' + milestone.name,
+                    start: milestone.date,
+                    allDay: true,
+                    backgroundColor: '#10B981',
+                    borderColor: '#10B981',
+                    classNames: ['fc-event-milestone'],
+                    extendedProps: {
+                        type: 'milestone',
+                        milestoneData: milestone
+                    }
+                });
+            }
+        });
+
+        // Initialiser FullCalendar
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            locale: ONG.state.lang === 'fr' ? 'fr' : ONG.state.lang === 'es' ? 'es' : ONG.state.lang === 'sl' ? 'sl' : 'en',
+            firstDay: 1, // Lundi
+            events: events,
+            editable: true, // Permet le drag & drop
+            eventClick: function(info) {
+                const eventType = info.event.extendedProps.type;
+                if (eventType === 'task') {
+                    const taskId = parseInt(info.event.id.substring(2));
+                    ONG.editTask(taskId);
+                }
+                // Les jalons ne sont pas éditables pour l'instant
+            },
+            eventDrop: function(info) {
+                // Mise à jour quand on déplace un événement
+                if (info.event.extendedProps.type === 'task') {
+                    const taskId = parseInt(info.event.id.substring(2));
+                    const task = ONG.data.tasks.find(t => t.id === taskId);
+
+                    if (task) {
+                        // Calculer la nouvelle date de fin
+                        const duration = new Date(task.end_date) - new Date(task.start_date);
+                        const newStart = info.event.start.toISOString().split('T')[0];
+                        const newEnd = new Date(info.event.start.getTime() + duration).toISOString().split('T')[0];
+
+                        task.start_date = newStart;
+                        task.end_date = newEnd;
+
+                        // Sauvegarder via API
+                        ONG.api('update_task', {
+                            id: taskId,
+                            start_date: newStart,
+                            end_date: newEnd
+                        }).then(() => {
+                            ONG.showToast('Dates mises à jour', 'success');
+                        }).catch(() => {
+                            // Annuler le changement en cas d'erreur
+                            info.revert();
+                        });
+                    }
+                }
+            },
+            eventResize: function(info) {
+                // Mise à jour quand on redimensionne un événement
+                if (info.event.extendedProps.type === 'task') {
+                    const taskId = parseInt(info.event.id.substring(2));
+                    const task = ONG.data.tasks.find(t => t.id === taskId);
+
+                    if (task) {
+                        const newEnd = info.event.end ? info.event.end.toISOString().split('T')[0] : info.event.start.toISOString().split('T')[0];
+
+                        task.end_date = newEnd;
+
+                        // Sauvegarder via API
+                        ONG.api('update_task', {
+                            id: taskId,
+                            end_date: newEnd
+                        }).then(() => {
+                            ONG.showToast('Date de fin mise à jour', 'success');
+                        }).catch(() => {
+                            info.revert();
+                        });
+                    }
+                }
+            },
+            eventContent: function(arg) {
+                const status = arg.event.extendedProps.status;
+                let icon = '';
+                if (status === 'done') icon = '✅ ';
+                else if (status === 'wip') icon = '🔄 ';
+                else if (status === 'todo') icon = '⭕ ';
+
+                return { html: '<div class="fc-event-title">' + icon + arg.event.title + '</div>' };
+            }
+        });
+
+        calendar.render();
     },
 
     /**

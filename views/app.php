@@ -11,6 +11,9 @@
     <!-- Frappe Gantt -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.css">
     <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+    <!-- FullCalendar -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <style>
         :root {
             --primary-color: #2563EB;
@@ -64,6 +67,14 @@
         .gantt-view-mode button { padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 4px; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s; }
         .gantt-view-mode button:hover { background: #f9fafb; }
         .gantt-view-mode button.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+        /* FullCalendar Customization */
+        .fc { height: 100%; }
+        .fc .fc-button-primary { background-color: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+        .fc .fc-button-primary:hover { background-color: var(--primary-dark) !important; }
+        .fc .fc-button-active { background-color: var(--primary-dark) !important; }
+        .fc-event { cursor: pointer; }
+        .fc-event-milestone { background-color: var(--accent-color) !important; border-color: var(--accent-color) !important; }
     </style>
 </head>
 <body class="h-screen flex flex-col">
