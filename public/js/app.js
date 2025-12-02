@@ -2893,8 +2893,205 @@ window.ONG = {
         };
 
         reader.readAsText(file);
+    },
+
+    /**
+     * Ouvre le modal de gestion des webhooks
+     */
+    openWebhooksModal: async () => {
+        ONG.openModal('modalWebhooks');
+        await ONG.loadWebhooks();
+    },
+
+    /**
+     * Charge la liste des webhooks
+     */
+    loadWebhooks: async () => {
+        const r = await ONG.post('list_webhooks', {});
+        if (r.ok && r.data.webhooks) {
+            const webhooks = r.data.webhooks;
+            const container = document.getElementById('webhooksList');
+
+            if (webhooks.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 italic text-sm">Aucun webhook configuré</div>';
+                return;
+            }
+
+            container.innerHTML = webhooks.map(wh => `
+                <div class="border rounded p-4 ${wh.is_active ? 'bg-white' : 'bg-gray-100'}">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-sm">${ONG.escape(wh.name)}</h4>
+                            <div class="text-xs text-gray-600 break-all">${ONG.escape(wh.url)}</div>
+                        </div>
+                        <div class="flex gap-1 ml-2">
+                            <button onclick="ONG.testWebhook(${wh.id})"
+                                    class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    title="Tester le webhook">
+                                <i class="fas fa-flask"></i>
+                            </button>
+                            <button onclick="ONG.editWebhook(${wh.id})"
+                                    class="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                                    title="Éditer">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="ONG.toggleWebhook(${wh.id}, ${wh.is_active})"
+                                    class="px-2 py-1 text-xs ${wh.is_active ? 'bg-orange-500' : 'bg-green-500'} text-white rounded hover:opacity-80"
+                                    title="${wh.is_active ? 'Désactiver' : 'Activer'}">
+                                <i class="fas fa-${wh.is_active ? 'pause' : 'play'}"></i>
+                            </button>
+                            <button onclick="ONG.deleteWebhook(${wh.id})"
+                                    class="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                                    title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${(wh.events || '*').split(',').map(e =>
+                            `<span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">${e}</span>`
+                        ).join('')}
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        Secret: <code class="bg-gray-200 px-1 rounded">${wh.secret.substring(0, 16)}...</code>
+                    </div>
+                </div>
+            `).join('');
+        }
+    },
+
+    /**
+     * Ouvre le formulaire de webhook (créer ou éditer)
+     */
+    openWebhookForm: (webhookId = null) => {
+        if (webhookId) {
+            // Mode édition
+            document.getElementById('webhookFormTitle').innerHTML = '<i class="fas fa-edit"></i> Éditer le Webhook';
+            // Charger les données du webhook
+            const r = ONG.post('list_webhooks', {});
+            r.then(response => {
+                if (response.ok && response.data.webhooks) {
+                    const webhook = response.data.webhooks.find(w => w.id === webhookId);
+                    if (webhook) {
+                        document.getElementById('webhookId').value = webhook.id;
+                        document.getElementById('webhookName').value = webhook.name;
+                        document.getElementById('webhookUrl').value = webhook.url;
+
+                        // Cocher les événements
+                        const events = (webhook.events || '*').split(',');
+                        document.querySelectorAll('.webhook-event').forEach(cb => {
+                            cb.checked = events.includes(cb.value);
+                        });
+                    }
+                }
+            });
+        } else {
+            // Mode création
+            document.getElementById('webhookFormTitle').innerHTML = '<i class="fas fa-plus"></i> Nouveau Webhook';
+            document.getElementById('webhookId').value = '';
+            document.getElementById('webhookName').value = '';
+            document.getElementById('webhookUrl').value = '';
+            document.querySelectorAll('.webhook-event').forEach(cb => cb.checked = false);
+        }
+
+        ONG.openModal('modalWebhookForm');
+    },
+
+    /**
+     * Édite un webhook
+     */
+    editWebhook: (webhookId) => {
+        ONG.openWebhookForm(webhookId);
+    },
+
+    /**
+     * Supprime un webhook
+     */
+    deleteWebhook: async (webhookId) => {
+        if (!confirm('Supprimer ce webhook ?')) return;
+
+        const r = await ONG.post('delete_webhook', { id: webhookId });
+        if (r.ok) {
+            ONG.toast('Webhook supprimé', 'success');
+            await ONG.loadWebhooks();
+        }
+    },
+
+    /**
+     * Active/Désactive un webhook
+     */
+    toggleWebhook: async (webhookId, currentStatus) => {
+        const r = await ONG.post('update_webhook', {
+            id: webhookId,
+            is_active: currentStatus ? 0 : 1
+        });
+        if (r.ok) {
+            ONG.toast(currentStatus ? 'Webhook désactivé' : 'Webhook activé', 'success');
+            await ONG.loadWebhooks();
+        }
+    },
+
+    /**
+     * Teste un webhook
+     */
+    testWebhook: async (webhookId) => {
+        ONG.toast('Envoi du webhook de test...', 'info');
+        const r = await ONG.post('test_webhook', { id: webhookId });
+        if (r.ok) {
+            ONG.toast(`Test envoyé (HTTP ${r.data.http_code})`, 'success');
+        }
     }
 };
 
 // Initialiser l'application au chargement du DOM
 document.addEventListener("DOMContentLoaded", ONG.init);
+
+// Gérer la soumission du formulaire webhook
+document.addEventListener("DOMContentLoaded", () => {
+    const formWebhook = document.getElementById('formWebhook');
+    if (formWebhook) {
+        formWebhook.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const webhookId = document.getElementById('webhookId').value;
+            const name = document.getElementById('webhookName').value.trim();
+            const url = document.getElementById('webhookUrl').value.trim();
+
+            // Collecter les événements sélectionnés
+            const events = [];
+            document.querySelectorAll('.webhook-event:checked').forEach(cb => {
+                events.push(cb.value);
+            });
+
+            if (events.length === 0) {
+                ONG.toast('Sélectionnez au moins un événement', 'warning');
+                return;
+            }
+
+            const data = { name, url, events: events.join(',') };
+            if (webhookId) data.id = webhookId;
+
+            const action = webhookId ? 'update_webhook' : 'create_webhook';
+            const r = await ONG.post(action, data);
+
+            if (r.ok) {
+                ONG.toast(webhookId ? 'Webhook mis à jour' : 'Webhook créé', 'success');
+                ONG.closeModal('modalWebhookForm');
+                await ONG.loadWebhooks();
+            }
+        });
+    }
+
+    // Gérer la sélection exclusive de "Tous les événements"
+    document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('webhook-event')) {
+            if (e.target.value === '*' && e.target.checked) {
+                // Si "Tous les événements" est coché, décocher les autres
+                document.querySelectorAll('.webhook-event:not([value="*"])').forEach(cb => cb.checked = false);
+            } else if (e.target.value !== '*' && e.target.checked) {
+                // Si un événement spécifique est coché, décocher "Tous les événements"
+                document.querySelector('.webhook-event[value="*"]').checked = false;
+            }
+        }
+    });
+});

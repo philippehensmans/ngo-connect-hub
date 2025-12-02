@@ -166,6 +166,19 @@ class Database
             FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE
         )");
 
+        // Table des webhooks
+        $db->exec("CREATE TABLE IF NOT EXISTS webhooks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            url TEXT NOT NULL,
+            events TEXT DEFAULT '*',
+            secret TEXT NOT NULL,
+            is_active BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
+        )");
+
         // Créer des données de démo si la base est vide
         $this->createDemoDataIfNeeded();
     }
@@ -191,6 +204,8 @@ class Database
             "CREATE INDEX IF NOT EXISTS idx_milestones_project ON milestones(project_id)",
             "CREATE INDEX IF NOT EXISTS idx_members_team ON members(team_id)",
             "CREATE INDEX IF NOT EXISTS idx_projects_team ON projects(team_id)",
+            "CREATE INDEX IF NOT EXISTS idx_webhooks_team ON webhooks(team_id)",
+            "CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(is_active)",
         ];
 
         foreach ($indexes as $index) {

@@ -45,6 +45,18 @@
             </div>
         </div>
 
+        <!-- Section Webhooks -->
+        <div class="mt-6 pt-6 border-t">
+            <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
+                <i class="fas fa-link"></i>
+                🔗 Webhooks & Intégrations
+            </h4>
+
+            <button onclick="ONG.openWebhooksModal()" class="w-full bg-purple-600 text-white p-2 rounded hover:bg-purple-700">
+                <i class="fas fa-cog"></i> Gérer les Webhooks
+            </button>
+        </div>
+
         <button type="button" class="w-full mt-4 text-gray-500 btn-close"><?= $t->translate('cancel') ?></button>
     </div>
 </div>
@@ -391,5 +403,106 @@
         <div class="flex justify-end gap-2 mt-6">
             <button class="px-4 py-2 border rounded text-gray-600 btn-close">Fermer</button>
         </div>
+    </div>
+</div>
+
+<!-- Modal Webhooks -->
+<div id="modalWebhooks" class="modal">
+    <div class="bg-white p-6 rounded w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <h3 class="font-bold text-xl mb-4 flex items-center gap-2">
+            <i class="fas fa-link"></i>
+            🔗 Gestion des Webhooks
+        </h3>
+
+        <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded text-sm">
+            <p class="text-blue-800 mb-1"><strong>Qu'est-ce qu'un webhook ?</strong></p>
+            <p class="text-blue-600 text-xs">Les webhooks permettent d'envoyer automatiquement des notifications HTTP vers vos outils externes (Slack, Discord, etc.) quand des événements se produisent dans ONG Manager.</p>
+        </div>
+
+        <button onclick="ONG.openWebhookForm()" class="mb-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+            <i class="fas fa-plus"></i> Nouveau Webhook
+        </button>
+
+        <div id="webhooksList" class="space-y-3">
+            <div class="text-gray-500 italic text-sm">Chargement des webhooks...</div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6">
+            <button class="px-4 py-2 border rounded text-gray-600 btn-close">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Webhook Form (Créer/Éditer) -->
+<div id="modalWebhookForm" class="modal">
+    <div class="bg-white p-6 rounded w-full max-w-xl">
+        <h3 class="font-bold text-lg mb-4" id="webhookFormTitle">
+            <i class="fas fa-plus"></i> Nouveau Webhook
+        </h3>
+
+        <form id="formWebhook" class="space-y-3">
+            <input type="hidden" id="webhookId">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                <input type="text" id="webhookName" class="w-full border p-2 rounded" placeholder="Ex: Notifications Slack" required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">URL du Webhook</label>
+                <input type="url" id="webhookUrl" class="w-full border p-2 rounded" placeholder="https://hooks.slack.com/..." required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Événements à surveiller</label>
+                <div class="space-y-2 max-h-48 overflow-y-auto border p-3 rounded bg-gray-50">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="*" class="webhook-event" data-exclusive="true">
+                        <span class="text-sm">🌟 Tous les événements</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="task.created" class="webhook-event">
+                        <span class="text-sm">✅ Nouvelle tâche créée</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="task.updated" class="webhook-event">
+                        <span class="text-sm">✏️ Tâche mise à jour</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="task.deleted" class="webhook-event">
+                        <span class="text-sm">🗑️ Tâche supprimée</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="task.status_changed" class="webhook-event">
+                        <span class="text-sm">🔄 Statut de tâche modifié</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="project.created" class="webhook-event">
+                        <span class="text-sm">📁 Nouveau projet créé</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="project.updated" class="webhook-event">
+                        <span class="text-sm">📝 Projet mis à jour</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="comment.created" class="webhook-event">
+                        <span class="text-sm">💬 Nouveau commentaire</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" value="milestone.completed" class="webhook-event">
+                        <span class="text-sm">🎯 Jalon complété</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-4">
+                <button type="submit" class="flex-1 bg-green-600 text-white p-2 rounded hover:bg-green-700">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+                <button type="button" class="flex-1 border p-2 rounded text-gray-600 hover:bg-gray-50 btn-close">
+                    Annuler
+                </button>
+            </div>
+        </form>
     </div>
 </div>

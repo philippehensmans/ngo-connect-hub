@@ -15,6 +15,7 @@ use App\Controllers\TemplateController;
 use App\Controllers\CommentController;
 use App\Controllers\BackupController;
 use App\Controllers\ExportController;
+use App\Controllers\WebhookController;
 
 /**
  * Routeur de l'application
@@ -78,6 +79,13 @@ class Router
         // Routes pour l'export/import
         $this->routes['export_project'] = [ExportController::class, 'exportProject'];
         $this->routes['import_project'] = [ExportController::class, 'importProject'];
+
+        // Routes pour les webhooks
+        $this->routes['list_webhooks'] = [WebhookController::class, 'list'];
+        $this->routes['create_webhook'] = [WebhookController::class, 'create'];
+        $this->routes['update_webhook'] = [WebhookController::class, 'update'];
+        $this->routes['delete_webhook'] = [WebhookController::class, 'delete'];
+        $this->routes['test_webhook'] = [WebhookController::class, 'test'];
 
         // Route pour la suppression
         $this->routes['delete_item'] = [DeleteController::class, 'delete'];
