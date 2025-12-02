@@ -1078,20 +1078,16 @@ window.ONG = {
             wrapper.style.width = '100%';
             wrapper.style.overflowX = 'scroll';
             console.log('🔧 Wrapper forcé à max-width:', maxWidth + 'px');
-        }
 
-        // Debug scroll après initialisation
-        setTimeout(() => {
-            const wrapper = container.querySelector('#gantt-chart-wrapper');
-            if (wrapper) {
+            // Debug scroll après initialisation
+            setTimeout(() => {
                 console.log('=== DIMENSIONS GANTT ===');
                 console.log('Wrapper width:', wrapper.clientWidth);
                 console.log('Wrapper scrollWidth:', wrapper.scrollWidth);
                 console.log('Scrollable?', wrapper.scrollWidth > wrapper.clientWidth);
                 console.log('Max-width appliqué:', wrapper.style.maxWidth);
-                console.log('Wrapper element:', wrapper);
-            }
-        }, 500);
+            }, 500);
+        }
 
         // Gérer les changements de mode de vue
         container.querySelectorAll('.mode-btn').forEach(btn => {
