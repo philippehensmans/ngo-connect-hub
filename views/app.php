@@ -41,7 +41,7 @@
         /* Gantt Chart Customization */
         #gantt-chart-wrapper {
             overflow-x: scroll !important;
-            overflow-y: hidden;
+            overflow-y: auto;
             width: 100%;
             max-width: calc(100vw - 350px);
             min-height: 500px;
@@ -51,8 +51,8 @@
             background: #fff;
             flex-shrink: 0;
         }
-        #gantt-chart-wrapper::-webkit-scrollbar { height: 14px; }
-        #gantt-chart-wrapper::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 7px; margin: 0 10px; }
+        #gantt-chart-wrapper::-webkit-scrollbar { height: 14px; width: 14px; }
+        #gantt-chart-wrapper::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 7px; margin: 10px; }
         #gantt-chart-wrapper::-webkit-scrollbar-thumb { background: #888; border-radius: 7px; }
         #gantt-chart-wrapper::-webkit-scrollbar-thumb:hover { background: #555; }
         #gantt-chart { min-width: max-content; display: block; }
