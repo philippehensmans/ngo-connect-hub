@@ -80,6 +80,68 @@ window.ONG = {
     },
 
     /**
+     * Met à jour le compteur de caractères
+     * @param {HTMLElement} textarea - Element textarea
+     * @param {string} counterId - ID de l'élément compteur
+     */
+    updateCharCount: (textarea, counterId) => {
+        const counter = document.getElementById(counterId);
+        if (!counter) return;
+
+        const current = textarea.value.length;
+        const max = textarea.maxLength || 1000;
+        counter.textContent = `${current}/${max}`;
+
+        // Changer la couleur en fonction de la progression
+        if (current > max * 0.9) {
+            counter.classList.add('text-red-500');
+            counter.classList.remove('text-amber-500', 'text-gray-400');
+        } else if (current > max * 0.75) {
+            counter.classList.add('text-amber-500');
+            counter.classList.remove('text-red-500', 'text-gray-400');
+        } else {
+            counter.classList.add('text-gray-400');
+            counter.classList.remove('text-red-500', 'text-amber-500');
+        }
+    },
+
+    /**
+     * Convertit du Markdown simple en HTML
+     * @param {string} text - Texte markdown
+     * @return {string} HTML
+     */
+    markdownToHtml: (text) => {
+        if (!text) return '';
+
+        let html = ONG.escape(text);
+
+        // Gras: **texte** ou __texte__
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+        // Italique: *texte* ou _texte_
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+
+        // Code inline: `code`
+        html = html.replace(/`(.+?)`/g, '<code class="bg-gray-200 px-1 rounded text-xs">$1</code>');
+
+        // Lien: [texte](url)
+        html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" class="text-blue-600 hover:underline">$1</a>');
+
+        // Liste à puces: - item ou * item
+        html = html.replace(/^[\-\*] (.+)$/gm, '<li class="ml-4">$1</li>');
+
+        // Entourer les listes de <ul>
+        html = html.replace(/(<li class="ml-4">.+<\/li>\n?)+/g, '<ul class="list-disc list-inside my-1">$&</ul>');
+
+        // Sauts de ligne
+        html = html.replace(/\n/g, '<br>');
+
+        return html;
+    },
+
+    /**
      * Affiche une notification toast
      * @param {string} message - Le message à afficher
      * @param {string} type - Type: success, error, warning, info
@@ -114,19 +176,61 @@ window.ONG = {
     },
 
     /**
-     * Affiche une confirmation avec callbacks
+     * Affiche une confirmation personnalisée avec callbacks
      * @param {string} message - Message de confirmation
      * @param {function} onConfirm - Callback si confirmé
      * @param {function} onCancel - Callback si annulé (optionnel)
      */
     confirm: (message, onConfirm, onCancel = null) => {
-        // Pour le moment, utiliser confirm() natif
-        // TODO: Créer un modal de confirmation personnalisé
-        if (confirm(message)) {
-            onConfirm();
-        } else if (onCancel) {
-            onCancel();
+        const modal = document.getElementById('confirmModal');
+        const messageEl = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('confirmOk');
+        const cancelBtn = document.getElementById('confirmCancel');
+
+        if (!modal || !messageEl || !okBtn || !cancelBtn) {
+            // Fallback au confirm natif si le modal n'existe pas
+            if (confirm(message)) {
+                onConfirm();
+            } else if (onCancel) {
+                onCancel();
+            }
+            return;
         }
+
+        // Afficher le message
+        messageEl.textContent = message;
+
+        // Afficher le modal
+        modal.classList.add('active');
+
+        // Gérer le clic sur Confirmer
+        const handleConfirm = () => {
+            modal.classList.remove('active');
+            okBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            onConfirm();
+        };
+
+        // Gérer le clic sur Annuler
+        const handleCancel = () => {
+            modal.classList.remove('active');
+            okBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+            if (onCancel) onCancel();
+        };
+
+        // Attacher les événements
+        okBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+
+        // Fermer avec Escape
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                handleCancel();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
     },
 
     /**
@@ -2488,7 +2592,7 @@ window.ONG = {
                         ` : ''}
                     </div>
                 </div>
-                <div class="comment-content text-gray-600 whitespace-pre-wrap">${ONG.escape(comment.content)}</div>
+                <div class="comment-content text-gray-600">${ONG.markdownToHtml(comment.content)}</div>
             </div>
         `;
     },

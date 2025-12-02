@@ -156,12 +156,27 @@
             <div id="commentsList" class="space-y-3 mb-4 max-h-64 overflow-y-auto"></div>
 
             <!-- Formulaire d'ajout de commentaire -->
-            <div class="flex gap-2">
-                <textarea id="newCommentText" class="flex-1 border p-2 rounded text-sm" rows="2"
-                          placeholder="Ajouter un commentaire..."></textarea>
-                <button id="btnAddComment" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+            <div>
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <textarea id="newCommentText" class="w-full border p-2 rounded text-sm" rows="2"
+                                  placeholder="Ajouter un commentaire..." maxlength="1000"
+                                  oninput="ONG.updateCharCount(this, 'commentCharCount')"></textarea>
+                        <div class="flex justify-between items-center mt-1">
+                            <div class="text-xs text-gray-500">
+                                <span class="font-semibold">Markdown:</span>
+                                <code class="bg-gray-100 px-1">**gras**</code>
+                                <code class="bg-gray-100 px-1">*italique*</code>
+                                <code class="bg-gray-100 px-1">`code`</code>
+                                <code class="bg-gray-100 px-1">- liste</code>
+                            </div>
+                            <span id="commentCharCount" class="text-xs text-gray-400">0/1000</span>
+                        </div>
+                    </div>
+                    <button id="btnAddComment" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 self-start">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

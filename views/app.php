@@ -219,6 +219,29 @@
 <!-- Toast Notifications Container -->
 <div id="toastContainer"></div>
 
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="modal">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-start gap-4 mb-4">
+            <div class="flex-shrink-0 w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-amber-600 text-xl"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Confirmation</h3>
+                <p id="confirmMessage" class="text-gray-600 text-sm"></p>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3">
+            <button id="confirmCancel" class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-gray-700">
+                Annuler
+            </button>
+            <button id="confirmOk" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                Confirmer
+            </button>
+        </div>
+    </div>
+</div>
+
 <header class="bg-white border-b px-4 py-2 flex justify-between items-center shrink-0">
     <div class="flex items-center gap-3">
         <div class="bg-blue-100 text-blue-700 w-8 h-8 rounded flex items-center justify-center font-bold">
