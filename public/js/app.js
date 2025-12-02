@@ -1101,7 +1101,6 @@ window.ONG = {
 
         // Bouton "Aujourd'hui" - scroll vers la date du jour
         const todayBtn = container.querySelector('#gantt-today');
-        const wrapper = container.querySelector('#gantt-chart-wrapper');
 
         if (todayBtn && wrapper) {
             todayBtn.addEventListener('click', () => {
