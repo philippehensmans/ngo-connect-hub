@@ -963,9 +963,9 @@ window.ONG = {
             <div class="bg-white rounded-lg shadow p-5">
                 <div class="flex justify-between items-center mb-4">
                     <div class="gantt-view-mode">
+                        <button class="mode-btn" data-mode="Day">Jour</button>
                         <button class="mode-btn active" data-mode="Week">Semaine</button>
                         <button class="mode-btn" data-mode="Month">Mois</button>
-                        <button class="mode-btn" data-mode="Day">Jour</button>
                     </div>
                     <div class="flex gap-2">
                         <button id="gantt-today" class="px-3 py-1 text-sm border rounded hover:bg-gray-50" title="Aller à aujourd'hui">
@@ -1006,6 +1006,7 @@ window.ONG = {
                     arrow_curve: 5,
                     padding: 18,
                     date_format: 'YYYY-MM-DD',
+                    column_width: viewMode === 'Day' ? 40 : viewMode === 'Week' ? 120 : 180,
                     custom_popup_html: function(task) {
                         const taskData = task.task_data;
                         if (!taskData) {
@@ -1067,6 +1068,18 @@ window.ONG = {
 
         // Initialiser avec le mode par défaut
         initGantt(currentMode);
+
+        // Debug scroll après initialisation
+        setTimeout(() => {
+            const wrapper = container.querySelector('#gantt-chart-wrapper');
+            if (wrapper) {
+                console.log('=== DIMENSIONS GANTT ===');
+                console.log('Wrapper width:', wrapper.clientWidth);
+                console.log('Wrapper scrollWidth:', wrapper.scrollWidth);
+                console.log('Scrollable?', wrapper.scrollWidth > wrapper.clientWidth);
+                console.log('Wrapper element:', wrapper);
+            }
+        }, 500);
 
         // Gérer les changements de mode de vue
         container.querySelectorAll('.mode-btn').forEach(btn => {

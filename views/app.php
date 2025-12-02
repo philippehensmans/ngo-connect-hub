@@ -39,12 +39,21 @@
         .border-primary { border-color: var(--primary-color) !important; }
 
         /* Gantt Chart Customization */
-        #gantt-chart-wrapper { overflow-x: auto; overflow-y: hidden; max-width: 100%; min-height: 400px; }
+        #gantt-chart-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            width: 100%;
+            min-height: 500px;
+            max-height: 600px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fff;
+        }
         #gantt-chart-wrapper::-webkit-scrollbar { height: 14px; }
         #gantt-chart-wrapper::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 7px; margin: 0 10px; }
         #gantt-chart-wrapper::-webkit-scrollbar-thumb { background: #888; border-radius: 7px; }
         #gantt-chart-wrapper::-webkit-scrollbar-thumb:hover { background: #555; }
-        #gantt-chart { min-width: 100%; }
+        #gantt-chart { min-width: 100%; width: max-content; }
         .gantt .bar { fill: var(--primary-color) !important; }
         .gantt .bar-progress { fill: var(--primary-dark) !important; }
         .gantt .bar-milestone { fill: var(--accent-color) !important; stroke: var(--accent-color) !important; }
