@@ -75,6 +75,51 @@ class CommentController extends Controller
     }
 
     /**
+     * Modifie un commentaire
+     */
+    public function update(array $data): void
+    {
+        if (!Auth::check()) {
+            $this->error('Unauthorized', 401);
+            return;
+        }
+
+        if (!$this->validate($data, ['id', 'content'])) {
+            $this->error('Missing required fields');
+            return;
+        }
+
+        $data = $this->sanitize($data);
+        $commentModel = new Comment($this->db);
+
+        // Vérifier que le commentaire appartient à l'utilisateur
+        $comment = $commentModel->getById((int)$data['id']);
+        if (!$comment) {
+            $this->error('Comment not found');
+            return;
+        }
+
+        $teamId = Auth::getTeamId();
+        $stmt = $this->db->prepare("SELECT id FROM members WHERE team_id = ? LIMIT 1");
+        $stmt->execute([$teamId]);
+        $member = $stmt->fetch();
+
+        if (!$member || $comment['member_id'] != $member['id']) {
+            $this->error('Unauthorized to update this comment', 403);
+            return;
+        }
+
+        try {
+            $commentModel->update((int)$data['id'], [
+                'content' => trim($data['content'])
+            ]);
+            $this->success(['message' => 'Comment updated']);
+        } catch (\Exception $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    /**
      * Supprime un commentaire
      */
     public function delete(array $data): void

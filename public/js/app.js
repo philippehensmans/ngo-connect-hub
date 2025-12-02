@@ -80,6 +80,56 @@ window.ONG = {
     },
 
     /**
+     * Affiche une notification toast
+     * @param {string} message - Le message à afficher
+     * @param {string} type - Type: success, error, warning, info
+     * @param {number} duration - Durée en ms (défaut: 4000)
+     */
+    toast: (message, type = 'info', duration = 4000) => {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const icons = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <span class="toast-icon">${icons[type]}</span>
+            <div class="flex-1">${ONG.escape(message)}</div>
+            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto-remove après duration
+        setTimeout(() => {
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    },
+
+    /**
+     * Affiche une confirmation avec callbacks
+     * @param {string} message - Message de confirmation
+     * @param {function} onConfirm - Callback si confirmé
+     * @param {function} onCancel - Callback si annulé (optionnel)
+     */
+    confirm: (message, onConfirm, onCancel = null) => {
+        // Pour le moment, utiliser confirm() natif
+        // TODO: Créer un modal de confirmation personnalisé
+        if (confirm(message)) {
+            onConfirm();
+        } else if (onCancel) {
+            onCancel();
+        }
+    },
+
+    /**
      * Initialise l'application
      */
     init: async () => {
@@ -98,7 +148,7 @@ window.ONG = {
                 if (data.ok) {
                     location.reload();
                 } else {
-                    alert(data.msg);
+                    ONG.toast(data.msg, 'error');
                 }
             };
             return;
@@ -2380,7 +2430,7 @@ window.ONG = {
 
         const r = await ONG.post('delete_template', { id: templateId });
         if (r.ok) {
-            alert('Modèle supprimé avec succès');
+            ONG.toast('Modèle supprimé avec succès', 'success');
             ONG.loadTemplates();
         }
     },
@@ -2419,12 +2469,17 @@ window.ONG = {
         const isOwner = ONG.data.currentMember && ONG.data.currentMember.id === comment.member_id;
 
         return `
-            <div class="bg-gray-50 border border-gray-200 rounded p-3 text-sm">
+            <div id="comment-${comment.id}" class="bg-gray-50 border border-gray-200 rounded p-3 text-sm">
                 <div class="flex justify-between items-start mb-2">
                     <div class="font-semibold text-gray-700">${ONG.escape(authorName)}</div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs text-gray-500">${dateStr}</span>
                         ${isOwner ? `
+                            <button onclick="ONG.editComment(${comment.id}, '${ONG.escape(comment.content).replace(/'/g, "\\'")}', this)"
+                                    class="text-blue-500 hover:text-blue-700 text-xs"
+                                    title="Éditer">
+                                <i class="fas fa-edit"></i>
+                            </button>
                             <button onclick="ONG.deleteComment(${comment.id})"
                                     class="text-red-500 hover:text-red-700 text-xs"
                                     title="Supprimer">
@@ -2433,7 +2488,7 @@ window.ONG = {
                         ` : ''}
                     </div>
                 </div>
-                <div class="text-gray-600 whitespace-pre-wrap">${ONG.escape(comment.content)}</div>
+                <div class="comment-content text-gray-600 whitespace-pre-wrap">${ONG.escape(comment.content)}</div>
             </div>
         `;
     },
@@ -2449,7 +2504,7 @@ window.ONG = {
 
         const content = textarea.value.trim();
         if (!content) {
-            alert('Le commentaire ne peut pas être vide');
+            ONG.toast('Le commentaire ne peut pas être vide', 'warning');
             return;
         }
 
@@ -2465,13 +2520,60 @@ window.ONG = {
     },
 
     /**
-     * Supprime un commentaire
+     * Active le mode édition pour un commentaire
      */
-    deleteComment: async (commentId) => {
-        if (!confirm('Supprimer ce commentaire ?')) return;
+    editComment: (commentId, currentContent, button) => {
+        const commentDiv = document.getElementById(`comment-${commentId}`);
+        if (!commentDiv) return;
 
-        const r = await ONG.post('delete_comment', { id: commentId });
+        const contentDiv = commentDiv.querySelector('.comment-content');
+        if (!contentDiv) return;
+
+        // Sauvegarder le contenu original
+        contentDiv.setAttribute('data-original', currentContent);
+
+        // Remplacer par un textarea
+        contentDiv.innerHTML = `
+            <textarea class="w-full border p-2 rounded text-sm" rows="3">${ONG.escape(currentContent)}</textarea>
+            <div class="flex gap-2 mt-2">
+                <button onclick="ONG.saveCommentEdit(${commentId})"
+                        class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700">
+                    <i class="fas fa-check"></i> Enregistrer
+                </button>
+                <button onclick="ONG.cancelCommentEdit(${commentId})"
+                        class="px-3 py-1 bg-gray-400 text-white rounded text-xs hover:bg-gray-500">
+                    <i class="fas fa-times"></i> Annuler
+                </button>
+            </div>
+        `;
+
+        // Masquer les boutons d'action pendant l'édition
+        button.parentElement.style.display = 'none';
+    },
+
+    /**
+     * Enregistre les modifications d'un commentaire
+     */
+    saveCommentEdit: async (commentId) => {
+        const commentDiv = document.getElementById(`comment-${commentId}`);
+        if (!commentDiv) return;
+
+        const textarea = commentDiv.querySelector('textarea');
+        if (!textarea) return;
+
+        const newContent = textarea.value.trim();
+        if (!newContent) {
+            ONG.toast('Le commentaire ne peut pas être vide', 'warning');
+            return;
+        }
+
+        const r = await ONG.post('update_comment', {
+            id: commentId,
+            content: newContent
+        });
+
         if (r.ok) {
+            ONG.toast('Commentaire modifié avec succès', 'success');
             const taskId = ONG.state.editingTaskId;
             if (taskId) {
                 await ONG.loadComments(taskId);
@@ -2480,12 +2582,47 @@ window.ONG = {
     },
 
     /**
+     * Annule l'édition d'un commentaire
+     */
+    cancelCommentEdit: (commentId) => {
+        const commentDiv = document.getElementById(`comment-${commentId}`);
+        if (!commentDiv) return;
+
+        const contentDiv = commentDiv.querySelector('.comment-content');
+        if (!contentDiv) return;
+
+        const originalContent = contentDiv.getAttribute('data-original');
+        contentDiv.innerHTML = ONG.escape(originalContent);
+        contentDiv.classList.add('whitespace-pre-wrap');
+
+        // Réafficher les boutons d'action
+        const actionsDiv = commentDiv.querySelector('.flex.items-center.gap-2');
+        if (actionsDiv) actionsDiv.style.display = 'flex';
+    },
+
+    /**
+     * Supprime un commentaire
+     */
+    deleteComment: async (commentId) => {
+        ONG.confirm('Supprimer ce commentaire ?', async () => {
+            const r = await ONG.post('delete_comment', { id: commentId });
+            if (r.ok) {
+                ONG.toast('Commentaire supprimé', 'success');
+                const taskId = ONG.state.editingTaskId;
+                if (taskId) {
+                    await ONG.loadComments(taskId);
+                }
+            }
+        });
+    },
+
+    /**
      * Crée un backup manuel de la base de données
      */
     createBackup: async () => {
         const r = await ONG.post('create_backup', {});
         if (r.ok) {
-            alert('✅ Sauvegarde créée avec succès: ' + r.data.filename);
+            ONG.toast('Sauvegarde créée avec succès: ' + r.data.filename, 'success');
             ONG.loadBackupsList();
         }
     },

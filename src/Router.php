@@ -66,6 +66,7 @@ class Router
         // Routes pour les commentaires
         $this->routes['list_comments'] = [CommentController::class, 'list'];
         $this->routes['add_comment'] = [CommentController::class, 'add'];
+        $this->routes['update_comment'] = [CommentController::class, 'update'];
         $this->routes['delete_comment'] = [CommentController::class, 'delete'];
 
         // Routes pour les backups

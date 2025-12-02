@@ -75,11 +75,149 @@
         .fc .fc-button-active { background-color: var(--primary-dark) !important; }
         .fc-event { cursor: pointer; }
         .fc-event-milestone { background-color: var(--accent-color) !important; border-color: var(--accent-color) !important; }
+
+        /* Toast Notifications */
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+            min-width: 300px;
+            color: white;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .toast.hiding {
+            animation: slideOut 0.3s ease-out forwards;
+        }
+
+        .toast-success { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+        .toast-error { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
+        .toast-warning { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+        .toast-info { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+
+        .toast-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .toast-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            border: none;
+            color: white;
+            opacity: 0.7;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Button Loading State */
+        button.loading {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        button.loading::after {
+            content: '';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.6s linear infinite;
+        }
+
+        /* Form Validation */
+        .input-error {
+            border-color: #EF4444 !important;
+            background-color: #FEE2E2 !important;
+        }
+
+        .input-success {
+            border-color: #10B981 !important;
+        }
+
+        .error-message {
+            color: #EF4444;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
-<div id="errorToast" class="fixed top-4 right-4 bg-red-600 text-white p-4 rounded shadow-lg hidden z-50"></div>
+<!-- Toast Notifications Container -->
+<div id="toastContainer"></div>
 
 <header class="bg-white border-b px-4 py-2 flex justify-between items-center shrink-0">
     <div class="flex items-center gap-3">
