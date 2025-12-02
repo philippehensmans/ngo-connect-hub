@@ -888,6 +888,11 @@ window.ONG = {
      * Rend la vue Gantt
      */
     renderGanttView: (container, tasks) => {
+        console.log('=== DEBUG GANTT ===');
+        console.log('Projet ID:', ONG.state.pid);
+        console.log('Nombre de tâches:', tasks.length);
+        console.log('Gantt chargé?', typeof Gantt !== 'undefined');
+
         if (!ONG.state.pid) {
             container.innerHTML = "<p class='text-center text-gray-400'>Sélectionnez un projet</p>";
             return;
@@ -895,15 +900,18 @@ window.ONG = {
 
         // Vérifier que Frappe Gantt est chargé
         if (typeof Gantt === 'undefined') {
-            container.innerHTML = "<p class='text-center text-red-500'>Erreur: Bibliothèque Gantt non chargée</p>";
+            container.innerHTML = "<p class='text-center text-red-500'>❌ Erreur: Bibliothèque Gantt non chargée</p>";
+            console.error('Frappe Gantt non chargé !');
             return;
         }
 
         // Filtrer les tâches avec dates
         const tasksWithDates = tasks.filter(t => t.start_date && t.end_date);
+        console.log('Tâches avec dates:', tasksWithDates.length);
+        console.log('Exemples de tâches:', tasksWithDates.slice(0, 3));
 
         if (tasksWithDates.length === 0) {
-            container.innerHTML = "<div class='bg-white p-6 rounded shadow'><p class='text-center text-gray-400'>Aucune tâche avec dates de début et fin</p></div>";
+            container.innerHTML = "<div class='bg-white p-6 rounded shadow'><p class='text-center text-orange-500'>⚠️ Aucune tâche avec dates de début et fin</p><p class='text-sm text-gray-500 mt-2'>Total de tâches: " + tasks.length + "</p></div>";
             return;
         }
 
