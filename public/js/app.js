@@ -127,7 +127,10 @@ window.ONG = {
         ONG.on('btnLogout', 'click', () => ONG.post('logout').then(() => location.reload()));
         ONG.on('btnTeam', 'click', () => ONG.openModal('modalTeam'));
         ONG.on('btnTemplates', 'click', () => ONG.openTemplatesModal());
-        ONG.on('btnSettings', 'click', () => ONG.openModal('modalSettings'));
+        ONG.on('btnSettings', 'click', () => {
+            ONG.openModal('modalSettings');
+            ONG.loadBackupsList();
+        });
         ONG.on('btnAddProject', 'click', () => ONG.openModalProject());
         ONG.on('btnAddTask', 'click', () => ONG.openTaskModal());
         ONG.on('btnExport', 'click', () => ONG.exportExcel());
@@ -2474,6 +2477,84 @@ window.ONG = {
                 await ONG.loadComments(taskId);
             }
         }
+    },
+
+    /**
+     * Crée un backup manuel de la base de données
+     */
+    createBackup: async () => {
+        const r = await ONG.post('create_backup', {});
+        if (r.ok) {
+            alert('✅ Sauvegarde créée avec succès: ' + r.data.filename);
+            ONG.loadBackupsList();
+        }
+    },
+
+    /**
+     * Télécharge la base de données actuelle
+     */
+    downloadCurrentDb: () => {
+        window.location.href = '?action=download_db';
+    },
+
+    /**
+     * Charge la liste des backups disponibles
+     */
+    loadBackupsList: async () => {
+        const r = await ONG.post('list_backups', {});
+        if (r.ok) {
+            const backups = r.data.backups || [];
+            const container = ONG.el('backupsList');
+
+            if (container) {
+                if (backups.length === 0) {
+                    container.innerHTML = '<div class="italic text-gray-400">Aucune sauvegarde disponible</div>';
+                } else {
+                    const html = '<div class="max-h-32 overflow-y-auto">' +
+                        '<div class="font-bold mb-1">Sauvegardes récentes:</div>' +
+                        backups.slice(0, 5).map(b => `
+                            <div class="flex justify-between items-center py-1 border-b">
+                                <div>
+                                    <div class="font-mono text-xs">${b.date}</div>
+                                    <div class="text-gray-500" style="font-size: 10px">${(b.size / 1024).toFixed(1)} KB</div>
+                                </div>
+                                <button onclick="ONG.downloadBackup('${b.filename}')"
+                                        class="text-blue-600 hover:text-blue-800"
+                                        title="Télécharger">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        `).join('') +
+                        '</div>';
+                    container.innerHTML = html;
+                }
+            }
+        }
+    },
+
+    /**
+     * Télécharge un backup spécifique
+     */
+    downloadBackup: async (filename) => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'download_backup';
+
+        const filenameInput = document.createElement('input');
+        filenameInput.type = 'hidden';
+        filenameInput.name = 'filename';
+        filenameInput.value = filename;
+
+        form.appendChild(actionInput);
+        form.appendChild(filenameInput);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
     }
 };
 

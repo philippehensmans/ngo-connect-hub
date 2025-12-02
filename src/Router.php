@@ -13,6 +13,7 @@ use App\Controllers\MilestoneController;
 use App\Controllers\DeleteController;
 use App\Controllers\TemplateController;
 use App\Controllers\CommentController;
+use App\Controllers\BackupController;
 
 /**
  * Routeur de l'application
@@ -66,6 +67,11 @@ class Router
         $this->routes['list_comments'] = [CommentController::class, 'list'];
         $this->routes['add_comment'] = [CommentController::class, 'add'];
         $this->routes['delete_comment'] = [CommentController::class, 'delete'];
+
+        // Routes pour les backups
+        $this->routes['create_backup'] = [BackupController::class, 'create'];
+        $this->routes['list_backups'] = [BackupController::class, 'list'];
+        $this->routes['download_backup'] = [BackupController::class, 'download'];
 
         // Route pour la suppression
         $this->routes['delete_item'] = [DeleteController::class, 'delete'];

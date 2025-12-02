@@ -60,6 +60,14 @@ if (isset($_GET['reset_app'])) {
 $dbService = new Database($config);
 $db = $dbService->getConnection();
 
+// Backup automatique quotidien (si nécessaire)
+try {
+    $dbService->autoBackup();
+} catch (\Exception $e) {
+    // Silencieux - ne pas bloquer l'application si le backup échoue
+    error_log("Backup failed: " . $e->getMessage());
+}
+
 // Initialiser la traduction
 $lang = $_GET['lang'] ?? $_SESSION['lang'] ?? $config['languages']['default'];
 if (isset($_GET['lang'])) {

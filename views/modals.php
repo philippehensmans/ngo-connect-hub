@@ -22,8 +22,30 @@
             <input type="password" name="current_password" class="w-full border p-2 mb-4 rounded border-red-200 bg-red-50" required>
 
             <button class="w-full bg-gray-800 text-white p-2 rounded"><?= $t->translate('save_settings') ?></button>
-            <button type="button" class="w-full mt-2 text-gray-500 btn-close"><?= $t->translate('cancel') ?></button>
         </form>
+
+        <!-- Section Backups -->
+        <div class="mt-6 pt-6 border-t">
+            <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
+                <i class="fas fa-database"></i>
+                💾 Sauvegarde des Données
+            </h4>
+
+            <button onclick="ONG.createBackup()" class="w-full bg-blue-600 text-white p-2 rounded mb-2 hover:bg-blue-700">
+                <i class="fas fa-plus"></i> Créer une Sauvegarde
+            </button>
+
+            <button onclick="ONG.downloadCurrentDb()" class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700">
+                <i class="fas fa-download"></i> Télécharger Base Actuelle
+            </button>
+
+            <!-- Liste des backups récents -->
+            <div id="backupsList" class="mt-3 text-xs text-gray-600">
+                <div class="italic">Chargement des sauvegardes...</div>
+            </div>
+        </div>
+
+        <button type="button" class="w-full mt-4 text-gray-500 btn-close"><?= $t->translate('cancel') ?></button>
     </div>
 </div>
 
