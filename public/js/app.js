@@ -1399,6 +1399,13 @@ window.ONG = {
         const title = document.getElementById('modalTaskTitle');
         if (title) title.textContent = "Nouvelle Tâche";
 
+        // Réinitialiser l'ID de la tâche en cours d'édition
+        ONG.state.editingTaskId = null;
+
+        // Masquer la section commentaires pour une nouvelle tâche
+        const commentsSection = ONG.el('taskCommentsSection');
+        if (commentsSection) commentsSection.style.display = 'none';
+
         const pSel = ONG.el('taskProjectSelect');
         if (pSel) {
             pSel.innerHTML = '<option value="">-- Sélectionnez un projet --</option>' +
@@ -1432,6 +1439,9 @@ window.ONG = {
         ONG.setVal('taskTitle', t.title);
         ONG.setVal('taskDesc', t.desc);
         ONG.setVal('taskProjectSelect', t.project_id);
+
+        // Définir l'ID de la tâche en cours d'édition pour les commentaires
+        ONG.state.editingTaskId = t.id;
 
         ONG.updateTaskModalDeps(t.project_id);
 
