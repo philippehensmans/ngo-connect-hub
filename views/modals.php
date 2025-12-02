@@ -232,6 +232,40 @@
     </div>
 </div>
 
+<!-- Modal Import Project -->
+<div id="modalImport" class="modal">
+    <div class="bg-white p-6 rounded w-full max-w-md">
+        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+            <i class="fas fa-file-import"></i>
+            📥 Importer un Projet
+        </h3>
+
+        <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded text-sm">
+            <p class="text-blue-800 mb-2"><strong>Format attendu :</strong> Fichier JSON exporté depuis ONG Manager</p>
+            <p class="text-blue-600 text-xs">Le projet sera créé avec toutes ses tâches, groupes et jalons.</p>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-bold text-gray-700 mb-2">
+                Sélectionner un fichier JSON
+            </label>
+            <input type="file"
+                   id="importFileInput"
+                   accept=".json"
+                   class="w-full border p-2 rounded">
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <button type="button" class="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-gray-700 btn-close">
+                Annuler
+            </button>
+            <button onclick="ONG.importProject()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                <i class="fas fa-upload"></i> Importer
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Team -->
 <div id="modalTeam" class="modal">
     <div class="bg-white p-6 rounded w-full max-w-2xl">

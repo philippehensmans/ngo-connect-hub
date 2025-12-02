@@ -281,6 +281,8 @@ window.ONG = {
         ONG.on('btnLogout', 'click', () => ONG.post('logout').then(() => location.reload()));
         ONG.on('btnTeam', 'click', () => ONG.openModal('modalTeam'));
         ONG.on('btnTemplates', 'click', () => ONG.openTemplatesModal());
+        ONG.on('btnExportProject', 'click', () => ONG.exportProject(ONG.state.pid));
+        ONG.on('btnImportProject', 'click', () => ONG.openImportModal());
         ONG.on('btnSettings', 'click', () => {
             ONG.openModal('modalSettings');
             ONG.loadBackupsList();
@@ -2817,6 +2819,80 @@ window.ONG = {
         document.body.appendChild(form);
         form.submit();
         document.body.removeChild(form);
+    },
+
+    /**
+     * Exporte un projet en JSON
+     */
+    exportProject: async (projectId) => {
+        if (!projectId) {
+            ONG.toast('Sélectionnez un projet à exporter', 'warning');
+            return;
+        }
+
+        // Créer un formulaire pour déclencher le téléchargement
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'export_project';
+
+        const projectInput = document.createElement('input');
+        projectInput.type = 'hidden';
+        projectInput.name = 'project_id';
+        projectInput.value = projectId;
+
+        form.appendChild(actionInput);
+        form.appendChild(projectInput);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        ONG.toast('Export du projet en cours...', 'info');
+    },
+
+    /**
+     * Ouvre le modal d'import de projet
+     */
+    openImportModal: () => {
+        ONG.openModal('modalImport');
+    },
+
+    /**
+     * Importe un projet depuis un fichier JSON
+     */
+    importProject: async () => {
+        const fileInput = document.getElementById('importFileInput');
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+            ONG.toast('Sélectionnez un fichier JSON', 'warning');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async (e) => {
+            try {
+                const jsonData = e.target.result;
+                // Valider que c'est du JSON valide
+                JSON.parse(jsonData);
+
+                const r = await ONG.post('import_project', { json_data: jsonData });
+                if (r.ok) {
+                    ONG.toast('Projet importé avec succès !', 'success');
+                    ONG.closeModal('modalImport');
+                    await ONG.loadData();
+                    ONG.renderView();
+                }
+            } catch (error) {
+                ONG.toast('Fichier JSON invalide', 'error');
+            }
+        };
+
+        reader.readAsText(file);
     }
 };
 

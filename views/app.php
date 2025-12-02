@@ -262,6 +262,12 @@
         <button id="btnTemplates" class="hover:text-purple-600">
             <i class="fas fa-copy"></i> Modèles
         </button>
+        <button id="btnExportProject" class="hover:text-green-600" title="Exporter le projet courant">
+            <i class="fas fa-file-export"></i>
+        </button>
+        <button id="btnImportProject" class="hover:text-blue-600" title="Importer un projet">
+            <i class="fas fa-file-import"></i>
+        </button>
         <button id="btnSettings" class="hover:text-gray-800 text-lg text-gray-500" title="<?= $t->translate('settings') ?>">
             <i class="fas fa-cog"></i>
         </button>
