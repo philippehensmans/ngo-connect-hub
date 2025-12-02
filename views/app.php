@@ -41,11 +41,10 @@
         /* Gantt Chart Customization */
         #gantt-chart-wrapper {
             overflow-x: scroll !important;
-            overflow-y: auto;
+            overflow-y: scroll !important;
             width: 100%;
             max-width: calc(100vw - 350px);
-            min-height: 500px;
-            max-height: 600px;
+            height: 550px;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             background: #fff;
