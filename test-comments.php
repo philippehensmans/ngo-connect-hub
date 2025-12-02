@@ -27,15 +27,25 @@ foreach ($files as $file) {
     }
 }
 
-// 2. Vérifier l'autoloader
-echo "<h2>2. Vérification de l'autoloader</h2>";
-if (file_exists('vendor/autoload.php')) {
-    require_once 'vendor/autoload.php';
-    echo "✅ <span class='ok'>Autoloader chargé</span><br>";
-} else {
-    echo "❌ <span class='error'>vendor/autoload.php manquant</span><br>";
-    exit;
-}
+// 2. Charger l'autoloader personnalisé
+echo "<h2>2. Chargement de l'autoloader</h2>";
+spl_autoload_register(function ($class) {
+    $prefix = 'App\\';
+    $base_dir = __DIR__ . '/src/';
+
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+
+    if (file_exists($file)) {
+        require $file;
+    }
+});
+echo "✅ <span class='ok'>Autoloader personnalisé chargé</span><br>";
 
 // 3. Vérifier la base de données
 echo "<h2>3. Vérification de la base de données</h2>";
