@@ -132,6 +132,7 @@ window.ONG = {
         ONG.on('btnAddTask', 'click', () => ONG.openTaskModal());
         ONG.on('btnExport', 'click', () => ONG.exportExcel());
         ONG.on('btnResetFilters', 'click', () => ONG.resetFilters());
+        ONG.on('btnAddComment', 'click', () => ONG.addComment());
 
         // Changement de projet dans le modal de tâche
         ONG.on('taskProjectSelect', 'change', (e) => ONG.updateTaskModalDeps(e.target.value));
@@ -1452,6 +1453,11 @@ window.ONG = {
             }
         }, 50);
 
+        // Charger les commentaires si on édite une tâche existante
+        if (t.id) {
+            ONG.loadComments(t.id);
+        }
+
         ONG.openModal('modalTask');
     },
 
@@ -2363,6 +2369,100 @@ window.ONG = {
         if (r.ok) {
             alert('Modèle supprimé avec succès');
             ONG.loadTemplates();
+        }
+    },
+
+    /**
+     * Charge les commentaires d'une tâche
+     */
+    loadComments: async (taskId) => {
+        const r = await ONG.post('list_comments', { task_id: taskId });
+        if (r.ok) {
+            const comments = r.data.comments || [];
+            const container = ONG.el('commentsList');
+            const countSpan = ONG.el('commentsCount');
+            const section = ONG.el('taskCommentsSection');
+
+            if (section) section.style.display = 'block';
+            if (countSpan) countSpan.textContent = `(${comments.length})`;
+
+            if (container) {
+                if (comments.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-sm italic">Aucun commentaire pour le moment.</p>';
+                } else {
+                    container.innerHTML = comments.map(c => ONG.renderComment(c)).join('');
+                }
+            }
+        }
+    },
+
+    /**
+     * Génère le HTML d'un commentaire
+     */
+    renderComment: (comment) => {
+        const authorName = `${comment.fname} ${comment.lname}`;
+        const date = new Date(comment.created_at);
+        const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const isOwner = ONG.data.currentMember && ONG.data.currentMember.id === comment.member_id;
+
+        return `
+            <div class="bg-gray-50 border border-gray-200 rounded p-3 text-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="font-semibold text-gray-700">${ONG.escape(authorName)}</div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">${dateStr}</span>
+                        ${isOwner ? `
+                            <button onclick="ONG.deleteComment(${comment.id})"
+                                    class="text-red-500 hover:text-red-700 text-xs"
+                                    title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="text-gray-600 whitespace-pre-wrap">${ONG.escape(comment.content)}</div>
+            </div>
+        `;
+    },
+
+    /**
+     * Ajoute un commentaire
+     */
+    addComment: async () => {
+        const textarea = ONG.el('newCommentText');
+        const taskId = ONG.state.editingTaskId;
+
+        if (!textarea || !taskId) return;
+
+        const content = textarea.value.trim();
+        if (!content) {
+            alert('Le commentaire ne peut pas être vide');
+            return;
+        }
+
+        const r = await ONG.post('add_comment', {
+            task_id: taskId,
+            content: content
+        });
+
+        if (r.ok) {
+            textarea.value = '';
+            await ONG.loadComments(taskId);
+        }
+    },
+
+    /**
+     * Supprime un commentaire
+     */
+    deleteComment: async (commentId) => {
+        if (!confirm('Supprimer ce commentaire ?')) return;
+
+        const r = await ONG.post('delete_comment', { id: commentId });
+        if (r.ok) {
+            const taskId = ONG.state.editingTaskId;
+            if (taskId) {
+                await ONG.loadComments(taskId);
+            }
         }
     }
 };

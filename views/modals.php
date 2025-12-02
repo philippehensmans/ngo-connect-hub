@@ -121,6 +121,27 @@
                 <button class="px-4 py-2 bg-blue-600 text-white rounded"><?= $t->translate('save') ?></button>
             </div>
         </form>
+
+        <!-- Section Commentaires -->
+        <div id="taskCommentsSection" class="mt-6 border-t pt-4" style="display: none;">
+            <h4 class="font-bold text-md mb-3 flex items-center gap-2">
+                <i class="fas fa-comments"></i>
+                💬 Commentaires
+                <span id="commentsCount" class="text-sm text-gray-500"></span>
+            </h4>
+
+            <!-- Liste des commentaires -->
+            <div id="commentsList" class="space-y-3 mb-4 max-h-64 overflow-y-auto"></div>
+
+            <!-- Formulaire d'ajout de commentaire -->
+            <div class="flex gap-2">
+                <textarea id="newCommentText" class="flex-1 border p-2 rounded text-sm" rows="2"
+                          placeholder="Ajouter un commentaire..."></textarea>
+                <button id="btnAddComment" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 

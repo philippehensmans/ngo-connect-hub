@@ -59,12 +59,16 @@ class DataController extends Controller
             $tasks = $stmt->fetchAll();
         }
 
+        // Récupérer le membre actuel (premier membre de l'équipe pour la démo)
+        $currentMember = !empty($members) ? $members[0] : null;
+
         $this->success([
             'members' => $members,
             'projects' => $projects,
             'groups' => $groups,
             'milestones' => $milestones,
             'tasks' => $tasks,
+            'currentMember' => $currentMember,
         ]);
     }
 }
