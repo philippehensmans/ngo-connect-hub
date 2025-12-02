@@ -35,7 +35,7 @@ class ExportController extends Controller
         $milestoneModel = new Milestone($this->db);
 
         // Récupérer le projet
-        $project = $projectModel->getById($projectId);
+        $project = $projectModel->find($projectId);
         if (!$project) {
             $this->error('Project not found');
             return;
