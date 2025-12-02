@@ -147,6 +147,17 @@ class Database
             FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
         )");
 
+        // Table des commentaires sur les tâches
+        $db->exec("CREATE TABLE IF NOT EXISTS comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL,
+            member_id INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+            FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE
+        )");
+
         // Créer des données de démo si la base est vide
         $this->createDemoDataIfNeeded();
     }

@@ -12,6 +12,7 @@ use App\Controllers\GroupController;
 use App\Controllers\MilestoneController;
 use App\Controllers\DeleteController;
 use App\Controllers\TemplateController;
+use App\Controllers\CommentController;
 
 /**
  * Routeur de l'application
@@ -60,6 +61,11 @@ class Router
         $this->routes['save_template'] = [TemplateController::class, 'saveFromProject'];
         $this->routes['create_from_template'] = [TemplateController::class, 'createFromTemplate'];
         $this->routes['delete_template'] = [TemplateController::class, 'delete'];
+
+        // Routes pour les commentaires
+        $this->routes['list_comments'] = [CommentController::class, 'list'];
+        $this->routes['add_comment'] = [CommentController::class, 'add'];
+        $this->routes['delete_comment'] = [CommentController::class, 'delete'];
 
         // Route pour la suppression
         $this->routes['delete_item'] = [DeleteController::class, 'delete'];
