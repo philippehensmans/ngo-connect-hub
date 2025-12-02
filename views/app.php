@@ -303,8 +303,11 @@
 
         <!-- Filters Bar -->
         <div id="filtersBar" class="px-4 py-2 bg-gray-50 border-b flex gap-2 overflow-x-auto whitespace-nowrap items-center text-sm">
-            <input type="text" id="filterSearch" placeholder="<?= $t->translate('search') ?>"
-                   class="border rounded px-2 py-1 w-32 md:w-48 bg-white shrink-0">
+            <div class="relative">
+                <input type="text" id="filterSearch" placeholder="Rechercher (titre, description, tags, projet...)"
+                       class="border rounded px-2 py-1 w-48 md:w-64 bg-white shrink-0 pr-8">
+                <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
             <select id="filterResp" class="border rounded px-2 py-1 bg-white shrink-0">
                 <option value=""><?= $t->translate('filter_resp') ?></option>
             </select>

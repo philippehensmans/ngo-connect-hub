@@ -14,6 +14,7 @@ use App\Controllers\DeleteController;
 use App\Controllers\TemplateController;
 use App\Controllers\CommentController;
 use App\Controllers\BackupController;
+use App\Controllers\ExportController;
 
 /**
  * Routeur de l'application
@@ -73,6 +74,10 @@ class Router
         $this->routes['create_backup'] = [BackupController::class, 'create'];
         $this->routes['list_backups'] = [BackupController::class, 'list'];
         $this->routes['download_backup'] = [BackupController::class, 'download'];
+
+        // Routes pour l'export/import
+        $this->routes['export_project'] = [ExportController::class, 'exportProject'];
+        $this->routes['import_project'] = [ExportController::class, 'importProject'];
 
         // Route pour la suppression
         $this->routes['delete_item'] = [DeleteController::class, 'delete'];

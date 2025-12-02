@@ -1495,7 +1495,28 @@ window.ONG = {
 
         if (search || resp || stat || tag) {
             tasks = tasks.filter(t => {
-                if (search && !t.title.toLowerCase().includes(search)) return false;
+                // Recherche full-text avancée
+                if (search) {
+                    const searchTerms = search.split(' ').filter(term => term.length > 0);
+                    const searchable = [
+                        t.title || '',
+                        t.desc || '',
+                        t.tags || '',
+                        t.link || '',
+                        // Nom du projet
+                        ONG.data.projects.find(p => p.id == t.project_id)?.name || '',
+                        // Nom du responsable
+                        ONG.data.members.find(m => m.id == t.owner_id)?.fname || '',
+                        ONG.data.members.find(m => m.id == t.owner_id)?.lname || '',
+                        // Nom du groupe
+                        ONG.data.groups.find(g => g.id == t.group_id)?.name || ''
+                    ].join(' ').toLowerCase();
+
+                    // Tous les termes doivent être présents (AND)
+                    const matchesAll = searchTerms.every(term => searchable.includes(term));
+                    if (!matchesAll) return false;
+                }
+
                 if (resp && t.owner_id != resp) return false;
                 if (stat && t.status != stat) return false;
                 if (tag && (!t.tags || !t.tags.includes(tag))) return false;
