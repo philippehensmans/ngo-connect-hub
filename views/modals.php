@@ -1,8 +1,11 @@
 <!-- Modal Settings -->
 <div id="modalSettings" class="modal">
-    <div class="bg-white p-6 rounded w-96">
-        <h3 class="font-bold mb-4"><?= $t->translate('settings') ?></h3>
-        <form id="formSettings">
+    <div class="bg-white rounded w-96 max-h-[90vh] flex flex-col">
+        <div class="p-6 pb-3">
+            <h3 class="font-bold"><?= $t->translate('settings') ?></h3>
+        </div>
+        <div class="flex-1 overflow-y-auto px-6">
+            <form id="formSettings">
             <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('org_name') ?></label>
             <input name="org_name" class="w-full border p-2 mb-3 rounded" value="<?= htmlspecialchars($teamName) ?>" required>
 
@@ -68,8 +71,11 @@
                 <div class="text-xs text-gray-500 italic">Chargement des équipes...</div>
             </div>
         </div>
+        </div>
 
-        <button type="button" class="w-full mt-4 text-gray-500 btn-close"><?= $t->translate('cancel') ?></button>
+        <div class="p-6 pt-3 border-t">
+            <button type="button" class="w-full text-gray-500 btn-close"><?= $t->translate('cancel') ?></button>
+        </div>
     </div>
 </div>
 

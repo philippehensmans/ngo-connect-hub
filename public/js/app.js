@@ -467,7 +467,7 @@ window.ONG = {
             const container = document.getElementById('teamsList');
             if (!container) return;
 
-            const currentTeamId = ONG.data.currentMember?.team_id;
+            const currentTeamId = ONG.data.currentTeamId;
 
             container.innerHTML = r.data.teams.map(team => {
                 const isAdmin = team.is_admin == 1;

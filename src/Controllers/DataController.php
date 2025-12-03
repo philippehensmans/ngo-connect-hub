@@ -69,6 +69,7 @@ class DataController extends Controller
             'milestones' => $milestones,
             'tasks' => $tasks,
             'currentMember' => $currentMember,
+            'currentTeamId' => $teamId,
             'isAdmin' => Auth::isAdmin(),
         ]);
     }
