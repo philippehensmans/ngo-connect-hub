@@ -340,6 +340,6 @@
 <!-- Modals -->
 <?php include __DIR__ . '/modals.php'; ?>
 
-<script src="public/js/app-v2.js"></script>
+<script src="public/js/app.js?v=<?= time() ?>"></script>
 </body>
 </html>
