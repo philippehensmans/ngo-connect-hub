@@ -898,7 +898,7 @@ window.ONG = {
                                                 <div class="flex items-center justify-between text-sm py-1 px-2 hover:bg-gray-50 rounded">
                                                     <div class="flex items-center gap-2 flex-1">
                                                         <span>${statusIcon}</span>
-                                                        <span class="${statusClass} flex-1 text-xs">${ONG.escape(t.name)}</span>
+                                                        <span class="${statusClass} flex-1 text-xs">${ONG.escape(t.title)}</span>
                                                     </div>
                                                     ${t.start_date ? `<span class="text-xs text-gray-500">📅 ${t.start_date}</span>` : ''}
                                                     <button onclick="ONG.editTask(${t.id})" class="text-blue-500 text-xs ml-2">✏️</button>
@@ -974,7 +974,7 @@ window.ONG = {
                                                 <div class="flex items-center justify-between text-sm py-1 px-2 hover:bg-gray-50 rounded">
                                                     <div class="flex items-center gap-2 flex-1">
                                                         <span>${statusIcon}</span>
-                                                        <span class="${statusClass} flex-1">${ONG.escape(t.name)}</span>
+                                                        <span class="${statusClass} flex-1">${ONG.escape(t.title)}</span>
                                                         ${t.start_date ? `<span class="text-xs text-gray-500">📅 ${t.start_date}</span>` : ''}
                                                     </div>
                                                     <button onclick="ONG.editTask(${t.id})" class="text-blue-500 text-xs ml-2">✏️</button>
