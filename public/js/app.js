@@ -34,6 +34,7 @@ window.ONG = {
             kanban: 'Kanban',
             groups: 'Groupes',
             gantt: 'Gantt',
+            calendar: 'Calendrier',
             milestones: 'Jalons',
             global: 'Vue Globale',
             tree: 'Arbo'
@@ -47,6 +48,7 @@ window.ONG = {
             kanban: 'Kanban',
             groups: 'Groups',
             gantt: 'Gantt',
+            calendar: 'Calendar',
             milestones: 'Milestones',
             global: 'Global View',
             tree: 'Tree'
@@ -60,6 +62,7 @@ window.ONG = {
             kanban: 'Kanban',
             groups: 'Grupos',
             gantt: 'Gantt',
+            calendar: 'Calendario',
             milestones: 'Hitos',
             global: 'Global',
             tree: 'Árbol'
@@ -73,6 +76,7 @@ window.ONG = {
             kanban: 'Kanban',
             groups: 'Skupine',
             gantt: 'Gantt',
+            calendar: 'Kalendar',
             milestones: 'Mejniki',
             global: 'Globalno',
             tree: 'Drevo'
