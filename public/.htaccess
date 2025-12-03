@@ -3,15 +3,7 @@
     Require all denied
 </DirectoryMatch>
 
-# Bloquer l'accès aux fichiers sensibles
-<FilesMatch "^\.">
+# Bloquer l'accès aux fichiers sensibles (commençant par un point)
+<FilesMatch "^\.(?!well-known)">
     Require all denied
 </FilesMatch>
-
-# Redirection vers index.php pour les URLs propres
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ index.php [QSA,L]
-</IfModule>
