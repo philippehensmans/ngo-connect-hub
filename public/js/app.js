@@ -119,6 +119,15 @@ window.ONG = {
     },
 
     /**
+     * Fonction helper pour traduire une clé
+     * @param {string} key - Clé de traduction
+     * @return {string} Traduction ou la clé si non trouvée
+     */
+    t: (key) => {
+        return ONG.dict[ONG.state.lang]?.[key] || key;
+    },
+
+    /**
      * Met à jour le compteur de caractères
      * @param {HTMLElement} textarea - Element textarea
      * @param {string} counterId - ID de l'élément compteur
