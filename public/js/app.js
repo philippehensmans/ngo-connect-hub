@@ -1069,25 +1069,15 @@ window.ONG = {
 
         let html = '<div class="bg-white p-6 rounded shadow space-y-4">';
 
-        // Section pour les tâches avec hiérarchie de dépendances
-        const rootTasks = tasks.filter(t => !t.dependencies || t.dependencies.trim() === '');
-        if (rootTasks.length > 0) {
-            html += `
-                <details open>
-                    <summary class="font-bold cursor-pointer p-2 bg-blue-50 rounded mb-1 select-none flex items-center gap-2">
-                        <span class="text-lg">🔗</span>
-                        Hiérarchie des dépendances (${rootTasks.length} tâche${rootTasks.length > 1 ? 's' : ''} racine${rootTasks.length > 1 ? 's' : ''})
-                    </summary>
-                    <div class="pl-2">
-                        ${rootTasks.map(t => renderTaskWithDependents(t, new Set())).join('')}
-                    </div>
-                </details>
-            `;
-        }
-
         // Section pour les groupes
         groups.forEach(g => {
             const gTasks = tasks.filter(t => t.group_id == g.id);
+            // Trier par date de début
+            gTasks.sort((a, b) => {
+                if (!a.start_date) return 1;
+                if (!b.start_date) return -1;
+                return new Date(a.start_date) - new Date(b.start_date);
+            });
             html += `
                 <details open>
                     <summary class="font-bold cursor-pointer p-2 bg-gray-50 rounded mb-1 select-none flex items-center gap-2">
@@ -1101,13 +1091,17 @@ window.ONG = {
             `;
         });
 
-        // Section pour les tâches sans groupe
-        if (orphans.length) {
+        // Section pour les tâches sans groupe avec hiérarchie de dépendances
+        if (orphans.length > 0) {
+            const orphanRootTasks = orphans.filter(t => !t.dependencies || t.dependencies.trim() === '');
             html += `
                 <details open>
-                    <summary class="font-bold cursor-pointer p-2 text-gray-500">Aucun Groupe (${orphans.length})</summary>
+                    <summary class="font-bold cursor-pointer p-2 bg-blue-50 rounded mb-1 select-none flex items-center gap-2">
+                        <span class="text-lg">📋</span>
+                        Tâches sans groupe (${orphans.length})
+                    </summary>
                     <div class="pl-2">
-                        ${orphans.map(renderTask).join('')}
+                        ${orphanRootTasks.map(t => renderTaskWithDependents(t, new Set())).join('')}
                     </div>
                 </details>
             `;
