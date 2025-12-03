@@ -74,7 +74,7 @@
         </div>
 
         <div class="p-6 pt-3 border-t">
-            <button type="button" class="w-full text-gray-500 btn-close"><?= $t->translate('cancel') ?></button>
+            <button type="button" class="w-full text-gray-500 btn-close"><?= $t->translate('close') ?></button>
         </div>
     </div>
 </div>
