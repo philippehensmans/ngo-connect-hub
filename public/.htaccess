@@ -1,0 +1,17 @@
+# Bloquer l'accès au répertoire .git (si jamais accessible)
+<DirectoryMatch "^/.*/\.git/">
+    Require all denied
+</DirectoryMatch>
+
+# Bloquer l'accès aux fichiers sensibles
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Redirection vers index.php pour les URLs propres
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
