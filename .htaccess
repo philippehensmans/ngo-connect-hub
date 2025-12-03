@@ -1,17 +1,26 @@
 # Bloquer l'accès au répertoire .git
-<DirectoryMatch "^/.*/\.git/">
-    Require all denied
-</DirectoryMatch>
-
-# Bloquer l'accès aux fichiers sensibles (commençant par un point)
-<FilesMatch "^\.(?!well-known)">
-    Require all denied
-</FilesMatch>
+RedirectMatch 404 /\.git
 
 # Bloquer l'accès aux dossiers sensibles
-RedirectMatch 403 ^/(src|views|data|vendor|tests|\.git)/.*$
+RedirectMatch 404 ^/(src|views|data|vendor|tests)
 
 # Bloquer l'accès aux fichiers de configuration
-<FilesMatch "^(config\.php|composer\.(json|lock)|\.env)$">
-    Require all denied
-</FilesMatch>
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "composer.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files "composer.lock">
+    Order allow,deny
+    Deny from all
+</Files>
+
+<Files ".env">
+    Order allow,deny
+    Deny from all
+</Files>
