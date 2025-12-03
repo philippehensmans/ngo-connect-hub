@@ -1,9 +1,0 @@
-# Bloquer l'accès au répertoire .git (si jamais accessible)
-<DirectoryMatch "^/.*/\.git/">
-    Require all denied
-</DirectoryMatch>
-
-# Bloquer l'accès aux fichiers sensibles (commençant par un point)
-<FilesMatch "^\.(?!well-known)">
-    Require all denied
-</FilesMatch>

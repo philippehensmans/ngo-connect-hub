@@ -1,46 +1,17 @@
-# ONG Manager .htaccess Configuration
+# Bloquer l'accès au répertoire .git
+<DirectoryMatch "^/.*/\.git/">
+    Require all denied
+</DirectoryMatch>
 
-# Activer le moteur de réécriture
-RewriteEngine On
-
-# Forcer HTTPS (décommenter en production)
-# RewriteCond %{HTTPS} off
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-# Bloquer l'accès direct aux fichiers sensibles
-<FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op])|~)$">
-    Order allow,deny
-    Deny from all
-    Satisfy All
+# Bloquer l'accès aux fichiers sensibles (commençant par un point)
+<FilesMatch "^\.(?!well-known)">
+    Require all denied
 </FilesMatch>
 
-# Protéger les dossiers sensibles
-RedirectMatch 403 ^/config/
-RedirectMatch 403 ^/src/
-RedirectMatch 403 ^/data/
+# Bloquer l'accès aux dossiers sensibles
+RedirectMatch 403 ^/(src|views|data|vendor|tests|\.git)/.*$
 
-# Optimisation et sécurité
-<IfModule mod_headers.c>
-    # Sécurité des en-têtes
-    Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "SAMEORIGIN"
-    Header set X-XSS-Protection "1; mode=block"
-
-    # Cache des ressources statiques
-    <FilesMatch "\.(js|css|png|jpg|jpeg|gif|ico|svg)$">
-        Header set Cache-Control "max-age=2592000, public"
-    </FilesMatch>
-</IfModule>
-
-# Compression GZIP
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
-</IfModule>
-
-# Configuration PHP
-<IfModule mod_php7.c>
-    php_value upload_max_filesize 10M
-    php_value post_max_size 10M
-    php_value memory_limit 128M
-    php_value max_execution_time 300
-</IfModule>
+# Bloquer l'accès aux fichiers de configuration
+<FilesMatch "^(config\.php|composer\.(json|lock)|\.env)$">
+    Require all denied
+</FilesMatch>
