@@ -36,8 +36,7 @@ window.ONG = {
             gantt: 'Gantt',
             calendar: 'Calendrier',
             milestones: 'Jalons',
-            global: 'Vue Globale',
-            tree: 'Arbo'
+            global: 'Vue Globale'
         },
         en: {
             todo: 'To Do',
@@ -50,8 +49,7 @@ window.ONG = {
             gantt: 'Gantt',
             calendar: 'Calendar',
             milestones: 'Milestones',
-            global: 'Global View',
-            tree: 'Tree'
+            global: 'Global View'
         },
         es: {
             todo: 'Pendiente',
@@ -64,8 +62,7 @@ window.ONG = {
             gantt: 'Gantt',
             calendar: 'Calendario',
             milestones: 'Hitos',
-            global: 'Global',
-            tree: 'Árbol'
+            global: 'Global'
         },
         sl: {
             todo: 'Za narediti',
@@ -78,8 +75,7 @@ window.ONG = {
             gantt: 'Gantt',
             calendar: 'Kalendar',
             milestones: 'Mejniki',
-            global: 'Globalno',
-            tree: 'Drevo'
+            global: 'Globalno'
         }
     },
 
@@ -480,7 +476,7 @@ window.ONG = {
      */
     renderView: () => {
         const t = ONG.dict[ONG.state.lang];
-        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones', 'tree'];
+        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones'];
 
         // Rendre les onglets
         const navTabs = ONG.el('navTabs');
@@ -521,9 +517,6 @@ window.ONG = {
                 break;
             case 'calendar':
                 ONG.renderCalendarView(container, tasks);
-                break;
-            case 'tree':
-                ONG.renderTreeView(container, tasks);
                 break;
         }
     },
@@ -994,126 +987,6 @@ window.ONG = {
             </div>
         `;
 
-        container.innerHTML = html;
-    },
-
-    /**
-     * Rend la vue arborescente
-     */
-    renderTreeView: (container, tasks) => {
-        if (!ONG.state.pid) {
-            container.innerHTML = "<p class='text-center text-gray-400'>Sélectionnez un projet</p>";
-            return;
-        }
-
-        const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid);
-        const orphans = tasks.filter(t => !t.milestone_id);
-
-        // Créer une map des tâches pour faciliter la recherche
-        const taskMap = new Map(tasks.map(t => [t.id, t]));
-
-        // Fonction récursive pour afficher une tâche et ses dépendants
-        const renderTaskWithDependents = (t, renderedTasks = new Set(), level = 0) => {
-            if (renderedTasks.has(t.id)) return ''; // Éviter les doublons
-            renderedTasks.add(t.id);
-
-            const indent = level * 16;
-            const statusIcon = t.status === 'done' ? '✅' : t.status === 'wip' ? '🔄' : '⭕';
-            const statusClass = t.status === 'done' ? 'line-through text-gray-400' : '';
-
-            // Trouver les tâches qui dépendent de cette tâche
-            const dependents = tasks.filter(task => {
-                if (!task.dependencies) return false;
-                const deps = task.dependencies.split(',').map(d => parseInt(d.trim()));
-                return deps.includes(t.id);
-            });
-
-            // Informations sur les dépendances
-            let depsInfo = '';
-            if (t.dependencies && t.dependencies.trim() !== '') {
-                const deps = t.dependencies.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
-                if (deps.length > 0) {
-                    depsInfo = ` <span class="text-xs text-gray-400">(dépend de ${deps.length} tâche${deps.length > 1 ? 's' : ''})</span>`;
-                }
-            }
-
-            let html = `
-                <div class="py-1 hover:bg-gray-50 group text-sm" style="padding-left: ${indent}px;">
-                    <div class="flex justify-between items-center border-l-2 pl-3 ${level > 0 ? 'border-blue-200' : 'border-gray-200'}">
-                        <span class="${statusClass}">
-                            ${statusIcon} ${ONG.escape(t.title)}${depsInfo}
-                        </span>
-                        <button onclick="ONG.editTask(${t.id})" class="opacity-0 group-hover:opacity-100 text-blue-500 mr-2">✏️</button>
-                    </div>
-                </div>
-            `;
-
-            // Afficher récursivement les tâches dépendantes
-            if (dependents.length > 0) {
-                dependents.forEach(depTask => {
-                    html += renderTaskWithDependents(depTask, renderedTasks, level + 1);
-                });
-            }
-
-            return html;
-        };
-
-        const renderTask = (t) => `
-            <div class="pl-6 py-1 border-l-2 hover:bg-gray-50 flex justify-between group text-sm">
-                <span class="${t.status == 'done' ? 'line-through text-gray-400' : ''}">
-                    ${t.status === 'done' ? '✅' : t.status === 'wip' ? '🔄' : '⭕'} ${ONG.escape(t.title)}
-                </span>
-                <button onclick="ONG.editTask(${t.id})" class="opacity-0 group-hover:opacity-100 text-blue-500">✏️</button>
-            </div>
-        `;
-
-        let html = '<div class="bg-white p-6 rounded shadow space-y-4">';
-
-        // Section pour les jalons
-        milestones.forEach(m => {
-            const mTasks = tasks.filter(t => t.milestone_id == m.id);
-            // Trier par date de début
-            mTasks.sort((a, b) => {
-                if (!a.start_date) return 1;
-                if (!b.start_date) return -1;
-                return new Date(a.start_date) - new Date(b.start_date);
-            });
-
-            // Calculer la progression
-            const done = mTasks.filter(t => t.status === 'done').length;
-            const pct = mTasks.length > 0 ? Math.round((done / mTasks.length) * 100) : 0;
-
-            html += `
-                <details open>
-                    <summary class="font-bold cursor-pointer p-2 bg-gray-50 rounded mb-1 select-none flex items-center gap-2">
-                        <span class="text-lg">🎯</span>
-                        ${ONG.escape(m.name)} (${mTasks.length}) - ${pct}%
-                        ${m.due_date ? `<span class="text-xs text-gray-500 ml-2">📅 ${m.due_date}</span>` : ''}
-                    </summary>
-                    <div class="pl-2">
-                        ${mTasks.map(renderTask).join('')}
-                    </div>
-                </details>
-            `;
-        });
-
-        // Section pour les tâches sans jalon avec hiérarchie de dépendances
-        if (orphans.length > 0) {
-            const orphanRootTasks = orphans.filter(t => !t.dependencies || t.dependencies.trim() === '');
-            html += `
-                <details open>
-                    <summary class="font-bold cursor-pointer p-2 bg-blue-50 rounded mb-1 select-none flex items-center gap-2">
-                        <span class="text-lg">📋</span>
-                        Tâches sans jalon (${orphans.length})
-                    </summary>
-                    <div class="pl-2">
-                        ${orphanRootTasks.map(t => renderTaskWithDependents(t, new Set())).join('')}
-                    </div>
-                </details>
-            `;
-        }
-
-        html += '</div>';
         container.innerHTML = html;
     },
 
