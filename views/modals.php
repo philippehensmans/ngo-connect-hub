@@ -67,7 +67,7 @@
                 👥 Gestion des Équipes
             </h4>
 
-            <div id="teamsList" class="space-y-2 max-h-48 overflow-y-auto">
+            <div id="teamsList" class="space-y-2">
                 <div class="text-xs text-gray-500 italic">Chargement des équipes...</div>
             </div>
         </div>
