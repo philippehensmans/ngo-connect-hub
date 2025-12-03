@@ -985,6 +985,33 @@ window.ONG = {
 
         const groups = ONG.data.groups.filter(g => g.project_id == ONG.state.pid);
 
+        // Fonction helper pour obtenir les noms des membres d'un groupe
+        const getGroupMembersHtml = (group) => {
+            let memberIds = [];
+            if (group.member_ids) {
+                try {
+                    memberIds = JSON.parse(group.member_ids);
+                } catch (e) {
+                    memberIds = [];
+                }
+            }
+            if (memberIds.length > 0 && ONG.data.members) {
+                const memberNames = memberIds
+                    .map(id => {
+                        const member = ONG.data.members.find(m => m.id == id);
+                        return member ? `${member.fname} ${member.lname}` : null;
+                    })
+                    .filter(name => name !== null);
+                if (memberNames.length > 0) {
+                    return `<div class="text-xs text-gray-500 mb-2">
+                                <span class="font-semibold">👥 Membres: </span>
+                                <span>${memberNames.join(', ')}</span>
+                            </div>`;
+                }
+            }
+            return '';
+        };
+
         let html = `
             <div class="mb-4">
                 <button onclick="ONG.openGroupModal()" class="bg-blue-600 text-white px-3 py-1 rounded shadow">
@@ -1014,32 +1041,7 @@ window.ONG = {
                             </div>
                             ${g.description ? `<div class="text-sm text-gray-600 mb-2 italic">${ONG.escape(g.description)}</div>` : ''}
                             <div class="text-xs text-gray-500 mb-1">Responsable: ${ONG.getMemberName(g.owner_id)}</div>
-                            ${(() => {
-                                // Afficher les membres du groupe
-                                let memberIds = [];
-                                if (g.member_ids) {
-                                    try {
-                                        memberIds = JSON.parse(g.member_ids);
-                                    } catch (e) {
-                                        memberIds = [];
-                                    }
-                                }
-                                if (memberIds.length > 0) {
-                                    const memberNames = memberIds
-                                        .map(id => {
-                                            const member = ONG.data.members.find(m => m.id == id);
-                                            return member ? `${member.fname} ${member.lname}` : null;
-                                        })
-                                        .filter(name => name !== null);
-                                    if (memberNames.length > 0) {
-                                        return `<div class="text-xs text-gray-500 mb-2">
-                                                    <span class="font-semibold">👥 Membres: </span>
-                                                    <span>${memberNames.join(', ')}</span>
-                                                </div>`;
-                                    }
-                                }
-                                return '';
-                            })()}
+                            ${getGroupMembersHtml(g)}
                             ${gTasks.length > 0 ? `
                                 <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                                     <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${pct}%"></div>
