@@ -507,7 +507,7 @@ window.ONG = {
                 ONG.renderKanbanView(container, tasks);
                 break;
             case 'groups':
-                ONG.renderGroupsView(container);
+                ONG.renderGroupsView(container, tasks);
                 break;
             case 'milestones':
                 ONG.renderMilestonesView(container, tasks);
@@ -846,7 +846,7 @@ window.ONG = {
     /**
      * Rend la vue des groupes
      */
-    renderGroupsView: (container) => {
+    renderGroupsView: (container, tasks) => {
         if (!ONG.state.pid) {
             container.innerHTML = "<p class='text-center text-gray-400'>Sélectionnez un projet</p>";
             return;
@@ -860,19 +860,56 @@ window.ONG = {
                     + Nouveau Groupe
                 </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                ${groups.map(g => `
-                    <div class="bg-white p-4 rounded shadow border-l-4" style="border-color:${g.color}">
-                        <div class="flex justify-between mb-2">
-                            <h3 class="font-bold">${ONG.escape(g.name)}</h3>
-                            <div>
-                                <button onclick='ONG.editGroup(${JSON.stringify(g)})' class="text-blue-500 mr-1">✏️</button>
-                                <button onclick="ONG.deleteItem('groups', ${g.id})" class="text-red-500">🗑️</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${groups.map(g => {
+                    const gTasks = tasks.filter(t => t.group_id == g.id);
+                    // Trier les tâches par date de début
+                    const sortedTasks = gTasks.sort((a, b) => {
+                        if (!a.start_date) return 1;
+                        if (!b.start_date) return -1;
+                        return new Date(a.start_date) - new Date(b.start_date);
+                    });
+                    const done = gTasks.filter(t => t.status === 'done').length;
+                    const pct = gTasks.length ? Math.round((done / gTasks.length) * 100) : 0;
+
+                    return `
+                        <div class="bg-white p-4 rounded shadow border-l-4" style="border-color:${g.color}">
+                            <div class="flex justify-between mb-2">
+                                <h3 class="font-bold">${ONG.escape(g.name)}</h3>
+                                <div>
+                                    <button onclick='ONG.editGroup(${JSON.stringify(g)})' class="text-blue-500 mr-1">✏️</button>
+                                    <button onclick="ONG.deleteItem('groups', ${g.id})" class="text-red-500">🗑️</button>
+                                </div>
                             </div>
+                            <div class="text-xs text-gray-500 mb-2">Responsable: ${ONG.getMemberName(g.owner_id)}</div>
+                            ${gTasks.length > 0 ? `
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${pct}%"></div>
+                                </div>
+                                <div class="text-xs text-gray-500 mb-3">${done}/${gTasks.length} tâches</div>
+                                <div class="mt-3 border-t pt-3">
+                                    <div class="text-sm font-semibold mb-2 text-gray-700">Tâches :</div>
+                                    <div class="space-y-2">
+                                        ${sortedTasks.map(t => {
+                                            const statusIcon = t.status === 'done' ? '✅' : t.status === 'wip' ? '🔄' : '⭕';
+                                            const statusClass = t.status === 'done' ? 'line-through text-gray-400' : '';
+                                            return `
+                                                <div class="flex items-center justify-between text-sm py-1 px-2 hover:bg-gray-50 rounded">
+                                                    <div class="flex items-center gap-2 flex-1">
+                                                        <span>${statusIcon}</span>
+                                                        <span class="${statusClass} flex-1 text-xs">${ONG.escape(t.name)}</span>
+                                                    </div>
+                                                    ${t.start_date ? `<span class="text-xs text-gray-500">📅 ${t.start_date}</span>` : ''}
+                                                    <button onclick="ONG.editTask(${t.id})" class="text-blue-500 text-xs ml-2">✏️</button>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                            ` : '<div class="text-sm text-gray-400 italic mt-2">Aucune tâche</div>'}
                         </div>
-                        <div class="text-xs text-gray-500">Responsable: ${ONG.getMemberName(g.owner_id)}</div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
 
@@ -899,6 +936,12 @@ window.ONG = {
             <div class="space-y-4">
                 ${milestones.map(m => {
                     const mTasks = tasks.filter(t => t.milestone_id == m.id);
+                    // Trier les tâches par date de début
+                    const sortedTasks = mTasks.sort((a, b) => {
+                        if (!a.start_date) return 1;
+                        if (!b.start_date) return -1;
+                        return new Date(a.start_date) - new Date(b.start_date);
+                    });
                     const done = mTasks.filter(t => t.status === 'done').length;
                     const pct = mTasks.length ? Math.round((done / mTasks.length) * 100) : 0;
 
@@ -917,7 +960,29 @@ window.ONG = {
                             <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                                 <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${pct}%"></div>
                             </div>
-                            <div class="text-xs text-gray-500">${done}/${mTasks.length} tâches</div>
+                            <div class="text-xs text-gray-500 mb-3">${done}/${mTasks.length} tâches</div>
+                            ${sortedTasks.length > 0 ? `
+                                <div class="mt-4 border-t pt-3">
+                                    <div class="text-sm font-semibold mb-2 text-gray-700">Tâches :</div>
+                                    <div class="space-y-2">
+                                        ${sortedTasks.map(t => {
+                                            const statusIcon = t.status === 'done' ? '✅' : t.status === 'wip' ? '🔄' : '⭕';
+                                            const statusClass = t.status === 'done' ? 'line-through text-gray-400' : '';
+                                            const priorityColor = t.priority === 'high' ? 'text-red-500' : t.priority === 'medium' ? 'text-orange-500' : 'text-green-500';
+                                            return `
+                                                <div class="flex items-center justify-between text-sm py-1 px-2 hover:bg-gray-50 rounded">
+                                                    <div class="flex items-center gap-2 flex-1">
+                                                        <span>${statusIcon}</span>
+                                                        <span class="${statusClass} flex-1">${ONG.escape(t.name)}</span>
+                                                        ${t.start_date ? `<span class="text-xs text-gray-500">📅 ${t.start_date}</span>` : ''}
+                                                    </div>
+                                                    <button onclick="ONG.editTask(${t.id})" class="text-blue-500 text-xs ml-2">✏️</button>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                            ` : '<div class="text-sm text-gray-400 italic mt-4">Aucune tâche</div>'}
                         </div>
                     `;
                 }).join('')}

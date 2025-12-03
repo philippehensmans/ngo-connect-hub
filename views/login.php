@@ -24,13 +24,7 @@
                 <?= $t->translate('login') ?>
             </button>
         </form>
-        <div class="mt-6 text-center border-t pt-4">
-            <a href="?reset_app=1" class="text-red-500 text-xs hover:underline"
-               onclick="return confirm('ATTENTION : TOUT EFFACER ?');">
-                🛑 <?= $t->translate('reset_db') ?>
-            </a>
-        </div>
-        <div class="flex gap-2 justify-center mt-4">
+        <div class="flex gap-2 justify-center mt-6">
             <a href="?lang=fr">🇫🇷</a>
             <a href="?lang=en">🇬🇧</a>
             <a href="?lang=es">🇪🇸</a>
