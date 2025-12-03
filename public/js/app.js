@@ -1006,8 +1006,8 @@ window.ONG = {
             return;
         }
 
-        const groups = ONG.data.groups.filter(g => g.project_id == ONG.state.pid);
-        const orphans = tasks.filter(t => !t.group_id);
+        const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid);
+        const orphans = tasks.filter(t => !t.milestone_id);
 
         // Créer une map des tâches pour faciliter la recherche
         const taskMap = new Map(tasks.map(t => [t.id, t]));
@@ -1069,36 +1069,42 @@ window.ONG = {
 
         let html = '<div class="bg-white p-6 rounded shadow space-y-4">';
 
-        // Section pour les groupes
-        groups.forEach(g => {
-            const gTasks = tasks.filter(t => t.group_id == g.id);
+        // Section pour les jalons
+        milestones.forEach(m => {
+            const mTasks = tasks.filter(t => t.milestone_id == m.id);
             // Trier par date de début
-            gTasks.sort((a, b) => {
+            mTasks.sort((a, b) => {
                 if (!a.start_date) return 1;
                 if (!b.start_date) return -1;
                 return new Date(a.start_date) - new Date(b.start_date);
             });
+
+            // Calculer la progression
+            const done = mTasks.filter(t => t.status === 'done').length;
+            const pct = mTasks.length > 0 ? Math.round((done / mTasks.length) * 100) : 0;
+
             html += `
                 <details open>
                     <summary class="font-bold cursor-pointer p-2 bg-gray-50 rounded mb-1 select-none flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full" style="background:${g.color}"></span>
-                        ${ONG.escape(g.name)} (${gTasks.length})
+                        <span class="text-lg">🎯</span>
+                        ${ONG.escape(m.name)} (${mTasks.length}) - ${pct}%
+                        ${m.due_date ? `<span class="text-xs text-gray-500 ml-2">📅 ${m.due_date}</span>` : ''}
                     </summary>
                     <div class="pl-2">
-                        ${gTasks.map(renderTask).join('')}
+                        ${mTasks.map(renderTask).join('')}
                     </div>
                 </details>
             `;
         });
 
-        // Section pour les tâches sans groupe avec hiérarchie de dépendances
+        // Section pour les tâches sans jalon avec hiérarchie de dépendances
         if (orphans.length > 0) {
             const orphanRootTasks = orphans.filter(t => !t.dependencies || t.dependencies.trim() === '');
             html += `
                 <details open>
                     <summary class="font-bold cursor-pointer p-2 bg-blue-50 rounded mb-1 select-none flex items-center gap-2">
                         <span class="text-lg">📋</span>
-                        Tâches sans groupe (${orphans.length})
+                        Tâches sans jalon (${orphans.length})
                     </summary>
                     <div class="pl-2">
                         ${orphanRootTasks.map(t => renderTaskWithDependents(t, new Set())).join('')}
