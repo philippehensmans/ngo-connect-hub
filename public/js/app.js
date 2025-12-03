@@ -13,6 +13,9 @@ window.ONG = {
         members: []
     },
 
+    // Statut administrateur
+    isAdmin: false,
+
     // État de l'application
     state: {
         pid: null,
@@ -424,12 +427,25 @@ window.ONG = {
     loadData: async () => {
         const r = await ONG.post('load_all');
         if (r.ok) {
+            // Extraire isAdmin avant de stocker les données
+            ONG.isAdmin = r.data.isAdmin || false;
             ONG.data = r.data;
             ONG.renderSidebar();
             ONG.fillFilters();
             ONG.renderView();
             ONG.fillTeamSelects();
             ONG.checkConflicts();
+            ONG.updateAdminUI();
+        }
+    },
+
+    /**
+     * Met à jour l'interface en fonction du statut admin
+     */
+    updateAdminUI: () => {
+        const btnSettings = document.getElementById('btnSettings');
+        if (btnSettings) {
+            btnSettings.style.display = ONG.isAdmin ? '' : 'none';
         }
     },
 

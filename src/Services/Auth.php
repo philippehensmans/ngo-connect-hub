@@ -9,6 +9,7 @@ class Auth
 {
     private const SESSION_KEY_TEAM_ID = 'team_id';
     private const SESSION_KEY_TEAM_NAME = 'team_name';
+    private const SESSION_KEY_IS_ADMIN = 'is_admin';
 
     /**
      * Démarre la session si elle n'est pas déjà démarrée
@@ -32,11 +33,12 @@ class Auth
     /**
      * Connecte un utilisateur
      */
-    public static function login(int $teamId, string $teamName): void
+    public static function login(int $teamId, string $teamName, bool $isAdmin = false): void
     {
         self::startSession();
         $_SESSION[self::SESSION_KEY_TEAM_ID] = $teamId;
         $_SESSION[self::SESSION_KEY_TEAM_NAME] = $teamName;
+        $_SESSION[self::SESSION_KEY_IS_ADMIN] = $isAdmin;
     }
 
     /**
@@ -64,6 +66,15 @@ class Auth
     {
         self::startSession();
         return $_SESSION[self::SESSION_KEY_TEAM_NAME] ?? null;
+    }
+
+    /**
+     * Vérifie si l'équipe connectée est administrateur
+     */
+    public static function isAdmin(): bool
+    {
+        self::startSession();
+        return $_SESSION[self::SESSION_KEY_IS_ADMIN] ?? false;
     }
 
     /**

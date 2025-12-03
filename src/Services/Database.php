@@ -67,6 +67,7 @@ class Database
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             password TEXT NOT NULL,
+            is_admin INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )");
 
@@ -109,7 +110,7 @@ class Database
             FOREIGN KEY(owner_id) REFERENCES members(id) ON DELETE SET NULL
         )");
 
-        // Migration: Ajouter le champ description s'il n'existe pas
+        // Migration: Ajouter le champ description aux groupes s'il n'existe pas
         try {
             $result = $db->query("PRAGMA table_info(groups)")->fetchAll();
             $hasDescription = false;
@@ -121,6 +122,24 @@ class Database
             }
             if (!$hasDescription) {
                 $db->exec("ALTER TABLE groups ADD COLUMN description TEXT");
+            }
+        } catch (\Exception $e) {
+            // Colonne déjà existante ou autre erreur, on continue
+        }
+
+        // Migration: Ajouter le champ is_admin aux équipes s'il n'existe pas
+        try {
+            $result = $db->query("PRAGMA table_info(teams)")->fetchAll();
+            $hasIsAdmin = false;
+            foreach ($result as $column) {
+                if ($column['name'] === 'is_admin') {
+                    $hasIsAdmin = true;
+                    break;
+                }
+            }
+            if (!$hasIsAdmin) {
+                // Ajouter le champ et mettre toutes les équipes existantes comme admin
+                $db->exec("ALTER TABLE teams ADD COLUMN is_admin INTEGER DEFAULT 1");
             }
         } catch (\Exception $e) {
             // Colonne déjà existante ou autre erreur, on continue

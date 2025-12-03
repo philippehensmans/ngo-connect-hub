@@ -24,7 +24,7 @@ class AuthController extends Controller
         $team = Auth::attempt($this->db, $data['name'], $data['password']);
 
         if ($team) {
-            Auth::login($team['id'], $team['name']);
+            Auth::login($team['id'], $team['name'], (bool)($team['is_admin'] ?? 0));
             $this->success(null, 'Login successful');
         } else {
             $this->error('Invalid credentials', 401);
@@ -47,6 +47,11 @@ class AuthController extends Controller
     {
         if (!Auth::check()) {
             $this->error('Unauthorized', 401);
+            return;
+        }
+
+        if (!Auth::isAdmin()) {
+            $this->error('Admin access required', 403);
             return;
         }
 
@@ -78,8 +83,8 @@ class AuthController extends Controller
         }
 
         if ($teamModel->update($teamId, $updateData)) {
-            // Mettre à jour la session
-            Auth::login($teamId, $data['org_name']);
+            // Mettre à jour la session en préservant le statut admin
+            Auth::login($teamId, $data['org_name'], Auth::isAdmin());
             $this->success(null, 'Settings updated successfully');
         } else {
             $this->error('Failed to update settings');
