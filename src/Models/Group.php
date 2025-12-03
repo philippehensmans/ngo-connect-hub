@@ -8,5 +8,5 @@ namespace App\Models;
 class Group extends Model
 {
     protected string $table = 'groups';
-    protected array $fillable = ['project_id', 'name', 'color', 'owner_id'];
+    protected array $fillable = ['project_id', 'name', 'description', 'color', 'owner_id'];
 }

@@ -881,6 +881,7 @@ window.ONG = {
                                     <button onclick="ONG.deleteItem('groups', ${g.id})" class="text-red-500">🗑️</button>
                                 </div>
                             </div>
+                            ${g.description ? `<div class="text-sm text-gray-600 mb-2 italic">${ONG.escape(g.description)}</div>` : ''}
                             <div class="text-xs text-gray-500 mb-2">Responsable: ${ONG.getMemberName(g.owner_id)}</div>
                             ${gTasks.length > 0 ? `
                                 <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
@@ -1804,6 +1805,7 @@ window.ONG = {
         ONG.setVal('groupId', g.id);
         ONG.setVal('groupProjectId', g.project_id);
         ONG.setVal('groupName', g.name);
+        ONG.setVal('groupDescription', g.description || '');
         ONG.setVal('groupColor', g.color);
         ONG.setVal('groupOwner', g.owner_id);
         ONG.openModal('modalGroup');

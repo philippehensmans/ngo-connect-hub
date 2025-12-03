@@ -31,6 +31,7 @@ class GroupController extends Controller
         $groupData = [
             'project_id' => $data['project_id'],
             'name' => $data['name'],
+            'description' => $data['description'] ?? null,
             'color' => $data['color'] ?? '#E5E7EB',
             'owner_id' => !empty($data['owner_id']) ? $data['owner_id'] : null,
         ];

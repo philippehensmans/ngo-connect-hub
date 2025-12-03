@@ -205,6 +205,10 @@
             <input name="name" id="groupName" class="w-full border p-2 mb-2 rounded"
                    placeholder="<?= $t->translate('title') ?>" required>
 
+            <textarea name="description" id="groupDescription" rows="3"
+                      class="w-full border p-2 mb-2 rounded"
+                      placeholder="Description: Que font les membres de ce groupe?"></textarea>
+
             <select name="owner_id" id="groupOwner" class="w-full border p-2 mb-2 rounded team-select">
                 <option value=""><?= $t->translate('resp') ?>...</option>
             </select>

@@ -101,12 +101,30 @@ class Database
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             project_id INTEGER NOT NULL,
             name TEXT NOT NULL,
+            description TEXT,
             color TEXT DEFAULT '#E5E7EB',
             owner_id INTEGER,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
             FOREIGN KEY(owner_id) REFERENCES members(id) ON DELETE SET NULL
         )");
+
+        // Migration: Ajouter le champ description s'il n'existe pas
+        try {
+            $result = $db->query("PRAGMA table_info(groups)")->fetchAll();
+            $hasDescription = false;
+            foreach ($result as $column) {
+                if ($column['name'] === 'description') {
+                    $hasDescription = true;
+                    break;
+                }
+            }
+            if (!$hasDescription) {
+                $db->exec("ALTER TABLE groups ADD COLUMN description TEXT");
+            }
+        } catch (\Exception $e) {
+            // Colonne déjà existante ou autre erreur, on continue
+        }
 
         // Table des jalons
         $db->exec("CREATE TABLE IF NOT EXISTS milestones (
