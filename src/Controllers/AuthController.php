@@ -90,4 +90,63 @@ class AuthController extends Controller
             $this->error('Failed to update settings');
         }
     }
+
+    /**
+     * Liste toutes les équipes (admin uniquement)
+     */
+    public function listTeams(): void
+    {
+        if (!Auth::check()) {
+            $this->error('Unauthorized', 401);
+            return;
+        }
+
+        if (!Auth::isAdmin()) {
+            $this->error('Admin access required', 403);
+            return;
+        }
+
+        $stmt = $this->db->query("SELECT id, name, is_admin, created_at FROM teams ORDER BY name");
+        $teams = $stmt->fetchAll();
+
+        $this->success(['teams' => $teams]);
+    }
+
+    /**
+     * Met à jour le rôle admin d'une équipe (admin uniquement)
+     */
+    public function updateTeamRole(array $data): void
+    {
+        if (!Auth::check()) {
+            $this->error('Unauthorized', 401);
+            return;
+        }
+
+        if (!Auth::isAdmin()) {
+            $this->error('Admin access required', 403);
+            return;
+        }
+
+        if (!$this->validate($data, ['team_id', 'is_admin'])) {
+            $this->error('Missing required fields');
+            return;
+        }
+
+        $teamId = (int)$data['team_id'];
+        $isAdmin = (int)$data['is_admin'];
+        $currentTeamId = Auth::getTeamId();
+
+        // Empêcher de se retirer soi-même les droits admin
+        if ($teamId === $currentTeamId && $isAdmin === 0) {
+            $this->error('Cannot remove your own admin rights', 403);
+            return;
+        }
+
+        $teamModel = new Team($this->db);
+        if ($teamModel->update($teamId, ['is_admin' => $isAdmin])) {
+            $this->success(null, 'Team role updated successfully');
+        } else {
+            $this->error('Failed to update team role');
+        }
+    }
 }

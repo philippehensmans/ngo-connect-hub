@@ -289,6 +289,7 @@ window.ONG = {
         ONG.on('btnSettings', 'click', () => {
             ONG.openModal('modalSettings');
             ONG.loadBackupsList();
+            ONG.loadTeamsList();
         });
         ONG.on('btnAddProject', 'click', () => ONG.openModalProject());
         ONG.on('btnAddTask', 'click', () => ONG.openTaskModal());
@@ -446,6 +447,74 @@ window.ONG = {
         const btnSettings = document.getElementById('btnSettings');
         if (btnSettings) {
             btnSettings.style.display = ONG.isAdmin ? '' : 'none';
+        }
+
+        // Afficher/masquer la section de gestion des équipes dans les paramètres
+        const teamManagementSection = document.getElementById('teamManagementSection');
+        if (teamManagementSection) {
+            teamManagementSection.style.display = ONG.isAdmin ? 'block' : 'none';
+        }
+    },
+
+    /**
+     * Charge la liste des équipes (admin uniquement)
+     */
+    loadTeamsList: async () => {
+        if (!ONG.isAdmin) return;
+
+        const r = await ONG.post('list_teams');
+        if (r.ok && r.data.teams) {
+            const container = document.getElementById('teamsList');
+            if (!container) return;
+
+            const currentTeamId = ONG.data.currentMember?.team_id;
+
+            container.innerHTML = r.data.teams.map(team => {
+                const isAdmin = team.is_admin == 1;
+                const isCurrent = team.id === currentTeamId;
+                return `
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                        <div class="flex-1">
+                            <span class="font-semibold">${ONG.escape(team.name)}</span>
+                            ${isCurrent ? '<span class="text-xs text-blue-600 ml-2">(vous)</span>' : ''}
+                        </div>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <span class="text-xs ${isAdmin ? 'text-green-600' : 'text-gray-500'}">
+                                ${isAdmin ? '👑 Admin' : '👤 User'}
+                            </span>
+                            <input type="checkbox"
+                                   ${isAdmin ? 'checked' : ''}
+                                   ${isCurrent ? 'disabled' : ''}
+                                   onchange="ONG.toggleTeamRole(${team.id}, this.checked)"
+                                   class="toggle-checkbox">
+                        </label>
+                    </div>
+                `;
+            }).join('');
+        }
+    },
+
+    /**
+     * Bascule le rôle admin d'une équipe
+     */
+    toggleTeamRole: async (teamId, isAdmin) => {
+        if (!confirm(`Êtes-vous sûr de vouloir ${isAdmin ? 'promouvoir' : 'rétrograder'} cette équipe ?`)) {
+            // Recharger la liste pour réinitialiser la checkbox
+            ONG.loadTeamsList();
+            return;
+        }
+
+        const r = await ONG.post('update_team_role', {
+            team_id: teamId,
+            is_admin: isAdmin ? 1 : 0
+        });
+
+        if (r.ok) {
+            ONG.toast(isAdmin ? 'Équipe promue administrateur' : 'Droits admin retirés', 'success');
+            ONG.loadTeamsList();
+        } else {
+            ONG.toast(r.msg || 'Erreur lors de la mise à jour', 'error');
+            ONG.loadTeamsList();
         }
     },
 

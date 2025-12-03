@@ -57,6 +57,18 @@
             </button>
         </div>
 
+        <!-- Section Gestion des Équipes (Admin uniquement) -->
+        <div id="teamManagementSection" class="mt-6 pt-6 border-t" style="display: none;">
+            <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
+                <i class="fas fa-users-cog"></i>
+                👥 Gestion des Équipes
+            </h4>
+
+            <div id="teamsList" class="space-y-2 max-h-48 overflow-y-auto">
+                <div class="text-xs text-gray-500 italic">Chargement des équipes...</div>
+            </div>
+        </div>
+
         <button type="button" class="w-full mt-4 text-gray-500 btn-close"><?= $t->translate('cancel') ?></button>
     </div>
 </div>

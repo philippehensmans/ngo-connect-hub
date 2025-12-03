@@ -40,6 +40,8 @@ class Router
         $this->routes['login'] = [AuthController::class, 'login'];
         $this->routes['logout'] = [AuthController::class, 'logout'];
         $this->routes['update_settings'] = [AuthController::class, 'updateSettings'];
+        $this->routes['list_teams'] = [AuthController::class, 'listTeams'];
+        $this->routes['update_team_role'] = [AuthController::class, 'updateTeamRole'];
 
         // Route pour charger toutes les données
         $this->routes['load_all'] = [DataController::class, 'loadAll'];
