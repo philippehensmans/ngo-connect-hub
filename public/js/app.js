@@ -2179,6 +2179,9 @@ window.ONG = {
             return endDate >= today && endDate <= nextWeek && t.status !== 'done';
         }).slice(0, 5);
 
+        // Récupérer les traductions
+        const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+
         // HTML du Dashboard
         let html = `
             <div class="p-6 space-y-6">
@@ -2187,7 +2190,7 @@ window.ONG = {
                     <div class="bg-white p-6 rounded-lg shadow">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-500 text-sm">${ONG.t('total_tasks')}</p>
+                                <p class="text-gray-500 text-sm">${dict.total_tasks || 'Total Tâches'}</p>
                                 <p class="text-3xl font-bold text-gray-800">${stats.total}</p>
                             </div>
                             <div class="bg-blue-100 p-3 rounded-full">
@@ -2199,7 +2202,7 @@ window.ONG = {
                     <div class="bg-white p-6 rounded-lg shadow">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-500 text-sm">${ONG.t('wip')}</p>
+                                <p class="text-gray-500 text-sm">${dict.wip || 'En cours'}</p>
                                 <p class="text-3xl font-bold text-orange-600">${stats.wip}</p>
                             </div>
                             <div class="bg-orange-100 p-3 rounded-full">
@@ -2211,7 +2214,7 @@ window.ONG = {
                     <div class="bg-white p-6 rounded-lg shadow">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-500 text-sm">${ONG.t('completed')}</p>
+                                <p class="text-gray-500 text-sm">${dict.completed || 'Terminées'}</p>
                                 <p class="text-3xl font-bold text-green-600">${stats.done}</p>
                             </div>
                             <div class="bg-green-100 p-3 rounded-full">
@@ -2223,7 +2226,7 @@ window.ONG = {
                     <div class="bg-white p-6 rounded-lg shadow">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-500 text-sm">${ONG.t('progress')}</p>
+                                <p class="text-gray-500 text-sm">${dict.progress || 'Progression'}</p>
                                 <p class="text-3xl font-bold text-purple-600">${stats.completion}%</p>
                             </div>
                             <div class="bg-purple-100 p-3 rounded-full">
@@ -2237,7 +2240,7 @@ window.ONG = {
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Graphique par Statut -->
                     <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">${ONG.t('tasks_by_status')}</h3>
+                        <h3 class="text-lg font-bold mb-4">${dict.tasks_by_status || 'Tâches par Statut'}</h3>
                         <div style="height: 250px;">
                             <canvas id="chartStatus"></canvas>
                         </div>
@@ -2245,7 +2248,7 @@ window.ONG = {
 
                     <!-- Graphique par Projet -->
                     <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">${ONG.t('tasks_by_project')}</h3>
+                        <h3 class="text-lg font-bold mb-4">${dict.tasks_by_project || 'Tâches par Projet'}</h3>
                         <div style="height: 250px;">
                             <canvas id="chartProjects"></canvas>
                         </div>
@@ -2256,7 +2259,7 @@ window.ONG = {
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Tâches à venir -->
                     <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">📅 ${ONG.t('upcoming_week')}</h3>
+                        <h3 class="text-lg font-bold mb-4">📅 ${dict.upcoming_week || 'À venir cette semaine'}</h3>
                         ${upcomingTasks.length > 0 ? `
                             <div class="space-y-2">
                                 ${upcomingTasks.map(t => {
@@ -2272,12 +2275,12 @@ window.ONG = {
                                     `;
                                 }).join('')}
                             </div>
-                        ` : `<p class="text-gray-400 text-center py-8">${ONG.t('no_upcoming')}</p>`}
+                        ` : `<p class="text-gray-400 text-center py-8">${dict.no_upcoming || 'Aucune tâche à venir cette semaine'}</p>`}
                     </div>
 
                     <!-- Graphique par Responsable -->
                     <div class="bg-white p-6 rounded-lg shadow">
-                        <h3 class="text-lg font-bold mb-4">${ONG.t('tasks_by_assignee')}</h3>
+                        <h3 class="text-lg font-bold mb-4">${dict.tasks_by_assignee || 'Tâches par Responsable'}</h3>
                         <div style="height: 250px;">
                             <canvas id="chartMembers"></canvas>
                         </div>
@@ -2296,7 +2299,7 @@ window.ONG = {
                 new Chart(ctxStatus, {
                     type: 'doughnut',
                     data: {
-                        labels: [ONG.t('todo'), ONG.t('wip'), ONG.t('done')],
+                        labels: [dict.todo || 'À faire', dict.wip || 'En cours', dict.done || 'Terminé'],
                         datasets: [{
                             data: [stats.todo, stats.wip, stats.done],
                             backgroundColor: ['#FCA5A5', '#FBBF24', '#34D399'],
@@ -2326,7 +2329,7 @@ window.ONG = {
                     data: {
                         labels: Object.keys(projectStats),
                         datasets: [{
-                            label: ONG.t('tasks_label'),
+                            label: dict.tasks_label || 'Tâches',
                             data: Object.values(projectStats),
                             backgroundColor: '#3B82F6',
                             borderRadius: 5
