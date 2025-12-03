@@ -164,6 +164,24 @@ class Database
             // Colonne déjà existante ou autre erreur, on continue
         }
 
+        // Migration: Ajouter le champ member_ids aux groupes s'il n'existe pas
+        try {
+            $result = $db->query("PRAGMA table_info(groups)")->fetchAll();
+            $hasMemberIds = false;
+            foreach ($result as $column) {
+                if ($column['name'] === 'member_ids') {
+                    $hasMemberIds = true;
+                    break;
+                }
+            }
+            if (!$hasMemberIds) {
+                // Ajouter le champ pour stocker les IDs des membres assignés (format JSON)
+                $db->exec("ALTER TABLE groups ADD COLUMN member_ids TEXT");
+            }
+        } catch (\Exception $e) {
+            // Colonne déjà existante ou autre erreur, on continue
+        }
+
         // Table des jalons
         $db->exec("CREATE TABLE IF NOT EXISTS milestones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

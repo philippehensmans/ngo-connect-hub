@@ -28,12 +28,25 @@ class GroupController extends Controller
         $data = $this->sanitize($data);
         $groupModel = new Group($this->db);
 
+        // Gérer les member_ids (convertir le tableau en JSON)
+        $memberIds = null;
+        if (isset($data['member_ids'])) {
+            if (is_array($data['member_ids'])) {
+                $memberIds = json_encode(array_map('intval', $data['member_ids']));
+            } elseif (is_string($data['member_ids']) && !empty($data['member_ids'])) {
+                // Si c'est déjà une chaîne JSON, la valider et la garder
+                $decoded = json_decode($data['member_ids'], true);
+                $memberIds = is_array($decoded) ? json_encode(array_map('intval', $decoded)) : null;
+            }
+        }
+
         $groupData = [
             'project_id' => $data['project_id'],
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'color' => $data['color'] ?? '#E5E7EB',
             'owner_id' => !empty($data['owner_id']) ? $data['owner_id'] : null,
+            'member_ids' => $memberIds,
         ];
 
         try {

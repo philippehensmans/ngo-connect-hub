@@ -231,6 +231,13 @@
                 <option value=""><?= $t->translate('resp') ?>...</option>
             </select>
 
+            <div class="mb-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Membres du groupe</label>
+                <div id="groupMembersList" class="border rounded p-2 max-h-40 overflow-y-auto bg-gray-50">
+                    <!-- Les membres seront ajoutés dynamiquement ici -->
+                </div>
+            </div>
+
             <input type="color" name="color" id="groupColor" value="#E5E7EB"
                    class="w-full h-10 p-1 rounded cursor-pointer">
 

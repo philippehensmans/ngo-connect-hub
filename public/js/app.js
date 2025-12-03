@@ -370,6 +370,11 @@ window.ONG = {
 
         // Formulaire de groupe
         ONG.onSubmit('formGroup', async (fd) => {
+            // Collecter les IDs des membres sélectionnés
+            const selectedMembers = Array.from(document.querySelectorAll('#groupMembersList input[type="checkbox"]:checked'))
+                .map(cb => parseInt(cb.value));
+            fd.append('member_ids', JSON.stringify(selectedMembers));
+
             await ONG.post('save_group', fd);
             ONG.closeModal('modalGroup');
             ONG.loadData();
@@ -1008,7 +1013,33 @@ window.ONG = {
                                 </div>
                             </div>
                             ${g.description ? `<div class="text-sm text-gray-600 mb-2 italic">${ONG.escape(g.description)}</div>` : ''}
-                            <div class="text-xs text-gray-500 mb-2">Responsable: ${ONG.getMemberName(g.owner_id)}</div>
+                            <div class="text-xs text-gray-500 mb-1">Responsable: ${ONG.getMemberName(g.owner_id)}</div>
+                            ${(() => {
+                                // Afficher les membres du groupe
+                                let memberIds = [];
+                                if (g.member_ids) {
+                                    try {
+                                        memberIds = JSON.parse(g.member_ids);
+                                    } catch (e) {
+                                        memberIds = [];
+                                    }
+                                }
+                                if (memberIds.length > 0) {
+                                    const memberNames = memberIds
+                                        .map(id => {
+                                            const member = ONG.data.members.find(m => m.id == id);
+                                            return member ? `${member.fname} ${member.lname}` : null;
+                                        })
+                                        .filter(name => name !== null);
+                                    if (memberNames.length > 0) {
+                                        return `<div class="text-xs text-gray-500 mb-2">
+                                                    <span class="font-semibold">👥 Membres: </span>
+                                                    <span>${memberNames.join(', ')}</span>
+                                                </div>`;
+                                    }
+                                }
+                                return '';
+                            })()}
                             ${gTasks.length > 0 ? `
                                 <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                                     <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${pct}%"></div>
@@ -1801,6 +1832,7 @@ window.ONG = {
         if (form) form.reset();
 
         ONG.setVal('groupProjectId', ONG.state.pid);
+        ONG.fillGroupMembersList([]);
         ONG.openModal('modalGroup');
     },
 
@@ -1814,6 +1846,18 @@ window.ONG = {
         ONG.setVal('groupDescription', g.description || '');
         ONG.setVal('groupColor', g.color);
         ONG.setVal('groupOwner', g.owner_id);
+
+        // Parser les member_ids (stockés en JSON)
+        let selectedMembers = [];
+        if (g.member_ids) {
+            try {
+                selectedMembers = JSON.parse(g.member_ids);
+            } catch (e) {
+                selectedMembers = [];
+            }
+        }
+        ONG.fillGroupMembersList(selectedMembers);
+
         ONG.openModal('modalGroup');
     },
 
@@ -1866,6 +1910,30 @@ window.ONG = {
                 </div>
             `).join('');
         }
+    },
+
+    /**
+     * Remplit la liste des membres pour le modal de groupe
+     */
+    fillGroupMembersList: (selectedMemberIds = []) => {
+        const container = document.getElementById('groupMembersList');
+        if (!container) return;
+
+        if (ONG.data.members.length === 0) {
+            container.innerHTML = '<p class="text-gray-400 text-sm">Aucun membre disponible</p>';
+            return;
+        }
+
+        container.innerHTML = ONG.data.members.map(m => {
+            const isChecked = selectedMemberIds.includes(m.id);
+            return `
+                <label class="flex items-center gap-2 p-1 hover:bg-gray-100 rounded cursor-pointer">
+                    <input type="checkbox" value="${m.id}" ${isChecked ? 'checked' : ''}
+                           class="rounded border-gray-300">
+                    <span class="text-sm">${ONG.escape(m.fname)} ${ONG.escape(m.lname)}</span>
+                </label>
+            `;
+        }).join('');
     },
 
     /**
