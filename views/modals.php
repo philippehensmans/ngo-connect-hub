@@ -4,7 +4,7 @@
         <div class="p-6 pb-3">
             <h3 class="font-bold"><?= $t->translate('settings') ?></h3>
         </div>
-        <div class="flex-1 overflow-y-auto px-6">
+        <div class="flex-1 overflow-y-auto px-6 pb-6">
             <form id="formSettings">
             <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('org_name') ?></label>
             <input name="org_name" class="w-full border p-2 mb-3 rounded" value="<?= htmlspecialchars($teamName) ?>" required>

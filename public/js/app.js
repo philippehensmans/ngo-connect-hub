@@ -460,14 +460,25 @@ window.ONG = {
      * Charge la liste des équipes (admin uniquement)
      */
     loadTeamsList: async () => {
-        if (!ONG.isAdmin) return;
+        if (!ONG.isAdmin) {
+            console.log('❌ User is not admin, skipping teams list');
+            return;
+        }
 
+        console.log('📋 Loading teams list...');
         const r = await ONG.post('list_teams');
+        console.log('📋 Teams response:', r);
+
         if (r.ok && r.data.teams) {
             const container = document.getElementById('teamsList');
-            if (!container) return;
+            if (!container) {
+                console.log('❌ teamsList container not found in DOM');
+                return;
+            }
 
+            console.log('✅ Teams data:', r.data.teams, 'Count:', r.data.teams.length);
             const currentTeamId = ONG.data.currentTeamId;
+            console.log('👤 Current team ID:', currentTeamId);
 
             container.innerHTML = r.data.teams.map(team => {
                 const isAdmin = team.is_admin == 1;
