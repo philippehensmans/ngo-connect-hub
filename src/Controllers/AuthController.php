@@ -149,4 +149,69 @@ class AuthController extends Controller
             $this->error('Failed to update team role');
         }
     }
+
+    /**
+     * Liste tous les membres de l'équipe courante (admin uniquement)
+     */
+    public function listMembers(): void
+    {
+        if (!Auth::check()) {
+            $this->error('Unauthorized', 401);
+            return;
+        }
+
+        if (!Auth::isAdmin()) {
+            $this->error('Admin access required', 403);
+            return;
+        }
+
+        $teamId = Auth::getTeamId();
+        $stmt = $this->db->prepare("SELECT id, fname, lname, email, is_admin, created_at FROM members WHERE team_id = ? ORDER BY lname, fname");
+        $stmt->execute([$teamId]);
+        $members = $stmt->fetchAll();
+
+        $this->success(['members' => $members]);
+    }
+
+    /**
+     * Met à jour le rôle admin d'un membre (admin uniquement)
+     */
+    public function updateMemberRole(array $data): void
+    {
+        if (!Auth::check()) {
+            $this->error('Unauthorized', 401);
+            return;
+        }
+
+        if (!Auth::isAdmin()) {
+            $this->error('Admin access required', 403);
+            return;
+        }
+
+        if (!$this->validate($data, ['member_id', 'is_admin'])) {
+            $this->error('Missing required fields');
+            return;
+        }
+
+        $memberId = (int)$data['member_id'];
+        $isAdmin = (int)$data['is_admin'];
+        $teamId = Auth::getTeamId();
+
+        // Vérifier que le membre appartient bien à l'équipe courante
+        $stmt = $this->db->prepare("SELECT team_id FROM members WHERE id = ?");
+        $stmt->execute([$memberId]);
+        $member = $stmt->fetch();
+
+        if (!$member || $member['team_id'] != $teamId) {
+            $this->error('Member not found or does not belong to your team', 404);
+            return;
+        }
+
+        $memberModel = new \App\Models\Member($this->db);
+        if ($memberModel->update($memberId, ['is_admin' => $isAdmin])) {
+            $this->success(null, 'Member role updated successfully');
+        } else {
+            $this->error('Failed to update member role');
+        }
+    }
 }

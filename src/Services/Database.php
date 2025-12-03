@@ -78,6 +78,7 @@ class Database
             fname TEXT NOT NULL,
             lname TEXT NOT NULL,
             email TEXT NOT NULL,
+            is_admin INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
         )");
@@ -140,6 +141,24 @@ class Database
             if (!$hasIsAdmin) {
                 // Ajouter le champ et mettre toutes les équipes existantes comme admin
                 $db->exec("ALTER TABLE teams ADD COLUMN is_admin INTEGER DEFAULT 1");
+            }
+        } catch (\Exception $e) {
+            // Colonne déjà existante ou autre erreur, on continue
+        }
+
+        // Migration: Ajouter le champ is_admin aux membres s'il n'existe pas
+        try {
+            $result = $db->query("PRAGMA table_info(members)")->fetchAll();
+            $hasIsAdmin = false;
+            foreach ($result as $column) {
+                if ($column['name'] === 'is_admin') {
+                    $hasIsAdmin = true;
+                    break;
+                }
+            }
+            if (!$hasIsAdmin) {
+                // Ajouter le champ (par défaut non-admin)
+                $db->exec("ALTER TABLE members ADD COLUMN is_admin INTEGER DEFAULT 0");
             }
         } catch (\Exception $e) {
             // Colonne déjà existante ou autre erreur, on continue

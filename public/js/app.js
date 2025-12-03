@@ -289,7 +289,7 @@ window.ONG = {
         ONG.on('btnSettings', 'click', () => {
             ONG.openModal('modalSettings');
             ONG.loadBackupsList();
-            ONG.loadTeamsList();
+            ONG.loadMembersList();
         });
         ONG.on('btnAddProject', 'click', () => ONG.openModalProject());
         ONG.on('btnAddTask', 'click', () => ONG.openTaskModal());
@@ -449,45 +449,43 @@ window.ONG = {
             btnSettings.style.display = ONG.isAdmin ? '' : 'none';
         }
 
-        // Afficher/masquer la section de gestion des équipes dans les paramètres
-        const teamManagementSection = document.getElementById('teamManagementSection');
-        if (teamManagementSection) {
-            teamManagementSection.style.display = ONG.isAdmin ? 'block' : 'none';
+        // Afficher/masquer la section de gestion des membres dans les paramètres
+        const memberManagementSection = document.getElementById('memberManagementSection');
+        if (memberManagementSection) {
+            memberManagementSection.style.display = ONG.isAdmin ? 'block' : 'none';
         }
     },
 
     /**
-     * Charge la liste des équipes (admin uniquement)
+     * Charge la liste des membres (admin uniquement)
      */
-    loadTeamsList: async () => {
+    loadMembersList: async () => {
         if (!ONG.isAdmin) {
-            console.log('❌ User is not admin, skipping teams list');
+            console.log('❌ User is not admin, skipping members list');
             return;
         }
 
-        console.log('📋 Loading teams list...');
-        const r = await ONG.post('list_teams');
-        console.log('📋 Teams response:', r);
+        console.log('📋 Loading members list...');
+        const r = await ONG.post('list_members');
+        console.log('📋 Members response:', r);
 
-        if (r.ok && r.data.teams) {
-            const container = document.getElementById('teamsList');
+        if (r.ok && r.data.members) {
+            const container = document.getElementById('membersList');
             if (!container) {
-                console.log('❌ teamsList container not found in DOM');
+                console.log('❌ membersList container not found in DOM');
                 return;
             }
 
-            console.log('✅ Teams data:', r.data.teams, 'Count:', r.data.teams.length);
-            const currentTeamId = ONG.data.currentTeamId;
-            console.log('👤 Current team ID:', currentTeamId);
+            console.log('✅ Members data:', r.data.members, 'Count:', r.data.members.length);
 
-            container.innerHTML = r.data.teams.map(team => {
-                const isAdmin = team.is_admin == 1;
-                const isCurrent = team.id === currentTeamId;
+            container.innerHTML = r.data.members.map(member => {
+                const isAdmin = member.is_admin == 1;
+                const fullName = `${member.fname} ${member.lname}`;
                 return `
                     <div class="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
                         <div class="flex-1">
-                            <span class="font-semibold">${ONG.escape(team.name)}</span>
-                            ${isCurrent ? '<span class="text-xs text-blue-600 ml-2">(vous)</span>' : ''}
+                            <span class="font-semibold">${ONG.escape(fullName)}</span>
+                            <div class="text-xs text-gray-500">${ONG.escape(member.email)}</div>
                         </div>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <span class="text-xs ${isAdmin ? 'text-green-600' : 'text-gray-500'}">
@@ -495,8 +493,7 @@ window.ONG = {
                             </span>
                             <input type="checkbox"
                                    ${isAdmin ? 'checked' : ''}
-                                   ${isCurrent ? 'disabled' : ''}
-                                   onchange="ONG.toggleTeamRole(${team.id}, this.checked)"
+                                   onchange="ONG.toggleMemberRole(${member.id}, this.checked)"
                                    class="toggle-checkbox">
                         </label>
                     </div>
@@ -506,26 +503,26 @@ window.ONG = {
     },
 
     /**
-     * Bascule le rôle admin d'une équipe
+     * Bascule le rôle admin d'un membre
      */
-    toggleTeamRole: async (teamId, isAdmin) => {
-        if (!confirm(`Êtes-vous sûr de vouloir ${isAdmin ? 'promouvoir' : 'rétrograder'} cette équipe ?`)) {
+    toggleMemberRole: async (memberId, isAdmin) => {
+        if (!confirm(`Êtes-vous sûr de vouloir ${isAdmin ? 'promouvoir' : 'rétrograder'} ce membre ?`)) {
             // Recharger la liste pour réinitialiser la checkbox
-            ONG.loadTeamsList();
+            ONG.loadMembersList();
             return;
         }
 
-        const r = await ONG.post('update_team_role', {
-            team_id: teamId,
+        const r = await ONG.post('update_member_role', {
+            member_id: memberId,
             is_admin: isAdmin ? 1 : 0
         });
 
         if (r.ok) {
-            ONG.toast(isAdmin ? 'Équipe promue administrateur' : 'Droits admin retirés', 'success');
-            ONG.loadTeamsList();
+            ONG.toast(isAdmin ? 'Membre promu administrateur' : 'Droits admin retirés', 'success');
+            ONG.loadMembersList();
         } else {
             ONG.toast(r.msg || 'Erreur lors de la mise à jour', 'error');
-            ONG.loadTeamsList();
+            ONG.loadMembersList();
         }
     },
 

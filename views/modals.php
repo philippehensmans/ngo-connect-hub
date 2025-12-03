@@ -60,15 +60,15 @@
             </button>
         </div>
 
-        <!-- Section Gestion des Équipes (Admin uniquement) -->
-        <div id="teamManagementSection" class="mt-6 pt-6 border-t" style="display: none;">
+        <!-- Section Gestion des Membres (Admin uniquement) -->
+        <div id="memberManagementSection" class="mt-6 pt-6 border-t" style="display: none;">
             <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
                 <i class="fas fa-users-cog"></i>
-                👥 Gestion des Équipes
+                👥 Gestion des Membres
             </h4>
 
-            <div id="teamsList" class="space-y-2">
-                <div class="text-xs text-gray-500 italic">Chargement des équipes...</div>
+            <div id="membersList" class="space-y-2">
+                <div class="text-xs text-gray-500 italic">Chargement des membres...</div>
             </div>
         </div>
         </div>
