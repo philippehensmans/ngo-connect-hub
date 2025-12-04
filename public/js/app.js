@@ -1737,6 +1737,30 @@ window.ONG = {
             return;
         }
 
+        // Déterminer le mode actif
+        const team = ONG.data.team || {};
+        const useApi = team.ai_use_api == 1;
+        const provider = team.ai_api_provider || 'rules';
+        const model = team.ai_api_model || '';
+
+        let modeBadge = '';
+        if (useApi && provider !== 'rules') {
+            const providerNames = {
+                'claude': 'Claude',
+                'openai': 'OpenAI',
+                'azure': 'Azure'
+            };
+            const providerName = providerNames[provider] || provider;
+            const modelText = model ? ` (${model})` : '';
+            modeBadge = `<span class="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
+                🤖 Mode API: ${providerName}${modelText}
+            </span>`;
+        } else {
+            modeBadge = `<span class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                💡 Mode Gratuit (Règles)
+            </span>`;
+        }
+
         container.innerHTML = `
             <div class="h-full flex flex-col bg-white rounded-lg shadow">
                 <div class="p-4 border-b flex justify-between items-center bg-gradient-to-r from-blue-50 to-purple-50">
@@ -1745,7 +1769,10 @@ window.ONG = {
                             <i class="fas fa-robot text-white text-lg"></i>
                         </div>
                         <div>
-                            <h2 class="text-lg font-bold text-gray-800">${t.ai_assistant}</h2>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-lg font-bold text-gray-800">${t.ai_assistant}</h2>
+                                ${modeBadge}
+                            </div>
                             <p class="text-sm text-gray-600">${t.assistant_welcome}</p>
                         </div>
                     </div>
