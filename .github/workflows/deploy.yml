@@ -1,0 +1,23 @@
+name: Deploy to FTP
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ ftp.k1m.be }}
+          username: ${{ hensmans19824 }}
+          password: ${{ y4fywcCFSEER }}
+          local-dir: ./
+          server-dir: /www/exercices/projets/ong-manager-ai/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.DS_Store
+            .gitignore
+            README.md
