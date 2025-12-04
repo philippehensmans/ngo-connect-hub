@@ -33,8 +33,7 @@ class CalendarController extends Controller
             $icsContent = $this->calendarService->generateProjectCalendar($projectId);
 
             // Récupérer le nom du projet pour le nom du fichier
-            $db = \App\Services\Database::getConnection();
-            $stmt = $db->prepare("SELECT * FROM projects WHERE id = ? AND team_id = ?");
+            $stmt = $this->db->prepare("SELECT * FROM projects WHERE id = ? AND team_id = ?");
             $stmt->execute([$projectId, Auth::getTeamId()]);
             $project = $stmt->fetch(\PDO::FETCH_ASSOC);
 
