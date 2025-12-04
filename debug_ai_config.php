@@ -8,10 +8,25 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 // Connexion directe à la base de données
-$dbPath = __DIR__ . '/data/ngo.db';
+// Essayer plusieurs chemins possibles
+$possiblePaths = [
+    __DIR__ . '/data/ong_manager.db',
+    __DIR__ . '/data/ngo.db',
+    __DIR__ . '/../data/ong_manager.db',
+];
 
-if (!file_exists($dbPath)) {
-    die("<h1>ERREUR</h1><p>La base de données n'existe pas à : $dbPath</p>");
+$dbPath = null;
+foreach ($possiblePaths as $path) {
+    if (file_exists($path)) {
+        $dbPath = $path;
+        break;
+    }
+}
+
+if (!$dbPath) {
+    die("<h1>ERREUR</h1><p>La base de données n'a été trouvée dans aucun de ces chemins :</p><ul>" .
+        implode('', array_map(fn($p) => "<li>$p</li>", $possiblePaths)) .
+        "</ul>");
 }
 
 try {
@@ -42,6 +57,10 @@ try {
 </head>
 <body>
     <h1>🔍 Diagnostic Configuration AI</h1>
+
+    <div class="section">
+        <p><strong>Base de données utilisée :</strong> <code><?= htmlspecialchars($dbPath) ?></code></p>
+    </div>
 
     <!-- Section 1: Structure de la table -->
     <div class="section">
