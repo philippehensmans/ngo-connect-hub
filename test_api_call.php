@@ -7,12 +7,6 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Charger l'autoloader
-require __DIR__ . '/vendor/autoload.php';
-
-use App\Services\Database;
-use App\Services\AssistantService;
-
 header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
@@ -26,7 +20,9 @@ header('Content-Type: text/html; charset=utf-8');
         .success { color: #10b981; font-weight: bold; }
         .error { color: #ef4444; font-weight: bold; }
         .warning { color: #f59e0b; font-weight: bold; }
-        pre { background: #f3f4f6; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        pre { background: #f3f4f6; padding: 10px; border-radius: 5px; overflow-x: auto; max-height: 400px; }
+        h1 { color: #1f2937; }
+        h2 { color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -35,12 +31,32 @@ header('Content-Type: text/html; charset=utf-8');
     <div class="section">
         <h2>1. Connexion à la base de données</h2>
         <?php
+        // Trouver la base de données
+        $possiblePaths = [
+            __DIR__ . '/data/ong_manager.db',
+            __DIR__ . '/data/ngo.db',
+            __DIR__ . '/../data/ong_manager.db',
+        ];
+
+        $dbPath = null;
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                $dbPath = $path;
+                break;
+            }
+        }
+
+        if (!$dbPath) {
+            echo '<p class="error">✗ Base de données introuvable</p>';
+            die();
+        }
+
         try {
-            $config = require __DIR__ . '/config/config.php';
-            $database = new Database($config);
-            $db = $database->getConnection();
+            $db = new PDO('sqlite:' . $dbPath);
+            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             echo '<p class="success">✓ Connexion réussie</p>';
-        } catch (Exception $e) {
+            echo '<p>Base de données : <code>' . htmlspecialchars($dbPath) . '</code></p>';
+        } catch (PDOException $e) {
             echo '<p class="error">✗ Erreur : ' . htmlspecialchars($e->getMessage()) . '</p>';
             die();
         }
@@ -61,12 +77,12 @@ header('Content-Type: text/html; charset=utf-8');
             }
 
             echo '<p>Équipe : <strong>' . htmlspecialchars($team['name']) . '</strong> (ID: ' . $team['id'] . ')</p>';
-            echo '<ul>';
-            echo '<li>ai_use_api : ' . ($team['ai_use_api'] ? '<span class="success">✓ Activé</span>' : '<span class="error">✗ Désactivé</span>') . '</li>';
-            echo '<li>ai_api_provider : ' . htmlspecialchars($team['ai_api_provider']) . '</li>';
-            echo '<li>ai_api_key : ' . (empty($team['ai_api_key']) ? '<span class="error">✗ Vide</span>' : '<span class="success">✓ Présente (' . substr($team['ai_api_key'], 0, 20) . '...)</span>') . '</li>';
-            echo '<li>ai_api_model : ' . htmlspecialchars($team['ai_api_model']) . '</li>';
-            echo '</ul>';
+            echo '<table style="width: 100%; border-collapse: collapse;">';
+            echo '<tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>ai_use_api</strong></td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">' . ($team['ai_use_api'] ? '<span class="success">✓ Activé (' . $team['ai_use_api'] . ')</span>' : '<span class="error">✗ Désactivé (' . $team['ai_use_api'] . ')</span>') . '</td></tr>';
+            echo '<tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>ai_api_provider</strong></td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">' . htmlspecialchars($team['ai_api_provider']) . '</td></tr>';
+            echo '<tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>ai_api_key</strong></td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">' . (empty($team['ai_api_key']) ? '<span class="error">✗ Vide</span>' : '<span class="success">✓ Présente (' . substr($team['ai_api_key'], 0, 20) . '...)</span>') . '</td></tr>';
+            echo '<tr><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>ai_api_model</strong></td><td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">' . htmlspecialchars($team['ai_api_model']) . '</td></tr>';
+            echo '</table>';
 
             $teamId = $team['id'];
         } catch (Exception $e) {
@@ -77,42 +93,27 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
 
     <div class="section">
-        <h2>3. Test du service Assistant</h2>
+        <h2>3. Vérification des fichiers de service</h2>
         <?php
-        try {
-            $assistantService = new AssistantService($db);
-            echo '<p class="success">✓ Service Assistant créé</p>';
+        $requiredFiles = [
+            'src/Services/AssistantService.php',
+            'src/Services/AIApiService.php',
+            'src/Controllers/AssistantController.php'
+        ];
 
-            // Créer une conversation de test
-            $conversationId = $assistantService->startConversation($teamId, null);
-            echo '<p class="success">✓ Conversation créée (ID: ' . $conversationId . ')</p>';
-
-            // Obtenir le message initial
-            echo '<h3>Message initial :</h3>';
-            $initialMessage = $assistantService->getInitialMessage();
-            echo '<pre>' . htmlspecialchars(print_r($initialMessage, true)) . '</pre>';
-
-            echo '<div style="background: #e0f2fe; padding: 15px; border-left: 4px solid #0284c7; margin: 10px 0;">';
-            echo '<strong>Message affiché :</strong><br>';
-            echo nl2br(htmlspecialchars($initialMessage['content']));
-            echo '</div>';
-
-            // Analyser le message pour voir s'il vient de l'API ou des règles
-            if (strpos($initialMessage['content'], 'Bonjour ! Je suis votre assistant de planification de projet') !== false) {
-                echo '<p class="warning">⚠ Ce message semble être le message par défaut (mode règles)</p>';
+        foreach ($requiredFiles as $file) {
+            $fullPath = __DIR__ . '/' . $file;
+            if (file_exists($fullPath)) {
+                echo '<p class="success">✓ ' . htmlspecialchars($file) . '</p>';
             } else {
-                echo '<p class="success">✓ Ce message semble être généré par l\'API (différent du message par défaut)</p>';
+                echo '<p class="error">✗ ' . htmlspecialchars($file) . ' - MANQUANT</p>';
             }
-
-        } catch (Exception $e) {
-            echo '<p class="error">✗ Erreur : ' . htmlspecialchars($e->getMessage()) . '</p>';
-            echo '<pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
         }
         ?>
     </div>
 
     <div class="section">
-        <h2>4. Test direct de l'API</h2>
+        <h2>4. Test direct de l'API Claude</h2>
         <?php
         if ($team['ai_use_api'] && !empty($team['ai_api_key'])) {
             try {
@@ -123,11 +124,11 @@ header('Content-Type: text/html; charset=utf-8');
 
                 $data = [
                     'model' => $model,
-                    'max_tokens' => 1024,
+                    'max_tokens' => 150,
                     'messages' => [
                         [
                             'role' => 'user',
-                            'content' => 'Dis bonjour en une phrase courte.'
+                            'content' => 'Dis bonjour en une phrase courte et souhaite une bonne journée.'
                         ]
                     ]
                 ];
@@ -147,17 +148,34 @@ header('Content-Type: text/html; charset=utf-8');
                 $curlError = curl_error($ch);
                 curl_close($ch);
 
-                echo '<p>Code HTTP : <strong>' . $httpCode . '</strong></p>';
+                echo '<p><strong>Code HTTP :</strong> ' . $httpCode . '</p>';
 
                 if ($curlError) {
                     echo '<p class="error">✗ Erreur cURL : ' . htmlspecialchars($curlError) . '</p>';
                 } elseif ($httpCode === 200) {
                     echo '<p class="success">✓ Appel API réussi !</p>';
                     $result = json_decode($response, true);
+
+                    if (isset($result['content'][0]['text'])) {
+                        echo '<div style="background: #e0f2fe; padding: 15px; border-left: 4px solid #0284c7; margin: 10px 0;">';
+                        echo '<strong>Réponse de Claude :</strong><br>';
+                        echo nl2br(htmlspecialchars($result['content'][0]['text']));
+                        echo '</div>';
+                    }
+
+                    echo '<details><summary>Réponse complète JSON</summary>';
                     echo '<pre>' . htmlspecialchars(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) . '</pre>';
+                    echo '</details>';
                 } else {
                     echo '<p class="error">✗ Échec de l\'appel API</p>';
+                    $errorData = json_decode($response, true);
+                    if ($errorData && isset($errorData['error'])) {
+                        echo '<p><strong>Type d\'erreur :</strong> ' . htmlspecialchars($errorData['error']['type']) . '</p>';
+                        echo '<p><strong>Message :</strong> ' . htmlspecialchars($errorData['error']['message']) . '</p>';
+                    }
+                    echo '<details><summary>Réponse complète</summary>';
                     echo '<pre>' . htmlspecialchars($response) . '</pre>';
+                    echo '</details>';
                 }
 
             } catch (Exception $e) {
@@ -165,12 +183,34 @@ header('Content-Type: text/html; charset=utf-8');
             }
         } else {
             echo '<p class="warning">⚠ API non configurée, test ignoré</p>';
+            if (!$team['ai_use_api']) {
+                echo '<p>Raison : ai_use_api = ' . var_export($team['ai_use_api'], true) . '</p>';
+            }
+            if (empty($team['ai_api_key'])) {
+                echo '<p>Raison : ai_api_key est vide</p>';
+            }
         }
         ?>
     </div>
 
     <div class="section">
-        <p><em>Note : Ce script teste directement l'intégration de l'API Claude dans votre application.</em></p>
+        <h2>5. Analyse</h2>
+        <?php
+        if ($team['ai_use_api'] && !empty($team['ai_api_key'])) {
+            echo '<p class="success">✓ Configuration complète détectée</p>';
+            echo '<p>L\'API devrait être utilisée par l\'application.</p>';
+
+            echo '<p><strong>Points à vérifier :</strong></p>';
+            echo '<ul>';
+            echo '<li>Les fichiers <code>src/Services/AssistantService.php</code> et <code>src/Controllers/AssistantController.php</code> sont-ils à jour sur le serveur ?</li>';
+            echo '<li>Avez-vous vidé le cache de votre navigateur ?</li>';
+            echo '<li>Si l\'appel API direct ci-dessus a réussi, le problème vient du code PHP de l\'application</li>';
+            echo '</ul>';
+        } else {
+            echo '<p class="error">✗ Configuration incomplète</p>';
+            echo '<p>L\'API ne sera pas utilisée tant que la configuration n\'est pas complète.</p>';
+        }
+        ?>
     </div>
 
 </body>
