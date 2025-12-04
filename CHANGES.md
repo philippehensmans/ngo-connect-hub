@@ -2,7 +2,7 @@
 
 ## 📋 Résumé des Changements
 
-Cette version représente une refonte complète de l'application avec une architecture moderne et maintenable.
+Cette version représente une refonte complète de l'application avec une architecture moderne et maintenable. (Nous l'espérons)
 
 ## 🔄 Comparaison avec la Version Précédente
 
