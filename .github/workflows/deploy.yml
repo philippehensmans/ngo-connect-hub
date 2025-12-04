@@ -1,24 +1,48 @@
 name: Deploy to FTP
+
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches:
+      - main
+      - master
+      - claude/ai-assistant-*
 
 jobs:
   deploy:
+    name: Deploy to Web Server
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: SamKirkland/FTP-Deploy-Action@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          local-dir: ./
-          server-dir: /
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
           exclude: |
             **/.git*
             **/.git*/**
-            **/.DS_Store
-            .gitignore
-            README.md
+            **/node_modules/**
+            **/tests/**
+            **/docs/**
+            **/.env.example
+            **/.htaccess.bak
+            **/CHANGES.md
+            **/MANUEL.md
+            **/.github/**
+          dry-run: false
+          log-level: standard
+
+      - name: Notify success
+        if: success()
+        run: echo "Deployment successful"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "Deployment failed"
