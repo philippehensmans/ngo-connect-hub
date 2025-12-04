@@ -123,6 +123,35 @@ class AssistantService
      */
     public function getInitialMessage(): array
     {
+        // Si l'API est activée, utiliser l'API pour générer le message de bienvenue
+        if ($this->useApi && $this->apiService) {
+            try {
+                $systemPrompt = "Tu es un assistant IA spécialisé dans la planification de projets pour des ONG. " .
+                    "Accueille l'utilisateur chaleureusement et demande-lui quel type de projet il souhaite réaliser. " .
+                    "Propose-lui les catégories suivantes : Action humanitaire, Environnement et climat, Éducation, Santé, " .
+                    "Développement local, Plaidoyer et advocacy, ou un projet personnalisé.";
+
+                $welcomeMessage = $this->apiService->sendMessage([], $systemPrompt);
+
+                return [
+                    'role' => 'assistant',
+                    'content' => $welcomeMessage,
+                    'suggestions' => [
+                        'Action humanitaire',
+                        'Environnement et climat',
+                        'Éducation',
+                        'Santé',
+                        'Développement local',
+                        'Plaidoyer et advocacy',
+                        'Autre (projet personnalisé)'
+                    ]
+                ];
+            } catch (\Exception $e) {
+                // En cas d'erreur API, fallback sur le message par défaut
+            }
+        }
+
+        // Message par défaut (mode règles ou fallback si erreur API)
         return [
             'role' => 'assistant',
             'content' => "Bonjour ! Je suis votre assistant de planification de projet. Je vais vous aider à structurer votre projet en vous posant quelques questions.\n\nPour commencer, quel type de projet souhaitez-vous réaliser ?",

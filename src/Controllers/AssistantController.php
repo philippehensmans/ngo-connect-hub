@@ -32,7 +32,10 @@ class AssistantController extends Controller
         $projectId = $data['project_id'] ?? null;
 
         try {
+            // Créer la conversation (initialise aussi l'API si configurée)
             $conversationId = $this->assistantService->startConversation($teamId, $projectId);
+
+            // Obtenir le message initial (utilisera l'API si configurée)
             $initialMessage = $this->assistantService->getInitialMessage();
 
             $this->success([
