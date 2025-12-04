@@ -182,6 +182,27 @@ class Database
             // Colonne déjà existante ou autre erreur, on continue
         }
 
+        // Migration: Ajouter les champs de configuration AI à la table teams
+        try {
+            $result = $db->query("PRAGMA table_info(teams)")->fetchAll();
+            $columns = array_column($result, 'name');
+
+            if (!in_array('ai_use_api', $columns)) {
+                $db->exec("ALTER TABLE teams ADD COLUMN ai_use_api INTEGER DEFAULT 0");
+            }
+            if (!in_array('ai_api_provider', $columns)) {
+                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_provider TEXT DEFAULT 'rules'");
+            }
+            if (!in_array('ai_api_key', $columns)) {
+                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_key TEXT");
+            }
+            if (!in_array('ai_api_model', $columns)) {
+                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_model TEXT");
+            }
+        } catch (\Exception $e) {
+            // Colonnes déjà existantes ou autre erreur, on continue
+        }
+
         // Table des jalons
         $db->exec("CREATE TABLE IF NOT EXISTS milestones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
