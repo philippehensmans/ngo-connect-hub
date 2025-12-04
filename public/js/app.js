@@ -1732,7 +1732,7 @@ window.ONG = {
 
         // Démarrer une nouvelle conversation
         const startNewConversation = async () => {
-            const response = await ONG.api('start_conversation', { project_id: ONG.state.pid });
+            const response = await ONG.post('start_conversation', { project_id: ONG.state.pid });
             if (response.ok) {
                 ONG.assistant.conversationId = response.data.conversation_id;
                 ONG.assistant.messages = [];
@@ -1764,7 +1764,7 @@ window.ONG = {
             ONG.showTypingIndicator();
 
             // Envoyer le message à l'API
-            const response = await ONG.api('send_message', {
+            const response = await ONG.post('send_message', {
                 conversation_id: ONG.assistant.conversationId,
                 message: message
             });
@@ -1794,7 +1794,7 @@ window.ONG = {
                 btnGenerateStructure.disabled = true;
                 btnGenerateStructure.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t.generating}`;
 
-                const response = await ONG.api('generate_structure', {
+                const response = await ONG.post('generate_structure', {
                     conversation_id: ONG.assistant.conversationId,
                     project_id: ONG.state.pid
                 });
