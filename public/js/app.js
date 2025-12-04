@@ -48,7 +48,19 @@ window.ONG = {
             upcoming_week: 'À venir cette semaine',
             no_upcoming: 'Aucune tâche à venir cette semaine',
             tasks_by_assignee: 'Tâches par Responsable',
-            tasks_label: 'Tâches'
+            tasks_label: 'Tâches',
+            assistant: 'Assistant',
+            ai_assistant: 'Assistant IA',
+            start_conversation: 'Nouvelle conversation',
+            send_message: 'Envoyer',
+            generate_structure: 'Générer la structure',
+            typing: 'L\'assistant écrit...',
+            new_conversation: 'Nouvelle conversation',
+            assistant_placeholder: 'Écrivez votre message...',
+            assistant_welcome: 'Bienvenue sur l\'assistant de planification',
+            generating: 'Génération en cours...',
+            structure_generated: 'Structure générée avec succès',
+            select_project: 'Sélectionnez un projet'
         },
         en: {
             todo: 'To Do',
@@ -70,7 +82,19 @@ window.ONG = {
             upcoming_week: 'Upcoming this week',
             no_upcoming: 'No upcoming tasks this week',
             tasks_by_assignee: 'Tasks by Assignee',
-            tasks_label: 'Tasks'
+            tasks_label: 'Tasks',
+            assistant: 'Assistant',
+            ai_assistant: 'AI Assistant',
+            start_conversation: 'New conversation',
+            send_message: 'Send',
+            generate_structure: 'Generate structure',
+            typing: 'Assistant is typing...',
+            new_conversation: 'New conversation',
+            assistant_placeholder: 'Type your message...',
+            assistant_welcome: 'Welcome to the planning assistant',
+            generating: 'Generating...',
+            structure_generated: 'Structure generated successfully',
+            select_project: 'Select a project'
         },
         es: {
             todo: 'Pendiente',
@@ -92,7 +116,19 @@ window.ONG = {
             upcoming_week: 'Próximas esta semana',
             no_upcoming: 'No hay tareas próximas esta semana',
             tasks_by_assignee: 'Tareas por Responsable',
-            tasks_label: 'Tareas'
+            tasks_label: 'Tareas',
+            assistant: 'Asistente',
+            ai_assistant: 'Asistente IA',
+            start_conversation: 'Nueva conversación',
+            send_message: 'Enviar',
+            generate_structure: 'Generar estructura',
+            typing: 'El asistente está escribiendo...',
+            new_conversation: 'Nueva conversación',
+            assistant_placeholder: 'Escribe tu mensaje...',
+            assistant_welcome: 'Bienvenido al asistente de planificación',
+            generating: 'Generando...',
+            structure_generated: 'Estructura generada con éxito',
+            select_project: 'Seleccionar un proyecto'
         },
         sl: {
             todo: 'Za narediti',
@@ -114,7 +150,19 @@ window.ONG = {
             upcoming_week: 'Prihajajoče ta teden',
             no_upcoming: 'Ni prihodnjih nalog ta teden',
             tasks_by_assignee: 'Naloge po Odgovornem',
-            tasks_label: 'Naloge'
+            tasks_label: 'Naloge',
+            assistant: 'Asistent',
+            ai_assistant: 'AI Asistent',
+            start_conversation: 'Nov pogovor',
+            send_message: 'Pošlji',
+            generate_structure: 'Generiraj strukturo',
+            typing: 'Asistent piše...',
+            new_conversation: 'Nov pogovor',
+            assistant_placeholder: 'Vpiši svoje sporočilo...',
+            assistant_welcome: 'Dobrodošli v načrtovalnem asistentu',
+            generating: 'Generiranje...',
+            structure_generated: 'Struktura uspešno generirana',
+            select_project: 'Izberi projekt'
         }
     },
 
@@ -1677,20 +1725,36 @@ window.ONG = {
         const btnGenerateStructure = document.getElementById('btnGenerateStructure');
         const chatInput = document.getElementById('chatInput');
 
+        if (!btnNewConversation || !btnSendMessage || !chatInput) {
+            console.error('Assistant elements not found');
+            return;
+        }
+
         // Démarrer une nouvelle conversation
-        btnNewConversation.addEventListener('click', async () => {
-            const response = await ONG.post('start_conversation', { project_id: ONG.state.pid });
+        const startNewConversation = async () => {
+            const response = await ONG.api('start_conversation', { project_id: ONG.state.pid });
             if (response.ok) {
                 ONG.assistant.conversationId = response.data.conversation_id;
                 ONG.assistant.messages = [];
-                ONG.addAssistantMessage(response.data.message);
+                // Effacer le chat
+                const chatMessages = document.getElementById('chatMessages');
+                if (chatMessages) chatMessages.innerHTML = '';
+                // Ajouter le message initial avec suggestions
+                ONG.addAssistantMessage(response.data.message.content, response.data.message.suggestions);
             }
-        });
+        };
+
+        btnNewConversation.onclick = startNewConversation;
 
         // Envoyer un message
         const sendMessage = async () => {
             const message = chatInput.value.trim();
-            if (!message || !ONG.assistant.conversationId) return;
+            if (!message) return;
+
+            if (!ONG.assistant.conversationId) {
+                ONG.toast('Démarrez d\'abord une conversation', 'warning');
+                return;
+            }
 
             // Ajouter le message de l'utilisateur
             ONG.addUserMessage(message);
@@ -1700,7 +1764,7 @@ window.ONG = {
             ONG.showTypingIndicator();
 
             // Envoyer le message à l'API
-            const response = await ONG.post('send_message', {
+            const response = await ONG.api('send_message', {
                 conversation_id: ONG.assistant.conversationId,
                 message: message
             });
@@ -1712,24 +1776,25 @@ window.ONG = {
 
                 // Afficher le bouton de génération si la conversation est terminée
                 if (response.data.completed) {
-                    document.getElementById('generateButton').style.display = 'block';
+                    const generateBtn = document.getElementById('generateButton');
+                    if (generateBtn) generateBtn.style.display = 'block';
                 }
             }
         };
 
-        btnSendMessage.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', (e) => {
+        btnSendMessage.onclick = sendMessage;
+        chatInput.onkeypress = (e) => {
             if (e.key === 'Enter') sendMessage();
-        });
+        };
 
         // Générer la structure
         if (btnGenerateStructure) {
-            btnGenerateStructure.addEventListener('click', async () => {
+            btnGenerateStructure.onclick = async () => {
                 const t = ONG.dict[ONG.state.lang];
                 btnGenerateStructure.disabled = true;
                 btnGenerateStructure.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t.generating}`;
 
-                const response = await ONG.post('generate_structure', {
+                const response = await ONG.api('generate_structure', {
                     conversation_id: ONG.assistant.conversationId,
                     project_id: ONG.state.pid
                 });
@@ -1746,12 +1811,12 @@ window.ONG = {
                     btnGenerateStructure.disabled = false;
                     btnGenerateStructure.innerHTML = `<i class="fas fa-magic"></i> ${t.generate_structure}`;
                 }
-            });
+            };
         }
 
         // Démarrer automatiquement une conversation si aucune n'existe
         if (!ONG.assistant.conversationId) {
-            btnNewConversation.click();
+            await startNewConversation();
         }
     },
 
