@@ -253,6 +253,20 @@ class Database
             FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
         )");
 
+        // Table des conversations de l'assistant IA
+        $db->exec("CREATE TABLE IF NOT EXISTS ai_conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_id INTEGER NOT NULL,
+            project_id INTEGER,
+            messages TEXT NOT NULL,
+            context TEXT,
+            status TEXT DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE,
+            FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE SET NULL
+        )");
+
         // Créer des données de démo si la base est vide
         $this->createDemoDataIfNeeded();
     }

@@ -16,6 +16,7 @@ use App\Controllers\CommentController;
 use App\Controllers\BackupController;
 use App\Controllers\ExportController;
 use App\Controllers\WebhookController;
+use App\Controllers\AssistantController;
 
 /**
  * Routeur de l'application
@@ -90,6 +91,14 @@ class Router
         $this->routes['update_webhook'] = [WebhookController::class, 'update'];
         $this->routes['delete_webhook'] = [WebhookController::class, 'delete'];
         $this->routes['test_webhook'] = [WebhookController::class, 'test'];
+
+        // Routes pour l'assistant IA
+        $this->routes['start_conversation'] = [AssistantController::class, 'startConversation'];
+        $this->routes['send_message'] = [AssistantController::class, 'sendMessage'];
+        $this->routes['get_conversation'] = [AssistantController::class, 'getConversation'];
+        $this->routes['list_conversations'] = [AssistantController::class, 'listConversations'];
+        $this->routes['generate_structure'] = [AssistantController::class, 'generateStructure'];
+        $this->routes['delete_conversation'] = [AssistantController::class, 'deleteConversation'];
 
         // Route pour la suppression
         $this->routes['delete_item'] = [DeleteController::class, 'delete'];

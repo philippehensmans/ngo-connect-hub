@@ -619,7 +619,7 @@ window.ONG = {
      */
     renderView: () => {
         const t = ONG.dict[ONG.state.lang];
-        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones'];
+        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones', 'assistant'];
 
         // Rendre les onglets
         const navTabs = ONG.el('navTabs');
@@ -660,6 +660,9 @@ window.ONG = {
                 break;
             case 'calendar':
                 ONG.renderCalendarView(container, tasks);
+                break;
+            case 'assistant':
+                ONG.renderAssistantView(container);
                 break;
         }
     },
@@ -1590,6 +1593,277 @@ window.ONG = {
         });
 
         calendar.render();
+    },
+
+    /**
+     * Rend la vue Assistant IA
+     */
+    renderAssistantView: (container) => {
+        const t = ONG.dict[ONG.state.lang];
+
+        if (!ONG.state.pid) {
+            container.innerHTML = "<p class='text-center text-gray-400'>" + t.select_project + "</p>";
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="h-full flex flex-col bg-white rounded-lg shadow">
+                <div class="p-4 border-b flex justify-between items-center bg-gradient-to-r from-blue-50 to-purple-50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-robot text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-800">${t.ai_assistant}</h2>
+                            <p class="text-sm text-gray-600">${t.assistant_welcome}</p>
+                        </div>
+                    </div>
+                    <button id="btnNewConversation" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>${t.new_conversation}</span>
+                    </button>
+                </div>
+
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <!-- Zone de chat -->
+                    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Messages apparaîtront ici -->
+                    </div>
+
+                    <!-- Zone de saisie -->
+                    <div class="p-4 border-t bg-gray-50">
+                        <div id="suggestionButtons" class="mb-3 flex flex-wrap gap-2">
+                            <!-- Boutons de suggestion apparaîtront ici -->
+                        </div>
+                        <div class="flex gap-2">
+                            <input
+                                type="text"
+                                id="chatInput"
+                                placeholder="${t.assistant_placeholder}"
+                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <button id="btnSendMessage" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                                <i class="fas fa-paper-plane"></i>
+                                <span>${t.send_message}</span>
+                            </button>
+                        </div>
+                        <div id="generateButton" class="mt-3" style="display: none;">
+                            <button id="btnGenerateStructure" class="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-magic"></i>
+                                <span>${t.generate_structure}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Initialiser la conversation
+        ONG.initAssistant();
+    },
+
+    /**
+     * Initialise l'assistant IA
+     */
+    initAssistant: async () => {
+        // Vérifier s'il y a une conversation active
+        ONG.assistant = ONG.assistant || {
+            conversationId: null,
+            messages: []
+        };
+
+        const btnNewConversation = document.getElementById('btnNewConversation');
+        const btnSendMessage = document.getElementById('btnSendMessage');
+        const btnGenerateStructure = document.getElementById('btnGenerateStructure');
+        const chatInput = document.getElementById('chatInput');
+
+        // Démarrer une nouvelle conversation
+        btnNewConversation.addEventListener('click', async () => {
+            const response = await ONG.post('start_conversation', { project_id: ONG.state.pid });
+            if (response.ok) {
+                ONG.assistant.conversationId = response.data.conversation_id;
+                ONG.assistant.messages = [];
+                ONG.addAssistantMessage(response.data.message);
+            }
+        });
+
+        // Envoyer un message
+        const sendMessage = async () => {
+            const message = chatInput.value.trim();
+            if (!message || !ONG.assistant.conversationId) return;
+
+            // Ajouter le message de l'utilisateur
+            ONG.addUserMessage(message);
+            chatInput.value = '';
+
+            // Afficher l'indicateur de saisie
+            ONG.showTypingIndicator();
+
+            // Envoyer le message à l'API
+            const response = await ONG.post('send_message', {
+                conversation_id: ONG.assistant.conversationId,
+                message: message
+            });
+
+            ONG.hideTypingIndicator();
+
+            if (response.ok) {
+                ONG.addAssistantMessage(response.data.message, response.data.suggestions);
+
+                // Afficher le bouton de génération si la conversation est terminée
+                if (response.data.completed) {
+                    document.getElementById('generateButton').style.display = 'block';
+                }
+            }
+        };
+
+        btnSendMessage.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Générer la structure
+        if (btnGenerateStructure) {
+            btnGenerateStructure.addEventListener('click', async () => {
+                const t = ONG.dict[ONG.state.lang];
+                btnGenerateStructure.disabled = true;
+                btnGenerateStructure.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${t.generating}`;
+
+                const response = await ONG.post('generate_structure', {
+                    conversation_id: ONG.assistant.conversationId,
+                    project_id: ONG.state.pid
+                });
+
+                if (response.ok) {
+                    ONG.toast(t.structure_generated, 'success');
+
+                    // Recharger les données du projet
+                    await ONG.loadAll();
+
+                    // Basculer vers la vue des groupes pour voir le résultat
+                    ONG.switchView('groups');
+                } else {
+                    btnGenerateStructure.disabled = false;
+                    btnGenerateStructure.innerHTML = `<i class="fas fa-magic"></i> ${t.generate_structure}`;
+                }
+            });
+        }
+
+        // Démarrer automatiquement une conversation si aucune n'existe
+        if (!ONG.assistant.conversationId) {
+            btnNewConversation.click();
+        }
+    },
+
+    /**
+     * Ajoute un message utilisateur au chat
+     */
+    addUserMessage: (message) => {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex justify-end';
+        messageDiv.innerHTML = `
+            <div class="max-w-[70%] bg-blue-600 text-white rounded-lg px-4 py-3 shadow">
+                <p class="text-sm whitespace-pre-wrap">${ONG.escapeHtml(message)}</p>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        ONG.assistant.messages.push({ role: 'user', content: message });
+    },
+
+    /**
+     * Ajoute un message de l'assistant au chat
+     */
+    addAssistantMessage: (message, suggestions = null) => {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex justify-start';
+
+        // Convertir les sauts de ligne en <br> et supporter le markdown basique
+        const formattedMessage = ONG.formatAssistantMessage(message);
+
+        messageDiv.innerHTML = `
+            <div class="max-w-[70%] bg-gray-100 text-gray-800 rounded-lg px-4 py-3 shadow">
+                <div class="flex items-start gap-2">
+                    <i class="fas fa-robot text-blue-600 mt-1"></i>
+                    <div class="text-sm whitespace-pre-wrap">${formattedMessage}</div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        ONG.assistant.messages.push({ role: 'assistant', content: message });
+
+        // Afficher les suggestions si présentes
+        if (suggestions && suggestions.length > 0) {
+            ONG.showSuggestions(suggestions);
+        } else {
+            document.getElementById('suggestionButtons').innerHTML = '';
+        }
+    },
+
+    /**
+     * Formate le message de l'assistant (supporte le markdown basique)
+     */
+    formatAssistantMessage: (message) => {
+        return message
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Gras
+            .replace(/\n/g, '<br>'); // Sauts de ligne
+    },
+
+    /**
+     * Affiche les boutons de suggestion
+     */
+    showSuggestions: (suggestions) => {
+        const container = document.getElementById('suggestionButtons');
+        container.innerHTML = suggestions.map(suggestion => `
+            <button class="suggestion-btn px-4 py-2 bg-white border-2 border-blue-400 text-blue-700 rounded-lg hover:bg-blue-50 transition text-sm">
+                ${ONG.escapeHtml(suggestion)}
+            </button>
+        `).join('');
+
+        // Gérer les clics sur les suggestions
+        container.querySelectorAll('.suggestion-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('chatInput').value = btn.textContent.trim();
+                document.getElementById('btnSendMessage').click();
+            });
+        });
+    },
+
+    /**
+     * Affiche l'indicateur de saisie
+     */
+    showTypingIndicator: () => {
+        const t = ONG.dict[ONG.state.lang];
+        const chatMessages = document.getElementById('chatMessages');
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typingIndicator';
+        typingDiv.className = 'flex justify-start';
+        typingDiv.innerHTML = `
+            <div class="max-w-[70%] bg-gray-100 text-gray-600 rounded-lg px-4 py-3 shadow">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-robot text-blue-600"></i>
+                    <span class="text-sm italic">${t.typing}</span>
+                    <div class="flex gap-1">
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0s"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                        <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    },
+
+    /**
+     * Masque l'indicateur de saisie
+     */
+    hideTypingIndicator: () => {
+        const typingDiv = document.getElementById('typingIndicator');
+        if (typingDiv) typingDiv.remove();
     },
 
     /**
