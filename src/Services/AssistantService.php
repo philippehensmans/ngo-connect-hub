@@ -6,10 +6,13 @@ use PDO;
 
 /**
  * Service de l'assistant IA basé sur des règles intelligentes
+ * Supporte le mode hybride : règles par défaut, API externe si configurée
  */
 class AssistantService
 {
     private PDO $db;
+    private ?AIApiService $apiService = null;
+    private bool $useApi = false;
 
     // Étapes du questionnaire
     private const STEP_WELCOME = 'welcome';
@@ -68,10 +71,38 @@ class AssistantService
     }
 
     /**
+     * Initialise l'API service si l'équipe a configuré une API
+     */
+    private function initializeApiService(int $teamId): void
+    {
+        $stmt = $this->db->prepare(
+            "SELECT ai_use_api, ai_api_provider, ai_api_key, ai_api_model
+             FROM teams
+             WHERE id = ?"
+        );
+        $stmt->execute([$teamId]);
+        $config = $stmt->fetch();
+
+        if ($config && $config['ai_use_api'] && $config['ai_api_key']) {
+            $this->useApi = true;
+            $this->apiService = new AIApiService(
+                $config['ai_api_provider'] ?: 'claude',
+                $config['ai_api_key'],
+                $config['ai_api_model']
+            );
+        } else {
+            $this->useApi = false;
+            $this->apiService = null;
+        }
+    }
+
+    /**
      * Démarre une nouvelle conversation
      */
     public function startConversation(int $teamId, ?int $projectId): int
     {
+        // Initialiser l'API si configurée
+        $this->initializeApiService($teamId);
         $messages = json_encode([]);
         $context = json_encode([
             'step' => self::STEP_WELCOME,
@@ -115,6 +146,9 @@ class AssistantService
         // Récupérer la conversation
         $conversation = $this->getConversation($conversationId);
 
+        // Initialiser l'API si configurée pour cette équipe
+        $this->initializeApiService((int)$conversation['team_id']);
+
         // Décoder le contexte
         $context = json_decode($conversation['context'], true);
         $messages = json_decode($conversation['messages'], true);
@@ -126,8 +160,12 @@ class AssistantService
             'timestamp' => date('Y-m-d H:i:s')
         ];
 
-        // Générer la réponse selon l'étape
-        $response = $this->generateResponse($context, $userMessage);
+        // Générer la réponse : API si disponible, sinon règles
+        if ($this->useApi && $this->apiService) {
+            $response = $this->generateApiResponse($messages, $context);
+        } else {
+            $response = $this->generateResponse($context, $userMessage);
+        }
 
         // Ajouter la réponse de l'assistant
         $messages[] = [
@@ -147,6 +185,75 @@ class AssistantService
             'message' => $response['message'],
             'suggestions' => $response['suggestions'] ?? null,
             'completed' => $context['step'] === self::STEP_COMPLETED
+        ];
+    }
+
+    /**
+     * Génère une réponse en utilisant l'API externe
+     */
+    private function generateApiResponse(array $messages, array $context): array
+    {
+        // Préparer le prompt système
+        $systemPrompt = "Tu es un assistant IA spécialisé dans la planification de projets pour des ONG. " .
+            "Tu aides les utilisateurs à structurer leurs projets en les guidant à travers des questions. " .
+            "Tu dois collecter les informations suivantes : " .
+            "1. Type de projet (humanitaire, environnement, éducation, santé, développement, plaidoyer) " .
+            "2. Nom du projet " .
+            "3. Description du projet " .
+            "4. Durée du projet " .
+            "5. Jalons (milestones) importants " .
+            "6. Groupes de travail " .
+            "7. Livrables principaux. " .
+            "\n\nContexte actuel : " . json_encode($context['data'] ?? []) .
+            "\n\nQuand toutes les informations sont collectées, indique clairement que la structure peut être générée.";
+
+        // Préparer les messages pour l'API (sans timestamp)
+        $apiMessages = array_map(function($msg) {
+            return [
+                'role' => $msg['role'],
+                'content' => $msg['content']
+            ];
+        }, $messages);
+
+        try {
+            // Appeler l'API
+            $responseText = $this->apiService->sendMessage($apiMessages, $systemPrompt);
+
+            // Parser la réponse pour extraire les données structurées si possible
+            $parsedData = $this->parseApiResponse($responseText, $context);
+
+            return [
+                'message' => $responseText,
+                'suggestions' => $parsedData['suggestions'] ?? null,
+                'context' => [
+                    'step' => $parsedData['step'] ?? $context['step'],
+                    'data' => $parsedData['data'] ?? $context['data']
+                ]
+            ];
+        } catch (\Exception $e) {
+            // En cas d'erreur API, fallback sur le système basé sur règles
+            return $this->generateResponse($context, end($messages)['content']);
+        }
+    }
+
+    /**
+     * Parse la réponse de l'API pour extraire des données structurées
+     */
+    private function parseApiResponse(string $response, array $context): array
+    {
+        $data = $context['data'] ?? [];
+        $step = $context['step'];
+        $suggestions = null;
+
+        // Détecter si toutes les informations sont collectées
+        if (preg_match('/(structure peut être générée|prêt à générer|toutes les informations)/i', $response)) {
+            $step = self::STEP_COMPLETED;
+        }
+
+        return [
+            'step' => $step,
+            'data' => $data,
+            'suggestions' => $suggestions
         ];
     }
 

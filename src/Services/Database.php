@@ -267,6 +267,26 @@ class Database
             FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE SET NULL
         )");
 
+        // Migration: Ajouter les champs de configuration API aux équipes
+        try {
+            $result = $db->query("PRAGMA table_info(teams)")->fetchAll();
+            $hasApiKey = false;
+            foreach ($result as $column) {
+                if ($column['name'] === 'ai_api_key') {
+                    $hasApiKey = true;
+                    break;
+                }
+            }
+            if (!$hasApiKey) {
+                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_key TEXT");
+                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_provider TEXT DEFAULT 'rules'");
+                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_model TEXT");
+                $db->exec("ALTER TABLE teams ADD COLUMN ai_use_api BOOLEAN DEFAULT 0");
+            }
+        } catch (\Exception $e) {
+            // Colonnes déjà existantes ou autre erreur, on continue
+        }
+
         // Créer des données de démo si la base est vide
         $this->createDemoDataIfNeeded();
     }
