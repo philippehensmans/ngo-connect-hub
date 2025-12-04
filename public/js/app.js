@@ -238,6 +238,17 @@ window.ONG = {
     },
 
     /**
+     * Échappe les caractères HTML pour éviter les injections XSS
+     * @param {string} text - Le texte à échapper
+     * @return {string} Texte échappé
+     */
+    escapeHtml: (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+
+    /**
      * Affiche une notification toast
      * @param {string} message - Le message à afficher
      * @param {string} type - Type: success, error, warning, info
