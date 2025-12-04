@@ -36,19 +36,19 @@ class CalendarService
         $stmt = $this->db->prepare("
             SELECT * FROM milestones
             WHERE project_id = ?
-            ORDER BY due_date ASC
+            ORDER BY date ASC
         ");
         $stmt->execute([$projectId]);
         $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Récupérer les tâches avec échéance
         $stmt = $this->db->prepare("
-            SELECT t.*, g.name as group_name, m.title as milestone_title
+            SELECT t.*, g.name as group_name, m.name as milestone_name
             FROM tasks t
             LEFT JOIN groups g ON t.group_id = g.id
             LEFT JOIN milestones m ON t.milestone_id = m.id
-            WHERE t.project_id = ? AND t.due_date IS NOT NULL
-            ORDER BY t.due_date ASC
+            WHERE t.project_id = ? AND t.end_date IS NOT NULL
+            ORDER BY t.end_date ASC
         ");
         $stmt->execute([$projectId]);
         $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -78,7 +78,7 @@ class CalendarService
             $stmt = $this->db->prepare("
                 SELECT * FROM milestones
                 WHERE project_id = ?
-                ORDER BY due_date ASC
+                ORDER BY date ASC
             ");
             $stmt->execute([$project['id']]);
             $milestones = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -90,12 +90,12 @@ class CalendarService
 
             // Récupérer les tâches avec échéance
             $stmt = $this->db->prepare("
-                SELECT t.*, g.name as group_name, m.title as milestone_title
+                SELECT t.*, g.name as group_name, m.name as milestone_name
                 FROM tasks t
                 LEFT JOIN groups g ON t.group_id = g.id
                 LEFT JOIN milestones m ON t.milestone_id = m.id
-                WHERE t.project_id = ? AND t.due_date IS NOT NULL
-                ORDER BY t.due_date ASC
+                WHERE t.project_id = ? AND t.end_date IS NOT NULL
+                ORDER BY t.end_date ASC
             ");
             $stmt->execute([$project['id']]);
             $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -162,18 +162,14 @@ class CalendarService
         $event[] = 'UID:' . $uid;
 
         // Dates
-        $dueDate = $this->formatICalDate($milestone['due_date']);
+        $dueDate = $this->formatICalDate($milestone['date']);
         $event[] = 'DTSTART;VALUE=DATE:' . $dueDate;
         $event[] = 'DTEND;VALUE=DATE:' . $dueDate;
 
         // Titre et description
         $projectPrefix = $project ? '' : '[' . $this->escapeICalText($milestone['project_name']) . '] ';
-        $summary = $projectPrefix . '🎯 ' . $this->escapeICalText($milestone['title']);
+        $summary = $projectPrefix . '🎯 ' . $this->escapeICalText($milestone['name']);
         $event[] = 'SUMMARY:' . $summary;
-
-        if (!empty($milestone['description'])) {
-            $event[] = 'DESCRIPTION:' . $this->escapeICalText($milestone['description']);
-        }
 
         // Statut
         $status = $milestone['status'] === 'completed' ? 'COMPLETED' : 'CONFIRMED';
@@ -189,7 +185,7 @@ class CalendarService
         $event[] = 'BEGIN:VALARM';
         $event[] = 'TRIGGER:-P3D';
         $event[] = 'ACTION:DISPLAY';
-        $event[] = 'DESCRIPTION:Rappel: Jalon à venir - ' . $this->escapeICalText($milestone['title']);
+        $event[] = 'DESCRIPTION:Rappel: Jalon à venir - ' . $this->escapeICalText($milestone['name']);
         $event[] = 'END:VALARM';
 
         // Dates de création et modification
@@ -215,7 +211,7 @@ class CalendarService
         $event[] = 'UID:' . $uid;
 
         // Dates
-        $dueDate = $this->formatICalDate($task['due_date']);
+        $dueDate = $this->formatICalDate($task['end_date']);
         $event[] = 'DTSTART;VALUE=DATE:' . $dueDate;
         $event[] = 'DTEND;VALUE=DATE:' . $dueDate;
 
@@ -226,11 +222,11 @@ class CalendarService
         $event[] = 'SUMMARY:' . $summary;
 
         $description = [];
-        if (!empty($task['description'])) {
-            $description[] = $task['description'];
+        if (!empty($task['desc'])) {
+            $description[] = $task['desc'];
         }
-        if (!empty($task['milestone_title'])) {
-            $description[] = 'Jalon: ' . $task['milestone_title'];
+        if (!empty($task['milestone_name'])) {
+            $description[] = 'Jalon: ' . $task['milestone_name'];
         }
         if (!empty($description)) {
             $event[] = 'DESCRIPTION:' . $this->escapeICalText(implode("\n\n", $description));
