@@ -2,16 +2,15 @@
 
 namespace App\Services;
 
-use App\Core\Auth;
 use PDO;
 
 class CalendarService
 {
     private PDO $db;
 
-    public function __construct()
+    public function __construct(PDO $db)
     {
-        $this->db = Database::getConnection();
+        $this->db = $db;
     }
 
     /**

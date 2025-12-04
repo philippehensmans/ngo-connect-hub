@@ -13,7 +13,7 @@ class CalendarController extends Controller
     public function __construct(PDO $db)
     {
         parent::__construct($db);
-        $this->calendarService = new CalendarService();
+        $this->calendarService = new CalendarService($db);
     }
 
     /**
