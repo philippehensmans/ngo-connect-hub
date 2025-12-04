@@ -417,6 +417,7 @@ window.ONG = {
             ONG.openModal('modalSettings');
             ONG.loadBackupsList();
             ONG.loadMembersList();
+            ONG.loadAIConfig();
         });
         ONG.on('btnAddProject', 'click', () => ONG.openModalProject());
         ONG.on('btnAddTask', 'click', () => ONG.openTaskModal());
@@ -655,6 +656,54 @@ window.ONG = {
         } else {
             ONG.toast(r.msg || 'Erreur lors de la mise à jour', 'error');
             ONG.loadMembersList();
+        }
+    },
+
+    /**
+     * Charge la configuration de l'API de l'assistant IA
+     */
+    loadAIConfig: async () => {
+        if (!ONG.isAdmin) {
+            return;
+        }
+
+        // Afficher la section AI config pour les admins
+        const aiSection = document.getElementById('aiConfigSection');
+        if (aiSection) {
+            aiSection.style.display = 'block';
+        }
+
+        // Charger la configuration actuelle depuis les données de l'équipe
+        const r = await ONG.post('load_all');
+        if (r.ok && r.data.team) {
+            const team = r.data.team;
+
+            // Remplir le formulaire
+            const useApiCheckbox = document.getElementById('aiUseApi');
+            const providerSelect = document.getElementById('aiProvider');
+            const apiKeyInput = document.getElementById('aiApiKey');
+            const modelInput = document.getElementById('aiModel');
+            const apiFields = document.getElementById('aiApiFields');
+
+            if (useApiCheckbox) {
+                useApiCheckbox.checked = team.ai_use_api == 1;
+                // Afficher/masquer les champs API
+                if (apiFields) {
+                    apiFields.style.display = team.ai_use_api == 1 ? 'block' : 'none';
+                }
+            }
+
+            if (providerSelect && team.ai_api_provider) {
+                providerSelect.value = team.ai_api_provider;
+            }
+
+            if (apiKeyInput && team.ai_api_key) {
+                apiKeyInput.value = team.ai_api_key;
+            }
+
+            if (modelInput && team.ai_api_model) {
+                modelInput.value = team.ai_api_model;
+            }
         }
     },
 
@@ -3686,5 +3735,44 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
+
+    // Gérer l'affichage/masquage des champs API de l'assistant IA
+    const aiUseApiCheckbox = document.getElementById('aiUseApi');
+    if (aiUseApiCheckbox) {
+        aiUseApiCheckbox.addEventListener('change', (e) => {
+            const apiFields = document.getElementById('aiApiFields');
+            if (apiFields) {
+                apiFields.style.display = e.target.checked ? 'block' : 'none';
+            }
+        });
+    }
+
+    // Gérer la soumission du formulaire de configuration IA
+    const formAIConfig = document.getElementById('formAIConfig');
+    if (formAIConfig) {
+        formAIConfig.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const useApi = document.getElementById('aiUseApi').checked;
+            const provider = document.getElementById('aiProvider').value;
+            const apiKey = document.getElementById('aiApiKey').value.trim();
+            const model = document.getElementById('aiModel').value.trim();
+
+            const data = {
+                ai_use_api: useApi ? 1 : 0,
+                ai_api_provider: provider,
+                ai_api_key: apiKey,
+                ai_api_model: model
+            };
+
+            const r = await ONG.post('update_ai_config', data);
+
+            if (r.ok) {
+                ONG.toast('Configuration IA mise à jour avec succès', 'success');
+            } else {
+                ONG.toast(r.msg || 'Erreur lors de la mise à jour', 'error');
+            }
+        });
+    }
 });
 // Cache buster - version 1764791874

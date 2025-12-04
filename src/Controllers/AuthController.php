@@ -214,4 +214,61 @@ class AuthController extends Controller
             $this->error('Failed to update member role');
         }
     }
+
+    /**
+     * Met à jour la configuration de l'API de l'assistant IA
+     */
+    public function updateAIConfig(array $data): void
+    {
+        if (!Auth::check()) {
+            $this->error('Unauthorized', 401);
+            return;
+        }
+
+        if (!Auth::isAdmin()) {
+            $this->error('Admin access required', 403);
+            return;
+        }
+
+        $teamId = Auth::getTeamId();
+
+        // Préparer les données
+        $useApi = isset($data['ai_use_api']) ? (int)$data['ai_use_api'] : 0;
+        $provider = $data['ai_api_provider'] ?? 'rules';
+        $apiKey = $data['ai_api_key'] ?? '';
+        $model = $data['ai_api_model'] ?? '';
+
+        // Valider le provider
+        $validProviders = ['rules', 'claude', 'openai', 'azure'];
+        if (!in_array($provider, $validProviders)) {
+            $this->error('Invalid AI provider');
+            return;
+        }
+
+        // Si l'API est activée, la clé API est requise
+        if ($useApi && empty($apiKey) && $provider !== 'rules') {
+            $this->error('API key is required when using external API');
+            return;
+        }
+
+        // Mettre à jour la configuration
+        $stmt = $this->db->prepare("
+            UPDATE teams
+            SET ai_use_api = ?,
+                ai_api_provider = ?,
+                ai_api_key = ?,
+                ai_api_model = ?
+            WHERE id = ?
+        ");
+
+        if ($stmt->execute([$useApi, $provider, $apiKey, $model, $teamId])) {
+            $this->success([
+                'ai_use_api' => $useApi,
+                'ai_api_provider' => $provider,
+                'ai_api_model' => $model
+            ], 'AI configuration updated successfully');
+        } else {
+            $this->error('Failed to update AI configuration');
+        }
+    }
 }

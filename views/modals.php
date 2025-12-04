@@ -76,6 +76,57 @@
             </p>
         </div>
 
+        <!-- Section Configuration Assistant IA (Admin uniquement) -->
+        <div id="aiConfigSection" class="mt-6 pt-6 border-t" style="display: none;">
+            <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
+                <i class="fas fa-robot"></i>
+                🤖 <?= $t->translate('ai_config') ?>
+            </h4>
+
+            <form id="formAIConfig">
+                <div class="mb-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="aiUseApi" name="ai_use_api" value="1" class="rounded">
+                        <span class="text-sm"><?= $t->translate('ai_use_api') ?></span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1 ml-6">
+                        Mode gratuit (règles) ou API externe (payant)
+                    </p>
+                </div>
+
+                <div id="aiApiFields" style="display: none;">
+                    <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('ai_provider') ?></label>
+                    <select id="aiProvider" name="ai_api_provider" class="w-full border p-2 mb-3 rounded">
+                        <option value="rules"><?= $t->translate('ai_mode_rules') ?></option>
+                        <option value="claude">Claude (Anthropic)</option>
+                        <option value="openai">OpenAI (ChatGPT)</option>
+                        <option value="azure">Azure OpenAI</option>
+                    </select>
+
+                    <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('ai_api_key') ?></label>
+                    <input type="password" id="aiApiKey" name="ai_api_key" class="w-full border p-2 mb-3 rounded"
+                           placeholder="sk-...">
+
+                    <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('ai_model') ?></label>
+                    <input type="text" id="aiModel" name="ai_api_model" class="w-full border p-2 mb-3 rounded"
+                           placeholder="claude-3-5-sonnet-20241022">
+                    <p class="text-xs text-gray-500 -mt-2 mb-3">
+                        Optionnel - Laissez vide pour le modèle par défaut
+                    </p>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+                    <i class="fas fa-save"></i> <?= $t->translate('save_settings') ?>
+                </button>
+            </form>
+
+            <div class="mt-3 p-3 bg-blue-50 rounded text-xs text-blue-800">
+                <p class="font-bold mb-1">💡 Info :</p>
+                <p>Mode gratuit : Assistant basé sur des règles (sans API)</p>
+                <p>Mode API : Réponses plus intelligentes et contextuelles (nécessite une clé API)</p>
+            </div>
+        </div>
+
         <!-- Section Gestion des Membres (Admin uniquement) -->
         <div id="memberManagementSection" class="mt-6 pt-6 border-t" style="display: none;">
             <h4 class="font-bold text-sm mb-3 flex items-center gap-2">

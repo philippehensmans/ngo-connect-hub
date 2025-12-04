@@ -62,6 +62,11 @@ class DataController extends Controller
         // Récupérer le membre actuel (premier membre de l'équipe pour la démo)
         $currentMember = !empty($members) ? $members[0] : null;
 
+        // Récupérer les données de l'équipe (pour la configuration IA)
+        $stmt = $this->db->prepare("SELECT * FROM teams WHERE id = ?");
+        $stmt->execute([$teamId]);
+        $team = $stmt->fetch();
+
         $this->success([
             'members' => $members,
             'projects' => $projects,
@@ -71,6 +76,7 @@ class DataController extends Controller
             'currentMember' => $currentMember,
             'currentTeamId' => $teamId,
             'isAdmin' => Auth::isAdmin(),
+            'team' => $team,
         ]);
     }
 }
