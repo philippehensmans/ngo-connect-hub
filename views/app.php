@@ -268,6 +268,9 @@
         <button id="btnImportProject" class="hover:text-blue-600" title="Importer un projet">
             <i class="fas fa-file-import"></i>
         </button>
+        <button id="btnExportCalendar" class="hover:text-purple-600" title="<?= $t->translate('export_calendar') ?>">
+            <i class="fas fa-calendar-alt"></i>
+        </button>
         <button id="btnSettings" class="hover:text-gray-800 text-lg text-gray-500" title="<?= $t->translate('settings') ?>">
             <i class="fas fa-cog"></i>
         </button>

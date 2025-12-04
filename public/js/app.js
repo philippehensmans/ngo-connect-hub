@@ -60,7 +60,11 @@ window.ONG = {
             assistant_welcome: 'Bienvenue sur l\'assistant de planification',
             generating: 'Génération en cours...',
             structure_generated: 'Structure générée avec succès',
-            select_project: 'Sélectionnez un projet'
+            select_project: 'Sélectionnez un projet',
+            export_calendar: 'Exporter calendrier',
+            export_project_calendar: 'Exporter ce projet',
+            export_team_calendar: 'Exporter tous les projets',
+            download_ics: 'Télécharger .ics'
         },
         en: {
             todo: 'To Do',
@@ -94,7 +98,11 @@ window.ONG = {
             assistant_welcome: 'Welcome to the planning assistant',
             generating: 'Generating...',
             structure_generated: 'Structure generated successfully',
-            select_project: 'Select a project'
+            select_project: 'Select a project',
+            export_calendar: 'Export calendar',
+            export_project_calendar: 'Export this project',
+            export_team_calendar: 'Export all projects',
+            download_ics: 'Download .ics'
         },
         es: {
             todo: 'Pendiente',
@@ -128,7 +136,11 @@ window.ONG = {
             assistant_welcome: 'Bienvenido al asistente de planificación',
             generating: 'Generando...',
             structure_generated: 'Estructura generada con éxito',
-            select_project: 'Seleccionar un proyecto'
+            select_project: 'Seleccionar un proyecto',
+            export_calendar: 'Exportar calendario',
+            export_project_calendar: 'Exportar este proyecto',
+            export_team_calendar: 'Exportar todos los proyectos',
+            download_ics: 'Descargar .ics'
         },
         sl: {
             todo: 'Za narediti',
@@ -162,7 +174,11 @@ window.ONG = {
             assistant_welcome: 'Dobrodošli v načrtovalnem asistentu',
             generating: 'Generiranje...',
             structure_generated: 'Struktura uspešno generirana',
-            select_project: 'Izberi projekt'
+            select_project: 'Izberi projekt',
+            export_calendar: 'Izvozi koledar',
+            export_project_calendar: 'Izvozi ta projekt',
+            export_team_calendar: 'Izvozi vse projekte',
+            download_ics: 'Prenesi .ics'
         }
     },
 
@@ -390,6 +406,13 @@ window.ONG = {
         ONG.on('btnTemplates', 'click', () => ONG.openTemplatesModal());
         ONG.on('btnExportProject', 'click', () => ONG.exportProject(ONG.state.pid));
         ONG.on('btnImportProject', 'click', () => ONG.openImportModal());
+        ONG.on('btnExportCalendar', 'click', () => {
+            if (ONG.state.pid) {
+                ONG.exportProjectCalendar(ONG.state.pid);
+            } else {
+                ONG.toast('Sélectionnez un projet ou exportez tous les projets depuis les paramètres', 'warning');
+            }
+        });
         ONG.on('btnSettings', 'click', () => {
             ONG.openModal('modalSettings');
             ONG.loadBackupsList();
@@ -3407,6 +3430,61 @@ window.ONG = {
         };
 
         reader.readAsText(file);
+    },
+
+    /**
+     * Exporte le calendrier du projet actuel au format .ics
+     */
+    exportProjectCalendar: (projectId) => {
+        if (!projectId) {
+            ONG.toast('Sélectionnez un projet', 'warning');
+            return;
+        }
+
+        // Créer un formulaire pour déclencher le téléchargement
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'export_project_calendar';
+
+        const projectInput = document.createElement('input');
+        projectInput.type = 'hidden';
+        projectInput.name = 'project_id';
+        projectInput.value = projectId;
+
+        form.appendChild(actionInput);
+        form.appendChild(projectInput);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        ONG.toast('Export du calendrier en cours...', 'info');
+    },
+
+    /**
+     * Exporte le calendrier de tous les projets de l'équipe au format .ics
+     */
+    exportTeamCalendar: () => {
+        // Créer un formulaire pour déclencher le téléchargement
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'export_team_calendar';
+
+        form.appendChild(actionInput);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        ONG.toast('Export du calendrier de l\'équipe en cours...', 'info');
     },
 
     /**

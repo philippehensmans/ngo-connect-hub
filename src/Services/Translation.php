@@ -100,6 +100,10 @@ class Translation
             'ai_test_connection' => 'Tester la connexion',
             'ai_mode_rules' => 'Mode gratuit (règles)',
             'ai_mode_api' => 'Mode API (payant)',
+            'export_calendar' => 'Exporter calendrier',
+            'export_project_calendar' => 'Exporter ce projet',
+            'export_team_calendar' => 'Exporter tous les projets',
+            'download_ics' => 'Télécharger .ics',
         ],
         'en' => [
             'settings' => 'Settings',
@@ -193,6 +197,10 @@ class Translation
             'ai_test_connection' => 'Test connection',
             'ai_mode_rules' => 'Free mode (rules)',
             'ai_mode_api' => 'API mode (paid)',
+            'export_calendar' => 'Export calendar',
+            'export_project_calendar' => 'Export this project',
+            'export_team_calendar' => 'Export all projects',
+            'download_ics' => 'Download .ics',
         ],
         'es' => [
             'settings' => 'Ajustes',
@@ -286,6 +294,10 @@ class Translation
             'ai_test_connection' => 'Probar conexión',
             'ai_mode_rules' => 'Modo gratuito (reglas)',
             'ai_mode_api' => 'Modo API (pago)',
+            'export_calendar' => 'Exportar calendario',
+            'export_project_calendar' => 'Exportar este proyecto',
+            'export_team_calendar' => 'Exportar todos los proyectos',
+            'download_ics' => 'Descargar .ics',
         ],
         'sl' => [
             'settings' => 'Nastavitve',
@@ -379,6 +391,10 @@ class Translation
             'ai_test_connection' => 'Testiraj povezavo',
             'ai_mode_rules' => 'Brezplačni način (pravila)',
             'ai_mode_api' => 'API način (plačljiv)',
+            'export_calendar' => 'Izvozi koledar',
+            'export_project_calendar' => 'Izvozi ta projekt',
+            'export_team_calendar' => 'Izvozi vse projekte',
+            'download_ics' => 'Prenesi .ics',
         ],
     ];
 

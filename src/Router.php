@@ -17,6 +17,7 @@ use App\Controllers\BackupController;
 use App\Controllers\ExportController;
 use App\Controllers\WebhookController;
 use App\Controllers\AssistantController;
+use App\Controllers\CalendarController;
 
 /**
  * Routeur de l'application
@@ -99,6 +100,10 @@ class Router
         $this->routes['list_conversations'] = [AssistantController::class, 'listConversations'];
         $this->routes['generate_structure'] = [AssistantController::class, 'generateStructure'];
         $this->routes['delete_conversation'] = [AssistantController::class, 'deleteConversation'];
+
+        // Routes pour l'export calendrier
+        $this->routes['export_project_calendar'] = [CalendarController::class, 'exportProject'];
+        $this->routes['export_team_calendar'] = [CalendarController::class, 'exportTeam'];
 
         // Route pour la suppression
         $this->routes['delete_item'] = [DeleteController::class, 'delete'];

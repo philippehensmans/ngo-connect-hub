@@ -60,6 +60,22 @@
             </button>
         </div>
 
+        <!-- Section Export Calendrier -->
+        <div class="mt-6 pt-6 border-t">
+            <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
+                <i class="fas fa-calendar-alt"></i>
+                📅 <?= $t->translate('export_calendar') ?>
+            </h4>
+
+            <button onclick="ONG.exportTeamCalendar()" class="w-full bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">
+                <i class="fas fa-calendar-check"></i> <?= $t->translate('export_team_calendar') ?>
+            </button>
+
+            <p class="text-xs text-gray-500 mt-2 italic">
+                Exporte tous les jalons et tâches avec échéances au format .ics (compatible Google Calendar, Outlook, etc.)
+            </p>
+        </div>
+
         <!-- Section Gestion des Membres (Admin uniquement) -->
         <div id="memberManagementSection" class="mt-6 pt-6 border-t" style="display: none;">
             <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
