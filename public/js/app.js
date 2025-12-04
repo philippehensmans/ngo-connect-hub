@@ -1740,7 +1740,7 @@ window.ONG = {
                 const chatMessages = document.getElementById('chatMessages');
                 if (chatMessages) chatMessages.innerHTML = '';
                 // Ajouter le message initial avec suggestions
-                ONG.addAssistantMessage(response.data.message.content, response.data.message.suggestions);
+                ONG.addAssistantMessage(response.data.message, response.data.suggestions);
             }
         };
 
@@ -1763,22 +1763,31 @@ window.ONG = {
             // Afficher l'indicateur de saisie
             ONG.showTypingIndicator();
 
-            // Envoyer le message à l'API
-            const response = await ONG.post('send_message', {
-                conversation_id: ONG.assistant.conversationId,
-                message: message
-            });
+            try {
+                // Envoyer le message à l'API
+                const response = await ONG.post('send_message', {
+                    conversation_id: ONG.assistant.conversationId,
+                    message: message
+                });
 
-            ONG.hideTypingIndicator();
+                ONG.hideTypingIndicator();
 
-            if (response.ok) {
-                ONG.addAssistantMessage(response.data.message, response.data.suggestions);
+                if (response.ok) {
+                    ONG.addAssistantMessage(response.data.message, response.data.suggestions);
 
-                // Afficher le bouton de génération si la conversation est terminée
-                if (response.data.completed) {
-                    const generateBtn = document.getElementById('generateButton');
-                    if (generateBtn) generateBtn.style.display = 'block';
+                    // Afficher le bouton de génération si la conversation est terminée
+                    if (response.data.completed) {
+                        const generateBtn = document.getElementById('generateButton');
+                        if (generateBtn) generateBtn.style.display = 'block';
+                    }
+                } else {
+                    console.error('API Error:', response);
+                    ONG.toast('Erreur lors de l\'envoi du message', 'error');
                 }
+            } catch (error) {
+                console.error('Send message error:', error);
+                ONG.hideTypingIndicator();
+                ONG.toast('Erreur lors de l\'envoi du message', 'error');
             }
         };
 

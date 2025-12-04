@@ -37,7 +37,8 @@ class AssistantController extends Controller
 
             $this->success([
                 'conversation_id' => $conversationId,
-                'message' => $initialMessage
+                'message' => $initialMessage['content'],
+                'suggestions' => $initialMessage['suggestions']
             ]);
         } catch (\Exception $e) {
             $this->error('Failed to start conversation: ' . $e->getMessage());
