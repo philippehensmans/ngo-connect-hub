@@ -2,17 +2,17 @@
 
 namespace App\Controllers;
 
-use App\Core\Controller;
-use App\Core\Auth;
+use App\Services\Auth;
 use App\Services\CalendarService;
+use PDO;
 
 class CalendarController extends Controller
 {
     private CalendarService $calendarService;
 
-    public function __construct()
+    public function __construct(PDO $db)
     {
-        parent::__construct();
+        parent::__construct($db);
         $this->calendarService = new CalendarService();
     }
 
