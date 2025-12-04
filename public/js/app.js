@@ -1823,7 +1823,7 @@ window.ONG = {
                     ONG.toast(t.structure_generated, 'success');
 
                     // Recharger les données du projet
-                    await ONG.loadAll();
+                    await ONG.loadData();
 
                     // Basculer vers la vue des groupes pour voir le résultat
                     ONG.switchView('groups');
