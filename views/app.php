@@ -331,6 +331,100 @@
                 font-size: 16px !important;
             }
         }
+
+        /* Optimisation pour l'orientation paysage (landscape) */
+        @media (orientation: landscape) and (max-height: 600px) {
+            /* Masquer le menu hamburger en paysage, afficher la sidebar */
+            #btnToggleSidebar {
+                display: none !important;
+            }
+
+            /* Sidebar toujours visible en paysage */
+            #sidebar {
+                position: relative !important;
+                transform: translateX(0) !important;
+                width: 200px !important; /* Plus étroite pour laisser de la place */
+            }
+
+            /* Overlay caché en paysage */
+            #sidebarOverlay {
+                display: none !important;
+            }
+
+            /* Header plus compact */
+            header {
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
+
+            /* Top bar plus compact */
+            .bg-white.border-b.px-4.py-2 {
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
+
+            /* Filters bar plus compact */
+            #filtersBar {
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
+
+            /* Gantt adapté en paysage */
+            #gantt-chart-wrapper {
+                height: 350px !important;
+                max-width: calc(100vw - 230px) !important;
+            }
+
+            /* Contenu principal scrollable */
+            #viewContainer {
+                height: calc(100vh - 120px) !important;
+                overflow-y: auto !important;
+            }
+
+            /* Toast plus petit en paysage */
+            #toastContainer {
+                top: 10px;
+            }
+
+            .toast {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            /* Modals adaptées en paysage */
+            .modal > div {
+                max-height: 80vh !important;
+            }
+
+            /* Boutons plus compacts */
+            button, a {
+                padding: 6px 10px !important;
+                font-size: 13px !important;
+            }
+
+            /* Sidebar liste projets */
+            #listProjects {
+                font-size: 13px;
+            }
+
+            /* Textes plus compacts */
+            h1 { font-size: 18px !important; }
+            h2 { font-size: 16px !important; }
+            h3 { font-size: 14px !important; }
+        }
+
+        /* Orientation paysage sur tablettes (plus de hauteur disponible) */
+        @media (orientation: landscape) and (min-height: 601px) and (max-width: 1023px) {
+            /* Sidebar visible mais possibilité de la cacher reste */
+            #sidebar {
+                width: 220px;
+            }
+
+            #gantt-chart-wrapper {
+                height: 450px;
+                max-width: calc(100vw - 250px);
+            }
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col">
