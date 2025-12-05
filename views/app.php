@@ -334,21 +334,42 @@
 
         /* Optimisation pour l'orientation paysage (landscape) */
         @media (orientation: landscape) and (max-height: 600px) {
+            /* Body et HTML scrollables horizontalement */
+            html, body {
+                overflow-x: auto !important;
+                overflow-y: hidden !important; /* Pas de scroll vertical au niveau body */
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Container principal avec largeur étendue */
+            body > div,
+            .flex-1.flex.overflow-hidden {
+                min-width: 1200px !important; /* Largeur minimale pour toute la page */
+                width: max-content;
+            }
+
             /* Masquer le menu hamburger en paysage, afficher la sidebar */
             #btnToggleSidebar {
                 display: none !important;
             }
 
-            /* Sidebar toujours visible en paysage */
+            /* Sidebar toujours visible en paysage, plus large */
             #sidebar {
                 position: relative !important;
                 transform: translateX(0) !important;
-                width: 200px !important; /* Plus étroite pour laisser de la place */
+                width: 250px !important; /* Plus large avec scroll horizontal */
+                flex-shrink: 0;
             }
 
             /* Overlay caché en paysage */
             #sidebarOverlay {
                 display: none !important;
+            }
+
+            /* Header avec largeur étendue */
+            header {
+                min-width: 1200px;
+                width: max-content;
             }
 
             /* Header plus compact */
@@ -385,24 +406,29 @@
                 -webkit-overflow-scrolling: touch; /* Scroll fluide iOS */
             }
 
-            /* Main content avec min-width pour forcer le scroll horizontal */
+            /* Main content étendu pour bénéficier du scroll horizontal de la page */
             main {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch;
+                flex: 1;
+                min-width: 900px !important; /* Plus large pour profiter de l'espace */
+                max-width: none !important;
             }
 
-            /* Permettre aux tableaux leur largeur naturelle */
+            /* Permettre aux tableaux leur largeur complète sans contrainte */
             table {
-                min-width: 800px !important; /* Forcer le scroll horizontal */
-                width: max-content;
+                width: auto !important;
+                min-width: auto !important;
             }
 
-            /* Wrapper pour les sections larges */
+            /* Wrapper pour les sections - pas de scroll interne, on utilise le scroll de la page */
             .table-container,
             .chart-container {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch;
-                min-width: 100%;
+                overflow-x: visible !important;
+                width: auto;
+            }
+
+            /* Navigation tabs avec plus d'espace */
+            #navTabs {
+                min-width: 600px;
             }
 
             /* Toast plus petit en paysage */
@@ -436,32 +462,53 @@
             h2 { font-size: 16px !important; }
             h3 { font-size: 14px !important; }
 
-            /* Scrollbars visibles et stylées en paysage */
+            /* Scrollbars visibles et stylées en paysage - pour toute la page */
+            body::-webkit-scrollbar,
             #viewContainer::-webkit-scrollbar,
-            main::-webkit-scrollbar,
-            .table-container::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
+            main::-webkit-scrollbar {
+                width: 10px;
+                height: 10px;
             }
 
+            body::-webkit-scrollbar-track,
             #viewContainer::-webkit-scrollbar-track,
-            main::-webkit-scrollbar-track,
-            .table-container::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 4px;
+            main::-webkit-scrollbar-track {
+                background: #e5e7eb;
+                border-radius: 5px;
             }
 
+            body::-webkit-scrollbar-thumb,
             #viewContainer::-webkit-scrollbar-thumb,
-            main::-webkit-scrollbar-thumb,
-            .table-container::-webkit-scrollbar-thumb {
-                background: #888;
-                border-radius: 4px;
+            main::-webkit-scrollbar-thumb {
+                background: var(--primary-color);
+                border-radius: 5px;
             }
 
+            body::-webkit-scrollbar-thumb:hover,
             #viewContainer::-webkit-scrollbar-thumb:hover,
-            main::-webkit-scrollbar-thumb:hover,
-            .table-container::-webkit-scrollbar-thumb:hover {
-                background: #555;
+            main::-webkit-scrollbar-thumb:hover {
+                background: var(--primary-dark);
+            }
+
+            /* Indication visuelle de scroll horizontal disponible */
+            body::after {
+                content: '↔ Swipe horizontal';
+                position: fixed;
+                bottom: 10px;
+                right: 10px;
+                background: var(--primary-color);
+                color: white;
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                z-index: 1000;
+                opacity: 0.7;
+                animation: fadeInOut 3s ease-in-out;
+            }
+
+            @keyframes fadeInOut {
+                0%, 100% { opacity: 0; }
+                50% { opacity: 0.7; }
             }
         }
 
