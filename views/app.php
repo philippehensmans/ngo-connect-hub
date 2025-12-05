@@ -372,13 +372,37 @@
             /* Gantt adapté en paysage */
             #gantt-chart-wrapper {
                 height: 350px !important;
-                max-width: calc(100vw - 230px) !important;
+                max-width: none !important; /* Permettre la largeur naturelle */
+                width: 100% !important;
+                min-width: 800px; /* Largeur minimale pour scroll horizontal */
             }
 
-            /* Contenu principal scrollable */
+            /* Contenu principal scrollable verticalement ET horizontalement */
             #viewContainer {
                 height: calc(100vh - 120px) !important;
-                overflow-y: auto !important;
+                overflow-x: auto !important; /* Scroll horizontal */
+                overflow-y: auto !important; /* Scroll vertical */
+                -webkit-overflow-scrolling: touch; /* Scroll fluide iOS */
+            }
+
+            /* Main content avec min-width pour forcer le scroll horizontal */
+            main {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Permettre aux tableaux leur largeur naturelle */
+            table {
+                min-width: 800px !important; /* Forcer le scroll horizontal */
+                width: max-content;
+            }
+
+            /* Wrapper pour les sections larges */
+            .table-container,
+            .chart-container {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+                min-width: 100%;
             }
 
             /* Toast plus petit en paysage */
@@ -411,6 +435,34 @@
             h1 { font-size: 18px !important; }
             h2 { font-size: 16px !important; }
             h3 { font-size: 14px !important; }
+
+            /* Scrollbars visibles et stylées en paysage */
+            #viewContainer::-webkit-scrollbar,
+            main::-webkit-scrollbar,
+            .table-container::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            #viewContainer::-webkit-scrollbar-track,
+            main::-webkit-scrollbar-track,
+            .table-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+
+            #viewContainer::-webkit-scrollbar-thumb,
+            main::-webkit-scrollbar-thumb,
+            .table-container::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+
+            #viewContainer::-webkit-scrollbar-thumb:hover,
+            main::-webkit-scrollbar-thumb:hover,
+            .table-container::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
         }
 
         /* Orientation paysage sur tablettes (plus de hauteur disponible) */
