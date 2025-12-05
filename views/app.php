@@ -212,6 +212,125 @@
         .error-message.show {
             display: block;
         }
+
+        /* Responsive Design pour Mobile */
+        @media (max-width: 1023px) {
+            /* Gantt chart responsive */
+            #gantt-chart-wrapper {
+                max-width: 100% !important;
+                height: 400px;
+            }
+
+            /* Tables responsive */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 600px;
+            }
+
+            /* Toast notifications */
+            #toastContainer {
+                top: 70px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+
+            .toast {
+                font-size: 13px;
+                padding: 12px 14px;
+            }
+
+            /* Modals responsive */
+            .modal > div {
+                max-width: 95% !important;
+                margin: 10px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            /* Filters bar */
+            #filtersBar {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Boutons plus compacts sur mobile */
+            button {
+                font-size: 14px;
+            }
+
+            /* Top bar responsive */
+            .bg-white.border-b.px-4.py-2 {
+                flex-wrap: wrap;
+            }
+
+            /* Gantt view mode buttons plus petits */
+            .gantt-view-mode button {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            /* Texte encore plus compact sur petit mobile */
+            body {
+                font-size: 14px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+
+            h3 {
+                font-size: 16px;
+            }
+
+            /* Padding réduits */
+            .p-4 {
+                padding: 12px !important;
+            }
+
+            .p-6 {
+                padding: 16px !important;
+            }
+
+            /* Gantt encore plus petit */
+            #gantt-chart-wrapper {
+                height: 300px;
+            }
+
+            /* Tables encore plus scrollables */
+            table {
+                font-size: 13px;
+            }
+
+            table th,
+            table td {
+                padding: 8px 6px !important;
+            }
+        }
+
+        /* Empêcher le zoom lors du focus sur input (iOS) */
+        @media (max-width: 1023px) {
+            input[type="text"],
+            input[type="email"],
+            input[type="password"],
+            input[type="number"],
+            input[type="date"],
+            textarea,
+            select {
+                font-size: 16px !important;
+            }
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col">
@@ -244,12 +363,18 @@
 
 <header class="bg-white border-b px-4 py-2 flex justify-between items-center shrink-0">
     <div class="flex items-center gap-3">
+        <!-- Menu Hamburger (visible sur mobile uniquement) -->
+        <button id="btnToggleSidebar" class="lg:hidden text-gray-600 hover:text-gray-900 -ml-2">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
         <div class="bg-blue-100 text-blue-700 w-8 h-8 rounded flex items-center justify-center font-bold">
             <?= substr($teamName, 0, 1) ?>
         </div>
-        <span class="font-bold text-gray-700"><?= htmlspecialchars($teamName) ?></span>
+        <span class="font-bold text-gray-700 hidden sm:inline"><?= htmlspecialchars($teamName) ?></span>
     </div>
-    <div class="flex gap-4 text-sm items-center">
+
+    <!-- Desktop Navigation -->
+    <div class="hidden lg:flex gap-4 text-sm items-center">
         <select id="langSelect" onchange="ONG.setLang(this.value)" class="bg-transparent cursor-pointer">
             <option value="fr">FR</option>
             <option value="en">EN</option>
@@ -281,16 +406,67 @@
             <i class="fas fa-sign-out-alt"></i>
         </button>
     </div>
+
+    <!-- Mobile Menu Button -->
+    <button id="btnMobileMenu" class="lg:hidden text-gray-600 hover:text-gray-900">
+        <i class="fas fa-ellipsis-v text-xl"></i>
+    </button>
 </header>
 
-<div class="flex-1 flex overflow-hidden">
+<!-- Mobile Menu Dropdown -->
+<div id="mobileMenuDropdown" class="hidden lg:hidden absolute top-14 right-4 bg-white border rounded-lg shadow-xl z-50 w-56">
+    <div class="py-2">
+        <select id="langSelectMobile" onchange="ONG.setLang(this.value)" class="w-full px-4 py-2 text-left hover:bg-gray-100 cursor-pointer border-0">
+            <option value="fr">🌐 Français</option>
+            <option value="en">🌐 English</option>
+            <option value="es">🌐 Español</option>
+            <option value="sl">🌐 Slovenščina</option>
+        </select>
+        <button id="btnTeamMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-users w-5"></i> <?= $t->translate('team') ?>
+        </button>
+        <button id="btnTemplatesMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-copy w-5"></i> Modèles
+        </button>
+        <button id="btnExportProjectMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-file-export w-5"></i> Exporter projet
+        </button>
+        <button id="btnImportProjectMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-file-import w-5"></i> Importer projet
+        </button>
+        <button id="btnExportCalendarMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-calendar-alt w-5"></i> <?= $t->translate('export_calendar') ?>
+        </button>
+        <button id="btnSettingsMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-cog w-5"></i> <?= $t->translate('settings') ?>
+        </button>
+        <a href="?action=download_db" class="block w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-download w-5"></i> <?= $t->translate('backup') ?>
+        </a>
+        <div class="border-t my-2"></div>
+        <button id="btnLogoutMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600 flex items-center gap-2">
+            <i class="fas fa-sign-out-alt w-5"></i> Déconnexion
+        </button>
+    </div>
+</div>
+
+<div class="flex-1 flex overflow-hidden relative">
+    <!-- Sidebar Overlay (mobile uniquement) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r flex flex-col">
+    <aside id="sidebar" class="w-64 bg-white border-r flex flex-col fixed lg:relative inset-y-0 left-0 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
         <div class="p-3 border-b flex justify-between items-center bg-gray-50">
             <span class="font-bold text-gray-600 text-sm"><?= $t->translate('proj') ?></span>
-            <button id="btnAddProject" class="text-blue-600 hover:bg-blue-100 p-1 rounded">
-                <i class="fas fa-plus"></i>
-            </button>
+            <div class="flex gap-2 items-center">
+                <button id="btnAddProject" class="text-blue-600 hover:bg-blue-100 p-1 rounded">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <!-- Bouton fermer sidebar (mobile uniquement) -->
+                <button id="btnCloseSidebar" class="lg:hidden text-gray-600 hover:bg-gray-100 p-1 rounded">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
         <div id="listProjects" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
     </aside>
@@ -342,6 +518,91 @@
 
 <!-- Modals -->
 <?php include __DIR__ . '/modals.php'; ?>
+
+<!-- Responsive Mobile Navigation Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+    const btnCloseSidebar = document.getElementById('btnCloseSidebar');
+    const btnMobileMenu = document.getElementById('btnMobileMenu');
+    const mobileMenuDropdown = document.getElementById('mobileMenuDropdown');
+
+    // Toggle Sidebar sur mobile
+    function openSidebar() {
+        sidebar.classList.remove('-translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        sidebarOverlay.classList.remove('hidden');
+    }
+
+    function closeSidebar() {
+        sidebar.classList.add('-translate-x-full');
+        sidebar.classList.remove('translate-x-0');
+        sidebarOverlay.classList.add('hidden');
+    }
+
+    if (btnToggleSidebar) {
+        btnToggleSidebar.addEventListener('click', openSidebar);
+    }
+
+    if (btnCloseSidebar) {
+        btnCloseSidebar.addEventListener('click', closeSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+    }
+
+    // Toggle Menu Mobile
+    function toggleMobileMenu() {
+        mobileMenuDropdown.classList.toggle('hidden');
+    }
+
+    if (btnMobileMenu) {
+        btnMobileMenu.addEventListener('click', toggleMobileMenu);
+    }
+
+    // Fermer le menu mobile quand on clique ailleurs
+    document.addEventListener('click', function(e) {
+        if (mobileMenuDropdown && !mobileMenuDropdown.contains(e.target) && e.target !== btnMobileMenu) {
+            mobileMenuDropdown.classList.add('hidden');
+        }
+    });
+
+    // Dupliquer les événements des boutons desktop vers mobile
+    const mobileBtnMap = {
+        'btnTeamMobile': 'btnTeam',
+        'btnTemplatesMobile': 'btnTemplates',
+        'btnExportProjectMobile': 'btnExportProject',
+        'btnImportProjectMobile': 'btnImportProject',
+        'btnExportCalendarMobile': 'btnExportCalendar',
+        'btnSettingsMobile': 'btnSettings',
+        'btnLogoutMobile': 'btnLogout'
+    };
+
+    Object.keys(mobileBtnMap).forEach(mobileId => {
+        const mobileBtn = document.getElementById(mobileId);
+        const desktopBtn = document.getElementById(mobileBtnMap[mobileId]);
+        if (mobileBtn && desktopBtn) {
+            mobileBtn.addEventListener('click', function() {
+                desktopBtn.click();
+                mobileMenuDropdown.classList.add('hidden');
+            });
+        }
+    });
+
+    // Synchroniser les sélecteurs de langue
+    const langSelect = document.getElementById('langSelect');
+    const langSelectMobile = document.getElementById('langSelectMobile');
+    if (langSelect && langSelectMobile) {
+        langSelect.addEventListener('change', function() {
+            langSelectMobile.value = this.value;
+        });
+        langSelectMobile.value = langSelect.value;
+    }
+});
+</script>
 
 <script src="public/js/app.js?v=<?= time() ?>"></script>
 </body>
