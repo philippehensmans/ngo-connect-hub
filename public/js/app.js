@@ -1794,11 +1794,37 @@ window.ONG = {
                     locale: ONG.state.lang === 'fr' ? 'fr' : 'en'
                 });
 
-                mind.init(mindMapData);
+                // Essayer avec MindElixir.new() d'abord (méthode officielle)
+                console.log('Test: Utilisation de MindElixir.new()');
+                const testData = MindElixir.new(project.name);
+                console.log('Données créées avec MindElixir.new():', testData);
+
+                // Si nous avons des données générées, essayons de les utiliser
+                // Sinon, utilisons les données de test
+                mind.init(testData);
+
+                // Maintenant ajoutons nos données manuellement
+                setTimeout(() => {
+                    console.log('Ajout des nœuds personnalisés...');
+                    const data = mind.getData();
+                    console.log('Données actuelles:', data);
+
+                    // Essayons d'ajouter un nœud enfant simple
+                    if (tasks.length > 0) {
+                        const firstTask = tasks[0];
+                        mind.addChild(data.nodeData.id, {
+                            topic: `Test: ${firstTask.title}`,
+                            id: 'test-' + firstTask.id
+                        });
+                        console.log('Premier nœud ajouté');
+                    }
+                }, 500);
+
                 window.mindElixirInstance = mind;
                 console.log('Mind Map initialisée avec succès');
             } catch (err) {
                 console.error('Erreur lors de l\'initialisation de Mind Map:', err);
+                console.error('Stack:', err.stack);
                 document.getElementById('mindMapContainer').innerHTML = `<p class='text-center text-red-500 p-8'>❌ Erreur: ${err.message}</p>`;
             }
         }, 100);
