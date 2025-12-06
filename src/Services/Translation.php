@@ -104,6 +104,10 @@ class Translation
             'export_project_calendar' => 'Exporter ce projet',
             'export_team_calendar' => 'Exporter tous les projets',
             'download_ics' => 'Télécharger .ics',
+            'templates' => 'Modèles',
+            'export_project' => 'Exporter projet',
+            'import_project' => 'Importer projet',
+            'logout' => 'Déconnexion',
         ],
         'en' => [
             'settings' => 'Settings',
@@ -201,6 +205,10 @@ class Translation
             'export_project_calendar' => 'Export this project',
             'export_team_calendar' => 'Export all projects',
             'download_ics' => 'Download .ics',
+            'templates' => 'Templates',
+            'export_project' => 'Export project',
+            'import_project' => 'Import project',
+            'logout' => 'Logout',
         ],
         'es' => [
             'settings' => 'Ajustes',
@@ -298,6 +306,10 @@ class Translation
             'export_project_calendar' => 'Exportar este proyecto',
             'export_team_calendar' => 'Exportar todos los proyectos',
             'download_ics' => 'Descargar .ics',
+            'templates' => 'Plantillas',
+            'export_project' => 'Exportar proyecto',
+            'import_project' => 'Importar proyecto',
+            'logout' => 'Cerrar sesión',
         ],
         'sl' => [
             'settings' => 'Nastavitve',
@@ -395,6 +407,10 @@ class Translation
             'export_project_calendar' => 'Izvozi ta projekt',
             'export_team_calendar' => 'Izvozi vse projekte',
             'download_ics' => 'Prenesi .ics',
+            'templates' => 'Predloge',
+            'export_project' => 'Izvozi projekt',
+            'import_project' => 'Uvozi projekt',
+            'logout' => 'Odjava',
         ],
     ];
 

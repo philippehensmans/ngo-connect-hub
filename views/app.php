@@ -581,12 +581,12 @@
             <i class="fas fa-users"></i> <?= $t->translate('team') ?>
         </button>
         <button id="btnTemplates" class="hover:text-purple-600">
-            <i class="fas fa-copy"></i> Modèles
+            <i class="fas fa-copy"></i> <?= $t->translate('templates') ?>
         </button>
-        <button id="btnExportProject" class="hover:text-green-600" title="Exporter le projet courant">
+        <button id="btnExportProject" class="hover:text-green-600" title="<?= $t->translate('export_project') ?>">
             <i class="fas fa-file-export"></i>
         </button>
-        <button id="btnImportProject" class="hover:text-blue-600" title="Importer un projet">
+        <button id="btnImportProject" class="hover:text-blue-600" title="<?= $t->translate('import_project') ?>">
             <i class="fas fa-file-import"></i>
         </button>
         <button id="btnExportCalendar" class="hover:text-purple-600" title="<?= $t->translate('export_calendar') ?>">
@@ -598,7 +598,7 @@
         <a href="?action=download_db" class="hover:text-green-600">
             <i class="fas fa-download"></i> <?= $t->translate('backup') ?>
         </a>
-        <button id="btnLogout" class="text-red-500 hover:text-red-700">
+        <button id="btnLogout" class="text-red-500 hover:text-red-700" title="<?= $t->translate('logout') ?>">
             <i class="fas fa-sign-out-alt"></i>
         </button>
     </div>
@@ -622,13 +622,13 @@
             <i class="fas fa-users w-5"></i> <?= $t->translate('team') ?>
         </button>
         <button id="btnTemplatesMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
-            <i class="fas fa-copy w-5"></i> Modèles
+            <i class="fas fa-copy w-5"></i> <?= $t->translate('templates') ?>
         </button>
         <button id="btnExportProjectMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
-            <i class="fas fa-file-export w-5"></i> Exporter projet
+            <i class="fas fa-file-export w-5"></i> <?= $t->translate('export_project') ?>
         </button>
         <button id="btnImportProjectMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
-            <i class="fas fa-file-import w-5"></i> Importer projet
+            <i class="fas fa-file-import w-5"></i> <?= $t->translate('import_project') ?>
         </button>
         <button id="btnExportCalendarMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
             <i class="fas fa-calendar-alt w-5"></i> <?= $t->translate('export_calendar') ?>
@@ -641,7 +641,7 @@
         </a>
         <div class="border-t my-2"></div>
         <button id="btnLogoutMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600 flex items-center gap-2">
-            <i class="fas fa-sign-out-alt w-5"></i> Déconnexion
+            <i class="fas fa-sign-out-alt w-5"></i> <?= $t->translate('logout') ?>
         </button>
     </div>
 </div>
