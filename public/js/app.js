@@ -39,6 +39,7 @@ window.ONG = {
             gantt: 'Gantt',
             calendar: 'Calendrier',
             milestones: 'Jalons',
+            mindmap: 'Carte Mentale',
             global: 'Vue Globale',
             total_tasks: 'Total Tâches',
             completed: 'Terminées',
@@ -77,6 +78,7 @@ window.ONG = {
             gantt: 'Gantt',
             calendar: 'Calendar',
             milestones: 'Milestones',
+            mindmap: 'Mind Map',
             global: 'Global View',
             total_tasks: 'Total Tasks',
             completed: 'Completed',
@@ -115,6 +117,7 @@ window.ONG = {
             gantt: 'Gantt',
             calendar: 'Calendario',
             milestones: 'Hitos',
+            mindmap: 'Mapa Mental',
             global: 'Global',
             total_tasks: 'Total Tareas',
             completed: 'Completadas',
@@ -153,6 +156,7 @@ window.ONG = {
             gantt: 'Gantt',
             calendar: 'Kalendar',
             milestones: 'Mejniki',
+            mindmap: 'Miselni Zemljevid',
             global: 'Globalno',
             total_tasks: 'Skupaj Nalog',
             completed: 'Končano',
@@ -750,7 +754,7 @@ window.ONG = {
      */
     renderView: () => {
         const t = ONG.dict[ONG.state.lang];
-        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones', 'assistant'];
+        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones', 'mindmap', 'assistant'];
 
         // Rendre les onglets
         const navTabs = ONG.el('navTabs');
@@ -791,6 +795,9 @@ window.ONG = {
                 break;
             case 'calendar':
                 ONG.renderCalendarView(container, tasks);
+                break;
+            case 'mindmap':
+                ONG.renderMindMapView(container, tasks);
                 break;
             case 'assistant':
                 ONG.renderAssistantView(container);
@@ -1724,6 +1731,226 @@ window.ONG = {
         });
 
         calendar.render();
+    },
+
+    /**
+     * Rend la vue Carte Mentale (Mind Map)
+     */
+    renderMindMapView: (container, tasks) => {
+        container.innerHTML = `
+            <div class="bg-white p-6 rounded-lg shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">🧠 Carte Mentale du Projet</h2>
+                    <div class="flex gap-2">
+                        <button onclick="ONG.exportMindMap()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+                            <i class="fas fa-download mr-2"></i>Exporter PNG
+                        </button>
+                        <button onclick="ONG.expandAllNodes()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm">
+                            <i class="fas fa-expand-alt mr-2"></i>Tout Développer
+                        </button>
+                        <button onclick="ONG.collapseAllNodes()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 text-sm">
+                            <i class="fas fa-compress-alt mr-2"></i>Tout Réduire
+                        </button>
+                    </div>
+                </div>
+                <div id="mindMapContainer" style="height: 600px; width: 100%; border: 1px solid #e5e7eb; border-radius: 8px;"></div>
+            </div>
+        `;
+
+        // Vérifier que MindElixir est chargé
+        if (typeof MindElixir === 'undefined') {
+            document.getElementById('mindMapContainer').innerHTML = "<p class='text-center text-red-500 p-8'>❌ Erreur: Bibliothèque MindElixir non chargée</p>";
+            console.error('MindElixir non chargé !');
+            return;
+        }
+
+        // Récupérer le projet actuel
+        const project = ONG.data.projects.find(p => p.id == ONG.state.pid);
+        if (!project) {
+            document.getElementById('mindMapContainer').innerHTML = "<p class='text-center text-gray-500 p-8'>Aucun projet sélectionné</p>";
+            return;
+        }
+
+        // Générer la structure de données pour MindElixir
+        const mindMapData = ONG.generateMindMapData(project, tasks);
+
+        // Initialiser MindElixir
+        const mind = new MindElixir({
+            el: '#mindMapContainer',
+            direction: MindElixir.SIDE,
+            draggable: true,
+            contextMenu: true,
+            toolBar: true,
+            nodeMenu: true,
+            keypress: true,
+            locale: ONG.state.lang === 'fr' ? 'fr' : 'en'
+        });
+
+        mind.init(mindMapData);
+        window.mindElixirInstance = mind;
+    },
+
+    /**
+     * Génère la structure de données pour la carte mentale
+     */
+    generateMindMapData: (project, tasks) => {
+        const milestones = ONG.data.milestones.filter(m => m.project_id == project.id);
+        const groups = ONG.data.groups.filter(g => g.project_id == project.id);
+
+        const getTasksFor = (milestoneId = null, groupId = null) => {
+            return tasks.filter(t => {
+                if (milestoneId !== null) return t.milestone_id == milestoneId;
+                if (groupId !== null) return t.group_id == groupId;
+                return false;
+            });
+        };
+
+        const createTaskNode = (task) => {
+            const member = ONG.data.members.find(m => m.id == task.owner_id);
+            const statusColors = {
+                'todo': '#3B82F6',
+                'wip': '#F59E0B',
+                'done': '#10B981'
+            };
+
+            return {
+                topic: `${task.title}`,
+                id: `task-${task.id}`,
+                style: {
+                    background: statusColors[task.status] || '#6B7280',
+                    color: '#fff',
+                    fontSize: '13px',
+                    padding: '8px 12px',
+                    borderRadius: '6px'
+                },
+                children: member ? [{
+                    topic: `👤 ${member.fname} ${member.lname}`,
+                    id: `member-${task.id}`,
+                    style: { fontSize: '11px', color: '#666' }
+                }] : []
+            };
+        };
+
+        const milestoneNodes = milestones.map(milestone => {
+            const milestoneTasks = getTasksFor(milestone.id, null);
+            return {
+                topic: `🎯 ${milestone.name}`,
+                id: `milestone-${milestone.id}`,
+                style: {
+                    background: '#8B5CF6',
+                    color: '#fff',
+                    fontSize: '15px',
+                    fontWeight: 'bold',
+                    padding: '10px 15px',
+                    borderRadius: '8px'
+                },
+                children: milestoneTasks.map(createTaskNode)
+            };
+        });
+
+        const groupNodes = groups.map(group => {
+            const groupTasks = getTasksFor(null, group.id);
+            return {
+                topic: `👥 ${group.name}`,
+                id: `group-${group.id}`,
+                style: {
+                    background: group.color || '#6B7280',
+                    color: '#fff',
+                    fontSize: '15px',
+                    fontWeight: 'bold',
+                    padding: '10px 15px',
+                    borderRadius: '8px'
+                },
+                children: groupTasks.map(createTaskNode)
+            };
+        });
+
+        const orphanTasks = tasks.filter(t => !t.milestone_id && !t.group_id);
+        const orphanNode = orphanTasks.length > 0 ? [{
+            topic: '📋 Tâches non classées',
+            id: 'orphans',
+            style: {
+                background: '#6B7280',
+                color: '#fff',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                padding: '10px 15px',
+                borderRadius: '8px'
+            },
+            children: orphanTasks.map(createTaskNode)
+        }] : [];
+
+        return {
+            nodeData: {
+                id: 'root',
+                topic: `📁 ${project.name}`,
+                root: true,
+                style: {
+                    background: '#2563EB',
+                    color: '#fff',
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    padding: '15px 25px',
+                    borderRadius: '12px'
+                },
+                children: [
+                    ...milestoneNodes,
+                    ...groupNodes,
+                    ...orphanNode
+                ]
+            },
+            theme: {
+                name: 'custom',
+                palette: ['#2563EB', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'],
+                cssVar: {
+                    '--main-color': '#2563EB',
+                    '--main-bgcolor': '#fff'
+                }
+            }
+        };
+    },
+
+    /**
+     * Exporte la carte mentale en PNG
+     */
+    exportMindMap: () => {
+        if (!window.mindElixirInstance) {
+            ONG.showToast('Carte mentale non disponible', 'error');
+            return;
+        }
+        try {
+            const project = ONG.data.projects.find(p => p.id == ONG.state.pid);
+            const filename = project ? `mindmap-${project.name.toLowerCase().replace(/\s+/g, '-')}.png` : 'mindmap.png';
+            MindElixir.exportPng(window.mindElixirInstance, filename);
+            ONG.showToast('Carte mentale exportée !', 'success');
+        } catch (err) {
+            console.error('Erreur export mind map:', err);
+            ONG.showToast('Erreur lors de l\'export', 'error');
+        }
+    },
+
+    /**
+     * Développe tous les noeuds de la carte mentale
+     */
+    expandAllNodes: () => {
+        if (window.mindElixirInstance) {
+            window.mindElixirInstance.expandNode();
+        }
+    },
+
+    /**
+     * Réduit tous les noeuds de la carte mentale
+     */
+    collapseAllNodes: () => {
+        if (window.mindElixirInstance) {
+            const allNodes = document.querySelectorAll('.mind-elixir-node');
+            allNodes.forEach((node, index) => {
+                if (index > 0) {
+                    window.mindElixirInstance.selectNode(node);
+                    window.mindElixirInstance.collapse();
+                }
+            });
+        }
     },
 
     /**
