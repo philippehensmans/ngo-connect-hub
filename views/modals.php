@@ -245,7 +245,7 @@
         <div id="taskCommentsSection" class="mt-6 border-t pt-4" style="display: none;">
             <h4 class="font-bold text-md mb-3 flex items-center gap-2">
                 <i class="fas fa-comments"></i>
-                💬 Commentaires
+                💬 <?= $t->translate('comments') ?>
                 <span id="commentsCount" class="text-sm text-gray-500"></span>
             </h4>
 
@@ -257,15 +257,15 @@
                 <div class="flex gap-2">
                     <div class="flex-1">
                         <textarea id="newCommentText" class="w-full border p-2 rounded text-sm" rows="2"
-                                  placeholder="Ajouter un commentaire..." maxlength="1000"
+                                  placeholder="<?= $t->translate('add_comment') ?>" maxlength="1000"
                                   oninput="ONG.updateCharCount(this, 'commentCharCount')"></textarea>
                         <div class="flex justify-between items-center mt-1">
                             <div class="text-xs text-gray-500">
-                                <span class="font-semibold">Markdown:</span>
-                                <code class="bg-gray-100 px-1">**gras**</code>
-                                <code class="bg-gray-100 px-1">*italique*</code>
-                                <code class="bg-gray-100 px-1">`code`</code>
-                                <code class="bg-gray-100 px-1">- liste</code>
+                                <span class="font-semibold"><?= $t->translate('markdown') ?>:</span>
+                                <code class="bg-gray-100 px-1">**<?= $t->translate('bold') ?>**</code>
+                                <code class="bg-gray-100 px-1">*<?= $t->translate('italic') ?>*</code>
+                                <code class="bg-gray-100 px-1">`<?= $t->translate('code') ?>`</code>
+                                <code class="bg-gray-100 px-1">- <?= $t->translate('list') ?></code>
                             </div>
                             <span id="commentCharCount" class="text-xs text-gray-400">0/1000</span>
                         </div>
@@ -292,14 +292,14 @@
 
             <textarea name="description" id="groupDescription" rows="3"
                       class="w-full border p-2 mb-2 rounded"
-                      placeholder="Description: Que font les membres de ce groupe?"></textarea>
+                      placeholder="<?= $t->translate('group_description_placeholder') ?>"></textarea>
 
             <select name="owner_id" id="groupOwner" class="w-full border p-2 mb-2 rounded team-select">
                 <option value=""><?= $t->translate('resp') ?>...</option>
             </select>
 
             <div class="mb-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Membres du groupe</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('group_members') ?></label>
                 <div id="groupMembersList" class="border rounded p-2 max-h-40 overflow-y-auto bg-gray-50">
                     <!-- Les membres seront ajoutés dynamiquement ici -->
                 </div>
@@ -380,9 +380,9 @@
         <h3 class="font-bold mb-4"><?= $t->translate('team') ?></h3>
         <form id="formMember" class="flex gap-2 mb-4 bg-gray-100 p-2 rounded">
             <input type="hidden" name="id" id="memberId">
-            <input name="fname" id="memberFname" placeholder="Prénom" class="border p-1 rounded flex-1" required>
-            <input name="lname" id="memberLname" placeholder="Nom" class="border p-1 rounded flex-1" required>
-            <input name="email" id="memberEmail" placeholder="Email" class="border p-1 rounded flex-1" required>
+            <input name="fname" id="memberFname" placeholder="<?= $t->translate('firstname') ?>" class="border p-1 rounded flex-1" required>
+            <input name="lname" id="memberLname" placeholder="<?= $t->translate('lastname') ?>" class="border p-1 rounded flex-1" required>
+            <input name="email" id="memberEmail" placeholder="<?= $t->translate('email') ?>" class="border p-1 rounded flex-1" required>
             <button type="submit" class="bg-green-600 text-white px-3 rounded" id="btnSaveMember">
                 <span id="memberBtnIcon">+</span>
             </button>
