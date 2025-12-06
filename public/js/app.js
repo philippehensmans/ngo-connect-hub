@@ -2447,8 +2447,9 @@ window.ONG = {
         const t = ONG.data.tasks.find(x => x.id == id);
         if (!t) return;
 
+        const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
         const title = document.getElementById('modalTaskTitle');
-        if (title) title.textContent = "Éditer Tâche";
+        if (title) title.textContent = dict.edit_task_title || "Éditer Tâche";
 
         const pSel = ONG.el('taskProjectSelect');
         if (pSel) {
@@ -2529,9 +2530,10 @@ window.ONG = {
         const form = document.querySelector('#modalProject form');
         if (form) form.reset();
 
+        const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
         ONG.setVal('projId', '');
         const title = document.getElementById('modalProjectTitle');
-        if (title) title.innerText = 'Nouveau Projet';
+        if (title) title.innerText = dict.new_proj || 'Nouveau Projet';
 
         ONG.openModal('modalProject');
     },
@@ -2543,8 +2545,9 @@ window.ONG = {
         const p = ONG.data.projects.find(x => x.id == id);
         if (!p) return;
 
+        const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
         const title = document.getElementById('modalProjectTitle');
-        if (title) title.innerText = 'Éditer Projet';
+        if (title) title.innerText = dict.edit_project_title || 'Éditer Projet';
 
         ONG.setVal('projId', p.id);
         ONG.setVal('projName', p.name);
@@ -2561,7 +2564,8 @@ window.ONG = {
      */
     openGroupModal: () => {
         if (!ONG.state.pid) {
-            alert("Sélectionnez un projet");
+            const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+            alert(dict.select_project || "Sélectionnez un projet");
             return;
         }
 
@@ -2603,7 +2607,8 @@ window.ONG = {
      */
     openMilestoneModal: () => {
         if (!ONG.state.pid) {
-            alert("Sélectionnez un projet");
+            const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+            alert(dict.select_project || "Sélectionnez un projet");
             return;
         }
 
