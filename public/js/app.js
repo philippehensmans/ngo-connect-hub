@@ -1933,11 +1933,24 @@ window.ONG = {
 
         console.log('Nœuds enfants générés:', childrenNodes.length);
 
-        return {
+        // Fonction pour ajouter expanded: true récursivement
+        const expandNode = (node) => {
+            node.expanded = true;
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => expandNode(child));
+            }
+            return node;
+        };
+
+        // Expandre tous les nœuds
+        childrenNodes = childrenNodes.map(expandNode);
+
+        const mindMapData = {
             nodeData: {
                 id: 'root',
                 topic: `📁 ${project.name}`,
                 root: true,
+                expanded: true,
                 style: {
                     background: '#2563EB',
                     color: '#fff',
@@ -1947,16 +1960,12 @@ window.ONG = {
                     borderRadius: '12px'
                 },
                 children: childrenNodes
-            },
-            theme: {
-                name: 'custom',
-                palette: ['#2563EB', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'],
-                cssVar: {
-                    '--main-color': '#2563EB',
-                    '--main-bgcolor': '#fff'
-                }
             }
         };
+
+        console.log('Structure finale avec expanded:', mindMapData);
+
+        return mindMapData;
     },
 
     /**
