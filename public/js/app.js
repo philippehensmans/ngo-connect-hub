@@ -1794,34 +1794,24 @@ window.ONG = {
                     locale: ONG.state.lang === 'fr' ? 'fr' : 'en'
                 });
 
-                // Essayer avec MindElixir.new() d'abord (méthode officielle)
-                console.log('Test: Utilisation de MindElixir.new()');
-                const testData = MindElixir.new(project.name);
-                console.log('Données créées avec MindElixir.new():', testData);
+                console.log('Initialisation avec nos données personnalisées (incluant linkData)');
 
-                // Si nous avons des données générées, essayons de les utiliser
-                // Sinon, utilisons les données de test
-                mind.init(testData);
-
-                // Maintenant ajoutons nos données manuellement
-                setTimeout(() => {
-                    console.log('Ajout des nœuds personnalisés...');
-                    const data = mind.getData();
-                    console.log('Données actuelles:', data);
-
-                    // Essayons d'ajouter un nœud enfant simple
-                    if (tasks.length > 0) {
-                        const firstTask = tasks[0];
-                        mind.addChild(data.nodeData.id, {
-                            topic: `Test: ${firstTask.title}`,
-                            id: 'test-' + firstTask.id
-                        });
-                        console.log('Premier nœud ajouté');
-                    }
-                }, 500);
+                // Utiliser nos données générées (qui incluent maintenant linkData)
+                mind.init(mindMapData);
 
                 window.mindElixirInstance = mind;
-                console.log('Mind Map initialisée avec succès');
+                console.log('Mind Map initialisée avec succès - Structure complète chargée');
+
+                // Vérifier le rendu après un court délai
+                setTimeout(() => {
+                    const svg = document.querySelector('#mindMapContainer svg');
+                    if (svg) {
+                        console.log('✅ SVG de la carte mentale trouvé dans le DOM');
+                    } else {
+                        console.error('❌ SVG de la carte mentale non trouvé');
+                    }
+                }, 300);
+
             } catch (err) {
                 console.error('Erreur lors de l\'initialisation de Mind Map:', err);
                 console.error('Stack:', err.stack);
@@ -1986,10 +1976,11 @@ window.ONG = {
                     borderRadius: '12px'
                 },
                 children: childrenNodes
-            }
+            },
+            linkData: {}  // Propriété requise par MindElixir
         };
 
-        console.log('Structure finale avec expanded:', mindMapData);
+        console.log('Structure finale avec expanded et linkData:', mindMapData);
 
         return mindMapData;
     },
