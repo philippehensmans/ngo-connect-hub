@@ -14,6 +14,9 @@
     <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <!-- MindElixir (Mind Map) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mind-elixir@2.0.2/dist/MindElixir.css">
+    <script src="https://cdn.jsdelivr.net/npm/mind-elixir@2.0.2/dist/MindElixir.js"></script>
     <style>
         :root {
             --primary-color: #2563EB;
