@@ -1753,41 +1753,55 @@ window.ONG = {
                         </button>
                     </div>
                 </div>
-                <div id="mindMapContainer" style="height: 600px; width: 100%; border: 1px solid #e5e7eb; border-radius: 8px;"></div>
+                <div id="mindMapContainer" style="height: 600px; width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb;"></div>
             </div>
         `;
 
-        // Vérifier que MindElixir est chargé
-        if (typeof MindElixir === 'undefined') {
-            document.getElementById('mindMapContainer').innerHTML = "<p class='text-center text-red-500 p-8'>❌ Erreur: Bibliothèque MindElixir non chargée</p>";
-            console.error('MindElixir non chargé !');
-            return;
-        }
+        // Attendre que le DOM soit prêt
+        setTimeout(() => {
+            // Vérifier que MindElixir est chargé
+            if (typeof MindElixir === 'undefined') {
+                document.getElementById('mindMapContainer').innerHTML = "<p class='text-center text-red-500 p-8'>❌ Erreur: Bibliothèque MindElixir non chargée</p>";
+                console.error('MindElixir non chargé !');
+                return;
+            }
 
-        // Récupérer le projet actuel
-        const project = ONG.data.projects.find(p => p.id == ONG.state.pid);
-        if (!project) {
-            document.getElementById('mindMapContainer').innerHTML = "<p class='text-center text-gray-500 p-8'>Aucun projet sélectionné</p>";
-            return;
-        }
+            // Récupérer le projet actuel
+            const project = ONG.data.projects.find(p => p.id == ONG.state.pid);
+            if (!project) {
+                document.getElementById('mindMapContainer').innerHTML = "<p class='text-center text-gray-500 p-8'>Aucun projet sélectionné</p>";
+                return;
+            }
 
-        // Générer la structure de données pour MindElixir
-        const mindMapData = ONG.generateMindMapData(project, tasks);
+            console.log('Projet sélectionné:', project.name);
+            console.log('Nombre de tâches:', tasks.length);
 
-        // Initialiser MindElixir
-        const mind = new MindElixir({
-            el: '#mindMapContainer',
-            direction: MindElixir.SIDE,
-            draggable: true,
-            contextMenu: true,
-            toolBar: true,
-            nodeMenu: true,
-            keypress: true,
-            locale: ONG.state.lang === 'fr' ? 'fr' : 'en'
-        });
+            // Générer la structure de données pour MindElixir
+            const mindMapData = ONG.generateMindMapData(project, tasks);
 
-        mind.init(mindMapData);
-        window.mindElixirInstance = mind;
+            console.log('Données Mind Map générées:', mindMapData);
+
+            try {
+                // Initialiser MindElixir
+                const mind = new MindElixir({
+                    el: '#mindMapContainer',
+                    direction: MindElixir.SIDE,
+                    draggable: true,
+                    contextMenu: true,
+                    toolBar: true,
+                    nodeMenu: true,
+                    keypress: true,
+                    locale: ONG.state.lang === 'fr' ? 'fr' : 'en'
+                });
+
+                mind.init(mindMapData);
+                window.mindElixirInstance = mind;
+                console.log('Mind Map initialisée avec succès');
+            } catch (err) {
+                console.error('Erreur lors de l\'initialisation de Mind Map:', err);
+                document.getElementById('mindMapContainer').innerHTML = `<p class='text-center text-red-500 p-8'>❌ Erreur: ${err.message}</p>`;
+            }
+        }, 100);
     },
 
     /**
@@ -1796,6 +1810,9 @@ window.ONG = {
     generateMindMapData: (project, tasks) => {
         const milestones = ONG.data.milestones.filter(m => m.project_id == project.id);
         const groups = ONG.data.groups.filter(g => g.project_id == project.id);
+
+        console.log('Jalons trouvés:', milestones.length);
+        console.log('Groupes trouvés:', groups.length);
 
         const getTasksFor = (milestoneId = null, groupId = null) => {
             return tasks.filter(t => {
@@ -1831,54 +1848,90 @@ window.ONG = {
             };
         };
 
-        const milestoneNodes = milestones.map(milestone => {
-            const milestoneTasks = getTasksFor(milestone.id, null);
-            return {
-                topic: `🎯 ${milestone.name}`,
-                id: `milestone-${milestone.id}`,
-                style: {
-                    background: '#8B5CF6',
-                    color: '#fff',
-                    fontSize: '15px',
-                    fontWeight: 'bold',
-                    padding: '10px 15px',
-                    borderRadius: '8px'
-                },
-                children: milestoneTasks.map(createTaskNode)
-            };
-        });
+        let childrenNodes = [];
 
-        const groupNodes = groups.map(group => {
-            const groupTasks = getTasksFor(null, group.id);
-            return {
-                topic: `👥 ${group.name}`,
-                id: `group-${group.id}`,
-                style: {
-                    background: group.color || '#6B7280',
-                    color: '#fff',
-                    fontSize: '15px',
-                    fontWeight: 'bold',
-                    padding: '10px 15px',
-                    borderRadius: '8px'
-                },
-                children: groupTasks.map(createTaskNode)
-            };
-        });
+        // Ajouter les jalons avec leurs tâches
+        if (milestones.length > 0) {
+            const milestoneNodes = milestones.map(milestone => {
+                const milestoneTasks = getTasksFor(milestone.id, null);
+                return {
+                    topic: `🎯 ${milestone.name}`,
+                    id: `milestone-${milestone.id}`,
+                    style: {
+                        background: '#8B5CF6',
+                        color: '#fff',
+                        fontSize: '15px',
+                        fontWeight: 'bold',
+                        padding: '10px 15px',
+                        borderRadius: '8px'
+                    },
+                    children: milestoneTasks.map(createTaskNode)
+                };
+            });
+            childrenNodes = childrenNodes.concat(milestoneNodes);
+        }
 
+        // Ajouter les groupes avec leurs tâches
+        if (groups.length > 0) {
+            const groupNodes = groups.map(group => {
+                const groupTasks = getTasksFor(null, group.id);
+                return {
+                    topic: `👥 ${group.name}`,
+                    id: `group-${group.id}`,
+                    style: {
+                        background: group.color || '#6B7280',
+                        color: '#fff',
+                        fontSize: '15px',
+                        fontWeight: 'bold',
+                        padding: '10px 15px',
+                        borderRadius: '8px'
+                    },
+                    children: groupTasks.map(createTaskNode)
+                };
+            });
+            childrenNodes = childrenNodes.concat(groupNodes);
+        }
+
+        // Ajouter les tâches orphelines
         const orphanTasks = tasks.filter(t => !t.milestone_id && !t.group_id);
-        const orphanNode = orphanTasks.length > 0 ? [{
-            topic: '📋 Tâches non classées',
-            id: 'orphans',
-            style: {
-                background: '#6B7280',
-                color: '#fff',
-                fontSize: '15px',
-                fontWeight: 'bold',
-                padding: '10px 15px',
-                borderRadius: '8px'
-            },
-            children: orphanTasks.map(createTaskNode)
-        }] : [];
+        if (orphanTasks.length > 0) {
+            childrenNodes.push({
+                topic: '📋 Tâches non classées',
+                id: 'orphans',
+                style: {
+                    background: '#6B7280',
+                    color: '#fff',
+                    fontSize: '15px',
+                    fontWeight: 'bold',
+                    padding: '10px 15px',
+                    borderRadius: '8px'
+                },
+                children: orphanTasks.map(createTaskNode)
+            });
+        }
+
+        // Si aucune organisation (pas de jalons ni groupes), afficher toutes les tâches directement
+        if (childrenNodes.length === 0 && tasks.length > 0) {
+            console.log('Aucun jalon/groupe trouvé, affichage de toutes les tâches directement');
+            childrenNodes = tasks.map(createTaskNode);
+        }
+
+        // Si toujours rien, ajouter un nœud par défaut
+        if (childrenNodes.length === 0) {
+            childrenNodes = [{
+                topic: 'Aucune tâche pour le moment',
+                id: 'empty',
+                style: {
+                    background: '#9CA3AF',
+                    color: '#fff',
+                    fontSize: '14px',
+                    padding: '10px 15px',
+                    borderRadius: '8px'
+                }
+            }];
+        }
+
+        console.log('Nœuds enfants générés:', childrenNodes.length);
 
         return {
             nodeData: {
@@ -1893,11 +1946,7 @@ window.ONG = {
                     padding: '15px 25px',
                     borderRadius: '12px'
                 },
-                children: [
-                    ...milestoneNodes,
-                    ...groupNodes,
-                    ...orphanNode
-                ]
+                children: childrenNodes
             },
             theme: {
                 name: 'custom',
