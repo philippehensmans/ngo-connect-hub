@@ -1840,28 +1840,23 @@ window.ONG = {
 
         const createTaskNode = (task) => {
             const member = ONG.data.members.find(m => m.id == task.owner_id);
-            const statusColors = {
-                'todo': '#3B82F6',
-                'wip': '#F59E0B',
-                'done': '#10B981'
+
+            const node = {
+                topic: task.title,
+                id: `task-${task.id}`,
+                expanded: true
             };
 
-            return {
-                topic: `${task.title}`,
-                id: `task-${task.id}`,
-                style: {
-                    background: statusColors[task.status] || '#6B7280',
-                    color: '#fff',
-                    fontSize: '13px',
-                    padding: '8px 12px',
-                    borderRadius: '6px'
-                },
-                children: member ? [{
-                    topic: `👤 ${member.fname} ${member.lname}`,
+            // Ajouter le membre comme enfant si présent
+            if (member) {
+                node.children = [{
+                    topic: `${member.fname} ${member.lname}`,
                     id: `member-${task.id}`,
-                    style: { fontSize: '11px', color: '#666' }
-                }] : []
-            };
+                    expanded: true
+                }];
+            }
+
+            return node;
         };
 
         let childrenNodes = [];
@@ -1871,16 +1866,9 @@ window.ONG = {
             const milestoneNodes = milestones.map(milestone => {
                 const milestoneTasks = getTasksFor(milestone.id, null);
                 return {
-                    topic: `🎯 ${milestone.name}`,
+                    topic: `Milestone: ${milestone.name}`,
                     id: `milestone-${milestone.id}`,
-                    style: {
-                        background: '#8B5CF6',
-                        color: '#fff',
-                        fontSize: '15px',
-                        fontWeight: 'bold',
-                        padding: '10px 15px',
-                        borderRadius: '8px'
-                    },
+                    expanded: true,
                     children: milestoneTasks.map(createTaskNode)
                 };
             });
@@ -1892,16 +1880,9 @@ window.ONG = {
             const groupNodes = groups.map(group => {
                 const groupTasks = getTasksFor(null, group.id);
                 return {
-                    topic: `👥 ${group.name}`,
+                    topic: `Group: ${group.name}`,
                     id: `group-${group.id}`,
-                    style: {
-                        background: group.color || '#6B7280',
-                        color: '#fff',
-                        fontSize: '15px',
-                        fontWeight: 'bold',
-                        padding: '10px 15px',
-                        borderRadius: '8px'
-                    },
+                    expanded: true,
                     children: groupTasks.map(createTaskNode)
                 };
             });
@@ -1912,16 +1893,9 @@ window.ONG = {
         const orphanTasks = tasks.filter(t => !t.milestone_id && !t.group_id);
         if (orphanTasks.length > 0) {
             childrenNodes.push({
-                topic: '📋 Tâches non classées',
+                topic: 'Unclassified Tasks',
                 id: 'orphans',
-                style: {
-                    background: '#6B7280',
-                    color: '#fff',
-                    fontSize: '15px',
-                    fontWeight: 'bold',
-                    padding: '10px 15px',
-                    borderRadius: '8px'
-                },
+                expanded: true,
                 children: orphanTasks.map(createTaskNode)
             });
         }
@@ -1964,23 +1938,15 @@ window.ONG = {
         const mindMapData = {
             nodeData: {
                 id: 'root',
-                topic: `📁 ${project.name}`,
+                topic: project.name,
                 root: true,
                 expanded: true,
-                style: {
-                    background: '#2563EB',
-                    color: '#fff',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    padding: '15px 25px',
-                    borderRadius: '12px'
-                },
                 children: childrenNodes
             },
             linkData: {}  // Propriété requise par MindElixir
         };
 
-        console.log('Structure finale avec expanded et linkData:', mindMapData);
+        console.log('Structure finale (simplifiée sans styles):', mindMapData);
 
         return mindMapData;
     },
