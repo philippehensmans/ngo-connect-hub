@@ -385,16 +385,16 @@ window.ONG = {
             return;
         }
 
-        // Charger les données
-        await ONG.loadData();
-
-        // Initialiser la langue
+        // Initialiser la langue AVANT de charger les données
         const langSelect = ONG.el('langSelect');
         if (langSelect) {
             const urlParams = new URLSearchParams(window.location.search);
             ONG.state.lang = urlParams.get('lang') || 'fr';
             langSelect.value = ONG.state.lang;
         }
+
+        // Charger les données (qui appelle renderView)
+        await ONG.loadData();
 
         // Attacher les événements
         ONG.attachEvents();
