@@ -934,40 +934,38 @@ window.ONG = {
         // Afficher les jalons avec leurs tâches
         milestones.forEach(milestone => {
             const milestoneTasks = tasksByMilestone.get(milestone.id) || [];
-            if (milestoneTasks.length > 0) {
-                const doneCount = milestoneTasks.filter(t => t.status === 'done').length;
-                const progress = Math.round((doneCount / milestoneTasks.length) * 100);
+            const doneCount = milestoneTasks.filter(t => t.status === 'done').length;
+            const progress = milestoneTasks.length > 0 ? Math.round((doneCount / milestoneTasks.length) * 100) : 0;
 
-                // Trouver le milestone parent si dépendance
-                const dependsOnMilestone = milestone.depends_on ? milestones.find(parent => parent.id == milestone.depends_on) : null;
-                const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+            // Trouver le milestone parent si dépendance
+            const dependsOnMilestone = milestone.depends_on ? milestones.find(parent => parent.id == milestone.depends_on) : null;
+            const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
 
-                html += `
-                    <tr class="bg-indigo-50 border-t-2 border-indigo-300">
-                        <td colspan="7" class="px-3 py-2 font-bold">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-indigo-600">📍</span>
-                                    <span>${ONG.escape(milestone.name)}</span>
-                                    <span class="text-xs font-normal text-gray-600">(${milestone.date})</span>
-                                    ${dependsOnMilestone ? `<span class="text-xs font-normal text-gray-600">🔗 ${dict.depends_on || 'Dépend de'}: ${ONG.escape(dependsOnMilestone.name)}</span>` : ''}
-                                    <span class="text-xs font-normal text-gray-500">${milestoneTasks.length} tâche${milestoneTasks.length > 1 ? 's' : ''}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-32 bg-gray-200 rounded-full h-2">
-                                        <div class="bg-indigo-600 h-2 rounded-full" style="width: ${progress}%"></div>
-                                    </div>
-                                    <span class="text-xs text-gray-600">${progress}%</span>
-                                </div>
+            html += `
+                <tr class="bg-indigo-50 border-t-2 border-indigo-300">
+                    <td colspan="7" class="px-3 py-2 font-bold">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-indigo-600">📍</span>
+                                <span>${ONG.escape(milestone.name)}</span>
+                                <span class="text-xs font-normal text-gray-600">(${milestone.date})</span>
+                                ${dependsOnMilestone ? `<span class="text-xs font-normal text-gray-600">🔗 ${dict.depends_on || 'Dépend de'}: ${ONG.escape(dependsOnMilestone.name)}</span>` : ''}
+                                <span class="text-xs font-normal text-gray-500">${milestoneTasks.length} tâche${milestoneTasks.length > 1 ? 's' : ''}</span>
                             </div>
-                        </td>
-                    </tr>
-                `;
+                            <div class="flex items-center gap-2">
+                                <div class="w-32 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-indigo-600 h-2 rounded-full" style="width: ${progress}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-600">${progress}%</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
 
-                milestoneTasks.forEach(t => {
-                    html += renderTaskRow(t);
-                });
-            }
+            milestoneTasks.forEach(t => {
+                html += renderTaskRow(t);
+            });
         });
 
         // Afficher les tâches sans jalon
