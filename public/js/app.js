@@ -424,7 +424,6 @@ window.ONG = {
             ONG.loadAIConfig();
         });
         ONG.on('btnAddProject', 'click', () => ONG.openModalProject());
-        ONG.on('btnAddTask', 'click', () => ONG.openTaskModal());
         ONG.on('btnExport', 'click', () => ONG.exportExcel());
         ONG.on('btnResetFilters', 'click', () => ONG.resetFilters());
         ONG.on('btnAddComment', 'click', () => ONG.addComment());

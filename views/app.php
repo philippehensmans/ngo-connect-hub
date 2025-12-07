@@ -713,9 +713,6 @@
                 <button id="btnExport" class="text-green-600 border border-green-200 px-3 py-1 rounded text-sm hover:bg-green-50">
                     <i class="fas fa-file-excel"></i>
                 </button>
-                <button id="btnAddTask" class="bg-blue-600 text-white px-3 py-1 rounded text-sm shadow hover:bg-blue-700">
-                    <i class="fas fa-plus"></i>
-                </button>
             </div>
         </div>
 
