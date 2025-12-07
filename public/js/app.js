@@ -938,6 +938,10 @@ window.ONG = {
                 const doneCount = milestoneTasks.filter(t => t.status === 'done').length;
                 const progress = Math.round((doneCount / milestoneTasks.length) * 100);
 
+                // Trouver le milestone parent si dépendance
+                const dependsOnMilestone = milestone.depends_on ? milestones.find(parent => parent.id == milestone.depends_on) : null;
+                const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+
                 html += `
                     <tr class="bg-indigo-50 border-t-2 border-indigo-300">
                         <td colspan="7" class="px-3 py-2 font-bold">
@@ -946,6 +950,7 @@ window.ONG = {
                                     <span class="text-indigo-600">📍</span>
                                     <span>${ONG.escape(milestone.name)}</span>
                                     <span class="text-xs font-normal text-gray-600">(${milestone.date})</span>
+                                    ${dependsOnMilestone ? `<span class="text-xs font-normal text-gray-600">🔗 ${dict.depends_on || 'Dépend de'}: ${ONG.escape(dependsOnMilestone.name)}</span>` : ''}
                                     <span class="text-xs font-normal text-gray-500">${milestoneTasks.length} tâche${milestoneTasks.length > 1 ? 's' : ''}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -1359,13 +1364,16 @@ window.ONG = {
         // Ajouter les jalons
         milestones.forEach(m => {
             if (m.date) {
+                // Ajouter la dépendance si elle existe
+                const dependencies = m.depends_on ? 'm_' + m.depends_on : '';
+
                 ganttTasks.push({
                     id: 'm_' + m.id,
                     name: '◆ ' + m.name,
                     start: m.date,
                     end: m.date,
                     progress: 100,
-                    dependencies: '',
+                    dependencies: dependencies,
                     custom_class: 'bar-milestone'
                 });
             }
@@ -1629,9 +1637,14 @@ window.ONG = {
         const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid);
         milestones.forEach(milestone => {
             if (milestone.date) {
+                // Trouver le milestone parent si dépendance
+                const dependsOnMilestone = milestone.depends_on ? milestones.find(parent => parent.id == milestone.depends_on) : null;
+                const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+                const titleSuffix = dependsOnMilestone ? ` (${dict.depends_on || 'Dépend de'}: ${dependsOnMilestone.name})` : '';
+
                 events.push({
                     id: 'm_' + milestone.id,
-                    title: '◆ ' + milestone.name,
+                    title: '◆ ' + milestone.name + titleSuffix,
                     start: milestone.date,
                     allDay: true,
                     backgroundColor: '#10B981',
@@ -1639,7 +1652,8 @@ window.ONG = {
                     classNames: ['fc-event-milestone'],
                     extendedProps: {
                         type: 'milestone',
-                        milestoneData: milestone
+                        milestoneData: milestone,
+                        dependsOn: dependsOnMilestone ? dependsOnMilestone.name : null
                     }
                 });
             }
