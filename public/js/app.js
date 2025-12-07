@@ -754,7 +754,7 @@ window.ONG = {
      */
     renderView: () => {
         const t = ONG.dict[ONG.state.lang];
-        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones', 'mindmap', 'assistant'];
+        const tabs = ['dashboard', 'global', 'list', 'kanban', 'groups', 'gantt', 'calendar', 'milestones', 'assistant'];
 
         // Rendre les onglets
         const navTabs = ONG.el('navTabs');
@@ -795,9 +795,6 @@ window.ONG = {
                 break;
             case 'calendar':
                 ONG.renderCalendarView(container, tasks);
-                break;
-            case 'mindmap':
-                ONG.renderMindMapView(container, tasks);
                 break;
             case 'assistant':
                 ONG.renderAssistantView(container);

@@ -180,6 +180,7 @@ class Translation
             'edit_project_title' => 'Éditer Projet',
             'edit_btn' => 'Éditer',
             'delete_btn' => 'Supprimer',
+            'new' => 'Nouveau',
         ],
         'en' => [
             'settings' => 'Settings',
@@ -353,6 +354,7 @@ class Translation
             'edit_project_title' => 'Edit Project',
             'edit_btn' => 'Edit',
             'delete_btn' => 'Delete',
+            'new' => 'New',
         ],
         'es' => [
             'settings' => 'Ajustes',
@@ -526,6 +528,7 @@ class Translation
             'edit_project_title' => 'Editar Proyecto',
             'edit_btn' => 'Editar',
             'delete_btn' => 'Eliminar',
+            'new' => 'Nuevo',
 
         ],
         'sl' => [
@@ -700,6 +703,7 @@ class Translation
             'edit_project_title' => 'Uredi Projekt',
             'edit_btn' => 'Uredi',
             'delete_btn' => 'Izbriši',
+            'new' => 'Novo',
 
         ],
     ];

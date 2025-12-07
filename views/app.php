@@ -14,9 +14,6 @@
     <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-    <!-- MindElixir (Mind Map) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mind-elixir@2.0.2/dist/MindElixir.css">
-    <script src="https://cdn.jsdelivr.net/npm/mind-elixir@2.0.2/dist/MindElixir.js"></script>
     <style>
         :root {
             --primary-color: #2563EB;
@@ -577,6 +574,31 @@
             <option value="es">ES</option>
             <option value="sl">SL</option>
         </select>
+
+        <!-- Menu déroulant Nouveau -->
+        <div class="relative">
+            <button id="btnNew" class="hover:text-green-600 font-semibold flex items-center gap-1">
+                <i class="fas fa-plus-circle"></i> <?= $t->translate('new') ?>
+                <i class="fas fa-chevron-down text-xs"></i>
+            </button>
+            <div id="newDropdown" class="hidden absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-xl z-50 w-48">
+                <div class="py-1">
+                    <button onclick="ONG.openModalProject()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+                        <i class="fas fa-folder text-blue-600"></i> <?= $t->translate('new_proj') ?>
+                    </button>
+                    <button onclick="ONG.openModal('modalTask')" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+                        <i class="fas fa-tasks text-green-600"></i> <?= $t->translate('new_task') ?>
+                    </button>
+                    <button onclick="ONG.openMilestoneModal()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+                        <i class="fas fa-flag text-purple-600"></i> <?= $t->translate('new_milestone') ?>
+                    </button>
+                    <button onclick="ONG.openGroupModal()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+                        <i class="fas fa-users text-orange-600"></i> <?= $t->translate('new_group') ?>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <button id="btnTeam" class="hover:text-blue-600">
             <i class="fas fa-users"></i> <?= $t->translate('team') ?>
         </button>
@@ -618,6 +640,21 @@
             <option value="es">🌐 Español</option>
             <option value="sl">🌐 Slovenščina</option>
         </select>
+        <div class="border-t my-2"></div>
+        <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase"><?= $t->translate('new') ?></div>
+        <button onclick="ONG.openModalProject()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-folder text-blue-600 w-5"></i> <?= $t->translate('new_proj') ?>
+        </button>
+        <button onclick="ONG.openModal('modalTask')" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-tasks text-green-600 w-5"></i> <?= $t->translate('new_task') ?>
+        </button>
+        <button onclick="ONG.openMilestoneModal()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-flag text-purple-600 w-5"></i> <?= $t->translate('new_milestone') ?>
+        </button>
+        <button onclick="ONG.openGroupModal()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+            <i class="fas fa-users text-orange-600 w-5"></i> <?= $t->translate('new_group') ?>
+        </button>
+        <div class="border-t my-2"></div>
         <button id="btnTeamMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
             <i class="fas fa-users w-5"></i> <?= $t->translate('team') ?>
         </button>
@@ -765,6 +802,54 @@ document.addEventListener('DOMContentLoaded', function() {
             mobileMenuDropdown.classList.add('hidden');
         }
     });
+
+    // Toggle Menu Nouveau (Desktop)
+    const btnNew = document.getElementById('btnNew');
+    const newDropdown = document.getElementById('newDropdown');
+
+    function toggleNewDropdown(e) {
+        e.stopPropagation();
+        newDropdown.classList.toggle('hidden');
+    }
+
+    if (btnNew) {
+        btnNew.addEventListener('click', toggleNewDropdown);
+    }
+
+    // Fermer le menu nouveau quand on clique ailleurs
+    document.addEventListener('click', function(e) {
+        if (newDropdown && !newDropdown.contains(e.target) && e.target !== btnNew) {
+            newDropdown.classList.add('hidden');
+        }
+    });
+
+    // Fermer le dropdown après avoir cliqué sur un item
+    if (newDropdown) {
+        newDropdown.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                newDropdown.classList.add('hidden');
+            });
+        });
+    }
+
+    // Fermer le menu mobile après avoir cliqué sur les items "Nouveau"
+    if (mobileMenuDropdown) {
+        const newItemButtons = [
+            'button[onclick="ONG.openModalProject()"]',
+            'button[onclick="ONG.openModal(\'modalTask\')"]',
+            'button[onclick="ONG.openMilestoneModal()"]',
+            'button[onclick="ONG.openGroupModal()"]'
+        ];
+
+        newItemButtons.forEach(selector => {
+            const btns = mobileMenuDropdown.querySelectorAll(selector);
+            btns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    mobileMenuDropdown.classList.add('hidden');
+                });
+            });
+        });
+    }
 
     // Dupliquer les événements des boutons desktop vers mobile
     const mobileBtnMap = {
