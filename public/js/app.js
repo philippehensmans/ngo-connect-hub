@@ -71,7 +71,9 @@ window.ONG = {
             date: 'Date',
             assistant_api_mode: 'Mode API',
             assistant_free_mode: 'Mode Gratuit (Règles)',
-            assistant_start_conversation: 'Démarrez d\'abord une conversation'
+            assistant_start_conversation: 'Démarrez d\'abord une conversation',
+            list_without_milestones: 'Liste sans jalons',
+            responsible: 'Responsable'
         },
         en: {
             todo: 'To Do',
@@ -116,7 +118,9 @@ window.ONG = {
             date: 'Date',
             assistant_api_mode: 'API Mode',
             assistant_free_mode: 'Free Mode (Rules)',
-            assistant_start_conversation: 'Please start a conversation first'
+            assistant_start_conversation: 'Please start a conversation first',
+            list_without_milestones: 'List without milestones',
+            responsible: 'Responsible'
         },
         es: {
             todo: 'Pendiente',
@@ -161,7 +165,9 @@ window.ONG = {
             date: 'Fecha',
             assistant_api_mode: 'Modo API',
             assistant_free_mode: 'Modo Gratuito (Reglas)',
-            assistant_start_conversation: 'Primero inicie una conversación'
+            assistant_start_conversation: 'Primero inicie una conversación',
+            list_without_milestones: 'Lista sin hitos',
+            responsible: 'Responsable'
         },
         sl: {
             todo: 'Za narediti',
@@ -206,7 +212,9 @@ window.ONG = {
             date: 'Datum',
             assistant_api_mode: 'API način',
             assistant_free_mode: 'Brezplačni način (Pravila)',
-            assistant_start_conversation: 'Najprej začnite pogovor'
+            assistant_start_conversation: 'Najprej začnite pogovor',
+            list_without_milestones: 'Seznam brez mejnikov',
+            responsible: 'Odgovoren'
         }
     },
 
@@ -829,6 +837,23 @@ window.ONG = {
      * Rend la vue en liste
      */
     renderListView: (container, tasks) => {
+        // Initialiser l'état de la vue Liste si pas défini
+        if (!ONG.state.listView) {
+            ONG.state.listView = {
+                groupByMilestone: true,
+                sortField: 'end_date',
+                sortDir: 'asc'
+            };
+        }
+
+        const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+
+        // Si mode "liste sans jalons", afficher une vue simplifiée avec tri
+        if (!ONG.state.listView.groupByMilestone) {
+            ONG.renderFlatListView(container, tasks);
+            return;
+        }
+
         // Trier les tâches par date de départ
         tasks.sort((a, b) => {
             // Tâches sans date de départ vont à la fin
@@ -939,6 +964,11 @@ window.ONG = {
         };
 
         let html = `
+            <div class="mb-4 flex items-center gap-2">
+                <button onclick="ONG.toggleListGrouping()" class="px-3 py-1 text-sm border rounded ${ONG.state.listView.groupByMilestone ? 'bg-white hover:bg-gray-50' : 'bg-blue-100 border-blue-500 text-blue-700'}">
+                    ${dict.list_without_milestones || 'Liste sans jalons'}
+                </button>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left bg-white shadow rounded">
                     <thead class="bg-gray-100 border-b cursor-pointer select-none">
@@ -1014,6 +1044,147 @@ window.ONG = {
                 html += renderTaskRow(t);
             });
         }
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-right text-xs text-gray-400 mt-2">${tasks.length} tâches</div>
+        `;
+
+        container.innerHTML = html;
+    },
+
+    /**
+     * Rend la vue en liste sans jalons (flat) avec options de tri
+     */
+    renderFlatListView: (container, tasks) => {
+        const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+
+        // Filtrer les tâches du projet actuel
+        tasks = tasks.filter(t => t.project_id == ONG.state.pid);
+
+        // Trier les tâches selon le champ et la direction sélectionnés
+        const sortField = ONG.state.listView.sortField;
+        const sortDir = ONG.state.listView.sortDir;
+
+        tasks.sort((a, b) => {
+            let aVal, bVal;
+
+            if (sortField === 'title') {
+                aVal = a.title || '';
+                bVal = b.title || '';
+                const result = aVal.localeCompare(bVal);
+                return sortDir === 'asc' ? result : -result;
+            } else if (sortField === 'owner_id') {
+                aVal = ONG.getMemberName(a.owner_id);
+                bVal = ONG.getMemberName(b.owner_id);
+                const result = aVal.localeCompare(bVal);
+                return sortDir === 'asc' ? result : -result;
+            } else if (sortField === 'end_date') {
+                aVal = a.end_date || '';
+                bVal = b.end_date || '';
+                if (!aVal && !bVal) return 0;
+                if (!aVal) return 1;
+                if (!bVal) return -1;
+                const result = aVal.localeCompare(bVal);
+                return sortDir === 'asc' ? result : -result;
+            }
+            return 0;
+        });
+
+        let html = `
+            <div class="mb-4 flex items-center gap-2">
+                <button onclick="ONG.toggleListGrouping()" class="px-3 py-1 text-sm border rounded bg-blue-100 border-blue-500 text-blue-700">
+                    ${dict.list_without_milestones || 'Liste sans jalons'}
+                </button>
+                <span class="text-sm text-gray-600 ml-4">${dict.sort || 'Trier par'} :</span>
+                <button onclick="ONG.toggleListSort('end_date')" class="px-3 py-1 text-sm border rounded ${sortField === 'end_date' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-white hover:bg-gray-50'}">
+                    📅 ${dict.date || 'Date'} ${sortField === 'end_date' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                </button>
+                <button onclick="ONG.toggleListSort('title')" class="px-3 py-1 text-sm border rounded ${sortField === 'title' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-white hover:bg-gray-50'}">
+                    📝 ${dict.name || 'Nom'} ${sortField === 'title' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                </button>
+                <button onclick="ONG.toggleListSort('owner_id')" class="px-3 py-1 text-sm border rounded ${sortField === 'owner_id' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-white hover:bg-gray-50'}">
+                    👤 ${dict.responsible || 'Responsable'} ${sortField === 'owner_id' ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left bg-white shadow rounded">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th class="px-3 py-2">Titre</th>
+                            <th class="px-3 py-2">Responsable</th>
+                            <th class="px-3 py-2">Début</th>
+                            <th class="px-3 py-2">Fin</th>
+                            <th class="px-3 py-2">Statut</th>
+                            <th class="px-3 py-2">Jalon</th>
+                            <th class="px-3 py-2">Dépendances</th>
+                            <th class="px-3 py-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        // Afficher toutes les tâches
+        tasks.forEach(t => {
+            // Récupérer le nom du jalon si existe
+            let milestoneName = '';
+            if (t.milestone_id) {
+                const milestone = ONG.data.milestones.find(m => m.id == t.milestone_id);
+                if (milestone) {
+                    milestoneName = `<span class="text-xs text-indigo-600">📍 ${ONG.escape(milestone.name)}</span>`;
+                }
+            }
+
+            // Récupérer les dépendances
+            let depsInfo = '';
+            if (t.dependencies && t.dependencies.trim() !== '') {
+                const deps = t.dependencies.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+                const depNames = deps.map(depId => {
+                    const depTask = tasks.find(task => task.id === depId);
+                    return depTask ? ONG.escape(depTask.title) : `#${depId}`;
+                });
+                if (depNames.length > 0) {
+                    depsInfo = `<span class="text-xs text-gray-500" title="${depNames.join(', ')}">🔗 ${depNames.length}</span>`;
+                }
+            }
+
+            // Détection de conflit de dates avec dépendances
+            let conflictIcon = '';
+            if (t.dependencies && t.dependencies.trim() !== '') {
+                const deps = t.dependencies.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+                deps.forEach(depId => {
+                    const depTask = tasks.find(task => task.id === depId);
+                    if (depTask && depTask.end_date && t.start_date && depTask.end_date > t.start_date) {
+                        conflictIcon = '<span class="text-red-500 mr-1" title="Conflit: cette tâche commence avant la fin de sa dépendance">⚠️</span>';
+                    }
+                });
+            }
+
+            html += `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-3 py-2 font-medium">
+                        ${conflictIcon}${ONG.escape(t.title)}
+                    </td>
+                    <td class="px-3 py-2 text-gray-600">${ONG.getMemberName(t.owner_id)}</td>
+                    <td class="px-3 py-2 text-gray-500">${t.start_date || ''}</td>
+                    <td class="px-3 py-2 text-gray-500">${t.end_date || ''}</td>
+                    <td class="px-3 py-2">
+                        <span class="px-2 rounded text-xs bg-gray-200">
+                            ${ONG.dict[ONG.state.lang][t.status] || t.status}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2">${milestoneName}</td>
+                    <td class="px-3 py-2">${depsInfo}</td>
+                    <td class="px-3 py-2 text-right">
+                        ${t.link ? `<a href="${ONG.escape(t.link)}" target="_blank" class="text-blue-500 mr-2">🔗</a>` : ''}
+                        <button onclick="ONG.editTask(${t.id})" class="text-blue-600 mr-2">✏️</button>
+                        <button onclick="ONG.deleteItem('tasks', ${t.id})" class="text-red-500">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        });
 
         html += `
                     </tbody>
@@ -2855,6 +3026,46 @@ window.ONG = {
             // Nouveau champ, commencer par ordre croissant
             ONG.state.milestoneSort.field = field;
             ONG.state.milestoneSort.dir = 'asc';
+        }
+
+        ONG.renderView();
+    },
+
+    /**
+     * Bascule le regroupement par jalons dans la vue Liste
+     */
+    toggleListGrouping: () => {
+        if (!ONG.state.listView) {
+            ONG.state.listView = {
+                groupByMilestone: true,
+                sortField: 'end_date',
+                sortDir: 'asc'
+            };
+        }
+
+        ONG.state.listView.groupByMilestone = !ONG.state.listView.groupByMilestone;
+        ONG.renderView();
+    },
+
+    /**
+     * Bascule le tri dans la vue Liste sans jalons
+     */
+    toggleListSort: (field) => {
+        if (!ONG.state.listView) {
+            ONG.state.listView = {
+                groupByMilestone: true,
+                sortField: 'end_date',
+                sortDir: 'asc'
+            };
+        }
+
+        if (ONG.state.listView.sortField === field) {
+            // Inverser la direction si même champ
+            ONG.state.listView.sortDir = (ONG.state.listView.sortDir === 'asc') ? 'desc' : 'asc';
+        } else {
+            // Nouveau champ, commencer par ordre croissant
+            ONG.state.listView.sortField = field;
+            ONG.state.listView.sortDir = 'asc';
         }
 
         ONG.renderView();
