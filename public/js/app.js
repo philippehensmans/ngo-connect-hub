@@ -2651,7 +2651,7 @@ window.ONG = {
      */
     fillMilestoneDependencies: (excludeId = null) => {
         const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
-        const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid && m.id != excludeId);
+        const milestones = (ONG.data.milestones || []).filter(m => m.project_id == ONG.state.pid && m.id != excludeId);
 
         const opts = `<option value="">${dict.no_dependency || 'Aucune dépendance'}</option>` +
             milestones.map(m => `<option value="${m.id}">${ONG.escape(m.name)} (${m.date})</option>`).join('');
