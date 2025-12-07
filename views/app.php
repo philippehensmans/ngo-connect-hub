@@ -560,9 +560,18 @@
         <button id="btnToggleSidebar" class="lg:hidden text-gray-600 hover:text-gray-900 -ml-2">
             <i class="fas fa-bars text-xl"></i>
         </button>
-        <div class="bg-blue-100 text-blue-700 w-8 h-8 rounded flex items-center justify-center font-bold">
-            <?= substr($teamName, 0, 1) ?>
-        </div>
+        <?php
+        $logoPath = __DIR__ . '/../public/images/logo.png';
+        if (file_exists($logoPath)) {
+            // Afficher le logo s'il existe
+            echo '<img src="images/logo.png" alt="Logo" class="h-10 w-auto object-contain">';
+        } else {
+            // Afficher le carré avec l'initiale si pas de logo
+            echo '<div class="bg-blue-100 text-blue-700 w-8 h-8 rounded flex items-center justify-center font-bold">';
+            echo substr($teamName, 0, 1);
+            echo '</div>';
+        }
+        ?>
         <span class="font-bold text-gray-700 hidden sm:inline"><?= htmlspecialchars($teamName) ?></span>
     </div>
 
