@@ -586,7 +586,7 @@
                     <button onclick="ONG.openModalProject()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
                         <i class="fas fa-folder text-blue-600"></i> <?= $t->translate('new_proj') ?>
                     </button>
-                    <button onclick="ONG.openModal('modalTask')" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+                    <button onclick="ONG.openTaskModal()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
                         <i class="fas fa-tasks text-green-600"></i> <?= $t->translate('new_task') ?>
                     </button>
                     <button onclick="ONG.openMilestoneModal()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
@@ -645,7 +645,7 @@
         <button onclick="ONG.openModalProject()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
             <i class="fas fa-folder text-blue-600 w-5"></i> <?= $t->translate('new_proj') ?>
         </button>
-        <button onclick="ONG.openModal('modalTask')" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+        <button onclick="ONG.openTaskModal()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
             <i class="fas fa-tasks text-green-600 w-5"></i> <?= $t->translate('new_task') ?>
         </button>
         <button onclick="ONG.openMilestoneModal()" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
