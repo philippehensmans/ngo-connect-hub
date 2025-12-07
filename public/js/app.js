@@ -964,11 +964,15 @@ window.ONG = {
                                 ${dependsOnMilestone ? `<span class="text-xs font-normal text-gray-600">🔗 ${dict.depends_on || 'Dépend de'}: ${ONG.escape(dependsOnMilestone.name)}</span>` : ''}
                                 <span class="text-xs font-normal text-gray-500">${milestoneTasks.length} tâche${milestoneTasks.length > 1 ? 's' : ''}</span>
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-3">
                                 <div class="w-32 bg-gray-200 rounded-full h-2">
                                     <div class="bg-indigo-600 h-2 rounded-full" style="width: ${progress}%"></div>
                                 </div>
                                 <span class="text-xs text-gray-600">${progress}%</span>
+                                <div class="flex gap-1">
+                                    <button onclick='ONG.editMilestone(${JSON.stringify(milestone)})' class="text-blue-600 hover:text-blue-800" title="Éditer">✏️</button>
+                                    <button onclick="ONG.deleteItem('milestones', ${milestone.id})" class="text-red-600 hover:text-red-800" title="Supprimer">🗑️</button>
+                                </div>
                             </div>
                         </div>
                     </td>
