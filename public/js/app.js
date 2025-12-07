@@ -68,7 +68,10 @@ window.ONG = {
             download_ics: 'Télécharger .ics',
             sort: 'Trier par',
             name: 'Nom',
-            date: 'Date'
+            date: 'Date',
+            assistant_api_mode: 'Mode API',
+            assistant_free_mode: 'Mode Gratuit (Règles)',
+            assistant_start_conversation: 'Démarrez d\'abord une conversation'
         },
         en: {
             todo: 'To Do',
@@ -110,7 +113,10 @@ window.ONG = {
             download_ics: 'Download .ics',
             sort: 'Sort by',
             name: 'Name',
-            date: 'Date'
+            date: 'Date',
+            assistant_api_mode: 'API Mode',
+            assistant_free_mode: 'Free Mode (Rules)',
+            assistant_start_conversation: 'Please start a conversation first'
         },
         es: {
             todo: 'Pendiente',
@@ -152,7 +158,10 @@ window.ONG = {
             download_ics: 'Descargar .ics',
             sort: 'Ordenar por',
             name: 'Nombre',
-            date: 'Fecha'
+            date: 'Fecha',
+            assistant_api_mode: 'Modo API',
+            assistant_free_mode: 'Modo Gratuito (Reglas)',
+            assistant_start_conversation: 'Primero inicie una conversación'
         },
         sl: {
             todo: 'Za narediti',
@@ -194,7 +203,10 @@ window.ONG = {
             download_ics: 'Prenesi .ics',
             sort: 'Razvrsti po',
             name: 'Ime',
-            date: 'Datum'
+            date: 'Datum',
+            assistant_api_mode: 'API način',
+            assistant_free_mode: 'Brezplačni način (Pravila)',
+            assistant_start_conversation: 'Najprej začnite pogovor'
         }
     },
 
@@ -2077,11 +2089,11 @@ window.ONG = {
             const providerName = providerNames[provider] || provider;
             const modelText = model ? ` (${model})` : '';
             modeBadge = `<span class="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold">
-                🤖 Mode API: ${providerName}${modelText}
+                🤖 ${t.assistant_api_mode || 'Mode API'}: ${providerName}${modelText}
             </span>`;
         } else {
             modeBadge = `<span class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">
-                💡 Mode Gratuit (Règles)
+                💡 ${t.assistant_free_mode || 'Mode Gratuit (Règles)'}
             </span>`;
         }
 
@@ -2186,7 +2198,8 @@ window.ONG = {
             if (!message) return;
 
             if (!ONG.assistant.conversationId) {
-                ONG.toast('Démarrez d\'abord une conversation', 'warning');
+                const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+                ONG.toast(dict.assistant_start_conversation || 'Démarrez d\'abord une conversation', 'warning');
                 return;
             }
 

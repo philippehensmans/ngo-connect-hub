@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Services\Auth;
 use App\Services\AssistantService;
+use App\Services\Translation;
 
 /**
  * Contrôleur pour l'assistant IA
@@ -15,7 +16,10 @@ class AssistantController extends Controller
     public function __construct($db)
     {
         parent::__construct($db);
-        $this->assistantService = new AssistantService($db);
+        // Récupérer la langue depuis la session
+        $lang = $_SESSION['lang'] ?? $_GET['lang'] ?? 'fr';
+        $translation = new Translation($lang);
+        $this->assistantService = new AssistantService($db, $translation);
     }
 
     /**

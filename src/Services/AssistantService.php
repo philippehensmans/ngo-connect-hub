@@ -13,6 +13,7 @@ class AssistantService
     private PDO $db;
     private ?AIApiService $apiService = null;
     private bool $useApi = false;
+    private Translation $translation;
 
     // Étapes du questionnaire
     private const STEP_WELCOME = 'welcome';
@@ -65,9 +66,10 @@ class AssistantService
         ]
     ];
 
-    public function __construct(PDO $db)
+    public function __construct(PDO $db, Translation $translation)
     {
         $this->db = $db;
+        $this->translation = $translation;
     }
 
     /**
@@ -126,10 +128,7 @@ class AssistantService
         // Si l'API est activée, utiliser l'API pour générer le message de bienvenue
         if ($this->useApi && $this->apiService) {
             try {
-                $systemPrompt = "Tu es un assistant IA spécialisé dans la planification de projets pour des ONG. " .
-                    "Accueille l'utilisateur chaleureusement et demande-lui quel type de projet il souhaite réaliser. " .
-                    "Propose-lui les catégories suivantes : Action humanitaire, Environnement et climat, Éducation, Santé, " .
-                    "Développement local, Plaidoyer et advocacy, ou un projet personnalisé.";
+                $systemPrompt = $this->translation->translate('assistant_api_prompt');
 
                 $welcomeMessage = $this->apiService->sendMessage([], $systemPrompt);
 
@@ -137,13 +136,13 @@ class AssistantService
                     'role' => 'assistant',
                     'content' => $welcomeMessage,
                     'suggestions' => [
-                        'Action humanitaire',
-                        'Environnement et climat',
-                        'Éducation',
-                        'Santé',
-                        'Développement local',
-                        'Plaidoyer et advocacy',
-                        'Autre (projet personnalisé)'
+                        $this->translation->translate('category_humanitarian'),
+                        $this->translation->translate('category_environment'),
+                        $this->translation->translate('category_education'),
+                        $this->translation->translate('category_health'),
+                        $this->translation->translate('category_development'),
+                        $this->translation->translate('category_advocacy'),
+                        $this->translation->translate('category_custom')
                     ]
                 ];
             } catch (\Exception $e) {
@@ -154,15 +153,15 @@ class AssistantService
         // Message par défaut (mode règles ou fallback si erreur API)
         return [
             'role' => 'assistant',
-            'content' => "Bonjour ! Je suis votre assistant de planification de projet. Je vais vous aider à structurer votre projet en vous posant quelques questions.\n\nPour commencer, quel type de projet souhaitez-vous réaliser ?",
+            'content' => $this->translation->translate('assistant_welcome_msg'),
             'suggestions' => [
-                'Action humanitaire',
-                'Environnement et climat',
-                'Éducation',
-                'Santé',
-                'Développement local',
-                'Plaidoyer et advocacy',
-                'Autre (projet personnalisé)'
+                $this->translation->translate('category_humanitarian'),
+                $this->translation->translate('category_environment'),
+                $this->translation->translate('category_education'),
+                $this->translation->translate('category_health'),
+                $this->translation->translate('category_development'),
+                $this->translation->translate('category_advocacy'),
+                $this->translation->translate('category_custom')
             ]
         ];
     }
@@ -324,7 +323,7 @@ class AssistantService
 
             default:
                 return [
-                    'message' => "Je ne comprends pas où nous en sommes. Recommençons depuis le début.",
+                    'message' => $this->translation->translate('assistant_error_step'),
                     'context' => ['step' => self::STEP_WELCOME, 'data' => []]
                 ];
         }
@@ -356,7 +355,7 @@ class AssistantService
         $data['project_type'] = $projectType;
 
         return [
-            'message' => "Excellent ! Vous avez choisi un projet de type « " . $this->getProjectTypeName($projectType) . " ».\n\nMaintenant, quel nom souhaitez-vous donner à votre projet ?",
+            'message' => sprintf($this->translation->translate('assistant_project_selected'), $this->getProjectTypeName($projectType)),
             'context' => [
                 'step' => self::STEP_PROJECT_TYPE,
                 'data' => $data
@@ -372,7 +371,7 @@ class AssistantService
         $data['project_name'] = trim($message);
 
         return [
-            'message' => "Parfait ! Le projet s'appellera « " . $data['project_name'] . " ».\n\nPouvez-vous me donner une brève description de ce projet ? (Objectifs principaux, contexte, etc.)",
+            'message' => sprintf($this->translation->translate('assistant_project_name_confirm'), $data['project_name']),
             'context' => [
                 'step' => self::STEP_PROJECT_NAME,
                 'data' => $data
@@ -388,8 +387,14 @@ class AssistantService
         $data['project_description'] = trim($message);
 
         return [
-            'message' => "Merci pour ces précisions !\n\nQuelle est la durée prévue de votre projet ? Indiquez la période (exemple : 6 mois, 1 an, 18 mois, etc.)",
-            'suggestions' => ['3 mois', '6 mois', '1 an', '18 mois', '2 ans'],
+            'message' => $this->translation->translate('assistant_description_confirm'),
+            'suggestions' => [
+                $this->translation->translate('assistant_duration_3m'),
+                $this->translation->translate('assistant_duration_6m'),
+                $this->translation->translate('assistant_duration_1y'),
+                $this->translation->translate('assistant_duration_18m'),
+                $this->translation->translate('assistant_duration_2y')
+            ],
             'context' => [
                 'step' => self::STEP_PROJECT_DESCRIPTION,
                 'data' => $data
@@ -407,11 +412,14 @@ class AssistantService
         $projectType = $data['project_type'] ?? 'custom';
         $suggestions = self::PROJECT_TYPES[$projectType]['milestones'];
 
+        $milestonesList = implode("\n", array_map(fn($m, $i) => ($i+1) . ". " . $m, $suggestions, array_keys($suggestions)));
+
         return [
-            'message' => "Compris ! Le projet durera " . $data['duration'] . ".\n\nMaintenant, parlons des jalons (milestones) importants. Les jalons sont les étapes clés de votre projet.\n\nVoici des suggestions basées sur votre type de projet. Vous pouvez les accepter, les modifier, ou proposer les vôtres :\n\n" .
-                         implode("\n", array_map(fn($m, $i) => ($i+1) . ". " . $m, $suggestions, array_keys($suggestions))) .
-                         "\n\nRépondez « OK » pour accepter ces jalons, ou proposez vos propres jalons séparés par des virgules.",
-            'suggestions' => ['OK', 'Je propose mes propres jalons'],
+            'message' => sprintf($this->translation->translate('assistant_milestones_question'), $data['duration'], $milestonesList),
+            'suggestions' => [
+                $this->translation->translate('assistant_accept'),
+                $this->translation->translate('assistant_custom_suggest')
+            ],
             'context' => [
                 'step' => self::STEP_DURATION,
                 'data' => $data
@@ -437,11 +445,14 @@ class AssistantService
 
         $suggestions = self::PROJECT_TYPES[$projectType]['groups'];
 
+        $groupsList = implode("\n", array_map(fn($g, $i) => ($i+1) . ". " . $g, $suggestions, array_keys($suggestions)));
+
         return [
-            'message' => "Parfait ! J'ai noté " . count($data['milestones']) . " jalons.\n\nPassons maintenant à l'organisation de votre équipe. Les groupes vous permettent d'organiser les tâches par thématique ou par équipe de travail.\n\nVoici des suggestions de groupes pour votre projet :\n\n" .
-                         implode("\n", array_map(fn($g, $i) => ($i+1) . ". " . $g, $suggestions, array_keys($suggestions))) .
-                         "\n\nRépondez « OK » pour accepter ces groupes, ou proposez vos propres groupes séparés par des virgules.",
-            'suggestions' => ['OK', 'Je propose mes propres groupes'],
+            'message' => sprintf($this->translation->translate('assistant_groups_question'), count($data['milestones']), $groupsList),
+            'suggestions' => [
+                $this->translation->translate('assistant_accept'),
+                $this->translation->translate('assistant_custom_groups')
+            ],
             'context' => [
                 'step' => self::STEP_MILESTONES,
                 'data' => $data
@@ -467,11 +478,14 @@ class AssistantService
 
         $suggestions = self::PROJECT_TYPES[$projectType]['deliverables'];
 
+        $deliverablesList = implode("\n", array_map(fn($d, $i) => ($i+1) . ". " . $d, $suggestions, array_keys($suggestions)));
+
         return [
-            'message' => "Excellent ! J'ai créé " . count($data['groups']) . " groupes de travail.\n\nPour finir, quels sont les principaux livrables (outputs/deliverables) attendus de ce projet ?\n\nVoici quelques suggestions :\n\n" .
-                         implode("\n", array_map(fn($d, $i) => ($i+1) . ". " . $d, $suggestions, array_keys($suggestions))) .
-                         "\n\nRépondez « OK » pour accepter ces livrables, ou proposez vos propres livrables séparés par des virgules.",
-            'suggestions' => ['OK', 'Je propose mes propres livrables'],
+            'message' => sprintf($this->translation->translate('assistant_deliverables_question'), count($data['groups']), $deliverablesList),
+            'suggestions' => [
+                $this->translation->translate('assistant_accept'),
+                $this->translation->translate('assistant_custom_deliverables')
+            ],
             'context' => [
                 'step' => self::STEP_GROUPS,
                 'data' => $data
@@ -499,9 +513,11 @@ class AssistantService
         $summary = $this->generateSummary($data);
 
         return [
-            'message' => "Parfait ! J'ai toutes les informations nécessaires.\n\n📋 **Résumé de votre projet :**\n\n" . $summary .
-                         "\n\nEst-ce que ce résumé vous convient ? Répondez « Oui » pour générer la structure, ou « Modifier » si vous voulez changer quelque chose.",
-            'suggestions' => ['Oui, générer la structure', 'Modifier quelque chose'],
+            'message' => sprintf($this->translation->translate('assistant_summary_confirm'), $summary),
+            'suggestions' => [
+                $this->translation->translate('assistant_confirm_yes'),
+                $this->translation->translate('assistant_confirm_modify')
+            ],
             'context' => [
                 'step' => self::STEP_DELIVERABLES,
                 'data' => $data
@@ -516,9 +532,9 @@ class AssistantService
     {
         $message = strtolower(trim($message));
 
-        if (strpos($message, 'oui') !== false || strpos($message, 'générer') !== false || strpos($message, 'ok') !== false) {
+        if (strpos($message, 'oui') !== false || strpos($message, 'yes') !== false || strpos($message, 'sí') !== false || strpos($message, 'da') !== false || strpos($message, 'générer') !== false || strpos($message, 'generar') !== false || strpos($message, 'generate') !== false || strpos($message, 'ok') !== false) {
             return [
-                'message' => "✅ Excellent ! Vous pouvez maintenant cliquer sur le bouton « Générer la structure » pour créer automatiquement les groupes, jalons et tâches de votre projet.\n\nL'assistant a terminé la collecte d'informations. Merci et bon projet !",
+                'message' => $this->translation->translate('assistant_completed'),
                 'context' => [
                     'step' => self::STEP_COMPLETED,
                     'data' => $data
@@ -526,8 +542,15 @@ class AssistantService
             ];
         } else {
             return [
-                'message' => "D'accord, que souhaitez-vous modifier ? Dites-moi ce que vous voulez changer (nom, description, durée, jalons, groupes, ou livrables).",
-                'suggestions' => ['Nom du projet', 'Description', 'Durée', 'Jalons', 'Groupes', 'Livrables'],
+                'message' => $this->translation->translate('assistant_modify_what'),
+                'suggestions' => [
+                    $this->translation->translate('assistant_modify_name'),
+                    $this->translation->translate('assistant_modify_description'),
+                    $this->translation->translate('assistant_modify_duration'),
+                    $this->translation->translate('assistant_modify_milestones'),
+                    $this->translation->translate('assistant_modify_groups'),
+                    $this->translation->translate('assistant_modify_deliverables')
+                ],
                 'context' => [
                     'step' => self::STEP_CONFIRMATION,
                     'data' => $data
@@ -555,25 +578,28 @@ class AssistantService
      */
     private function generateSummary(array $data): string
     {
-        $summary = "**Nom :** " . ($data['project_name'] ?? 'Non défini') . "\n";
-        $summary .= "**Type :** " . $this->getProjectTypeName($data['project_type'] ?? 'custom') . "\n";
-        $summary .= "**Description :** " . ($data['project_description'] ?? 'Non définie') . "\n";
-        $summary .= "**Durée :** " . ($data['duration'] ?? 'Non définie') . "\n\n";
+        $summary = sprintf($this->translation->translate('assistant_summary_name'), $data['project_name'] ?? 'Non défini') . "\n";
+        $summary .= sprintf($this->translation->translate('assistant_summary_type'), $this->getProjectTypeName($data['project_type'] ?? 'custom')) . "\n";
+        $summary .= sprintf($this->translation->translate('assistant_summary_description'), $data['project_description'] ?? 'Non définie') . "\n";
+        $summary .= sprintf($this->translation->translate('assistant_summary_duration'), $data['duration'] ?? 'Non définie') . "\n\n";
 
-        $summary .= "**Jalons (" . count($data['milestones'] ?? []) . ") :**\n";
+        $milestones = '';
         foreach ($data['milestones'] ?? [] as $i => $milestone) {
-            $summary .= "  " . ($i+1) . ". " . $milestone . "\n";
+            $milestones .= ($i+1) . ". " . $milestone . ", ";
         }
+        $summary .= sprintf($this->translation->translate('assistant_summary_milestones'), rtrim($milestones, ', ')) . "\n";
 
-        $summary .= "\n**Groupes de travail (" . count($data['groups'] ?? []) . ") :**\n";
+        $groups = '';
         foreach ($data['groups'] ?? [] as $i => $group) {
-            $summary .= "  " . ($i+1) . ". " . $group . "\n";
+            $groups .= ($i+1) . ". " . $group . ", ";
         }
+        $summary .= sprintf($this->translation->translate('assistant_summary_groups'), rtrim($groups, ', ')) . "\n";
 
-        $summary .= "\n**Livrables (" . count($data['deliverables'] ?? []) . ") :**\n";
+        $deliverables = '';
         foreach ($data['deliverables'] ?? [] as $i => $deliverable) {
-            $summary .= "  " . ($i+1) . ". " . $deliverable . "\n";
+            $deliverables .= ($i+1) . ". " . $deliverable . ", ";
         }
+        $summary .= sprintf($this->translation->translate('assistant_summary_deliverables'), rtrim($deliverables, ', ')) . "\n";
 
         return $summary;
     }
@@ -583,17 +609,18 @@ class AssistantService
      */
     private function getProjectTypeName(string $type): string
     {
-        $names = [
-            'humanitarian' => 'Action humanitaire',
-            'environment' => 'Environnement et climat',
-            'education' => 'Éducation',
-            'health' => 'Santé',
-            'development' => 'Développement local',
-            'advocacy' => 'Plaidoyer et advocacy',
-            'custom' => 'Projet personnalisé'
+        $keys = [
+            'humanitarian' => 'category_humanitarian',
+            'environment' => 'category_environment',
+            'education' => 'category_education',
+            'health' => 'category_health',
+            'development' => 'category_development',
+            'advocacy' => 'category_advocacy',
+            'custom' => 'category_custom'
         ];
 
-        return $names[$type] ?? 'Autre';
+        $key = $keys[$type] ?? 'category_custom';
+        return $this->translation->translate($key);
     }
 
     /**
