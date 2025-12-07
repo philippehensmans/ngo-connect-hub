@@ -1241,13 +1241,25 @@ window.ONG = {
                     const done = mTasks.filter(t => t.status === 'done').length;
                     const pct = mTasks.length ? Math.round((done / mTasks.length) * 100) : 0;
 
+                    // Trouver le milestone parent si dépendance
+                    const dependsOnMilestone = m.depends_on ? milestones.find(parent => parent.id == m.depends_on) : null;
+                    const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+
                     return `
                         <div class="bg-white p-4 rounded shadow">
                             <div class="flex justify-between items-center mb-2">
-                                <h3 class="font-bold text-lg">
-                                    ${ONG.escape(m.name)}
-                                    <span class="text-xs font-normal text-gray-500">(${m.date})</span>
-                                </h3>
+                                <div>
+                                    <h3 class="font-bold text-lg">
+                                        ${ONG.escape(m.name)}
+                                        <span class="text-xs font-normal text-gray-500">(${m.date})</span>
+                                    </h3>
+                                    ${dependsOnMilestone ? `
+                                        <div class="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                                            <i class="fas fa-link"></i>
+                                            <span>${dict.depends_on || 'Dépend de'}: <strong>${ONG.escape(dependsOnMilestone.name)}</strong></span>
+                                        </div>
+                                    ` : ''}
+                                </div>
                                 <div>
                                     <button onclick='ONG.editMilestone(${JSON.stringify(m)})' class="text-blue-500 mr-2">✏️</button>
                                     <button onclick="ONG.deleteItem('milestones', ${m.id})" class="text-red-500">🗑️</button>
@@ -2602,6 +2614,7 @@ window.ONG = {
         if (form) form.reset();
 
         ONG.setVal('milestoneProjectId', ONG.state.pid);
+        ONG.fillMilestoneDependencies();
         ONG.openModal('modalMilestone');
     },
 
@@ -2614,7 +2627,23 @@ window.ONG = {
         ONG.setVal('milestoneName', m.name);
         ONG.setVal('milestoneDate', m.date);
         ONG.setVal('milestoneStatus', m.status);
+        ONG.fillMilestoneDependencies(m.id);
+        ONG.setVal('milestoneDependsOn', m.depends_on || '');
         ONG.openModal('modalMilestone');
+    },
+
+    /**
+     * Remplit le select des dépendances de milestone
+     */
+    fillMilestoneDependencies: (excludeId = null) => {
+        const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+        const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid && m.id != excludeId);
+
+        const opts = `<option value="">${dict.no_dependency || 'Aucune dépendance'}</option>` +
+            milestones.map(m => `<option value="${m.id}">${ONG.escape(m.name)} (${m.date})</option>`).join('');
+
+        const select = ONG.el('milestoneDependsOn');
+        if (select) select.innerHTML = opts;
     },
 
     /**

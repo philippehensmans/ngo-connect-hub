@@ -210,9 +210,28 @@ class Database
             name TEXT NOT NULL,
             date DATE NOT NULL,
             status TEXT DEFAULT 'active',
+            depends_on INTEGER,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+            FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            FOREIGN KEY(depends_on) REFERENCES milestones(id) ON DELETE SET NULL
         )");
+
+        // Migration : Ajouter depends_on si la colonne n'existe pas
+        try {
+            $cols = $db->query("PRAGMA table_info(milestones)")->fetchAll(\PDO::FETCH_ASSOC);
+            $hasDepends = false;
+            foreach ($cols as $col) {
+                if ($col['name'] === 'depends_on') {
+                    $hasDepends = true;
+                    break;
+                }
+            }
+            if (!$hasDepends) {
+                $db->exec("ALTER TABLE milestones ADD COLUMN depends_on INTEGER REFERENCES milestones(id) ON DELETE SET NULL");
+            }
+        } catch (\Exception $e) {
+            // Colonne déjà existante ou autre erreur, on continue
+        }
 
         // Table des tâches
         $db->exec("CREATE TABLE IF NOT EXISTS tasks (

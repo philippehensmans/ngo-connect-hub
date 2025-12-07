@@ -33,6 +33,7 @@ class MilestoneController extends Controller
             'name' => $data['name'],
             'date' => $data['date'],
             'status' => $data['status'] ?? 'active',
+            'depends_on' => !empty($data['depends_on']) ? (int)$data['depends_on'] : null,
         ];
 
         try {

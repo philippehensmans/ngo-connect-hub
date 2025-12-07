@@ -181,6 +181,9 @@ class Translation
             'edit_btn' => 'Éditer',
             'delete_btn' => 'Supprimer',
             'new' => 'Nouveau',
+            'depends_on_milestone' => 'Dépend du jalon',
+            'no_dependency' => 'Aucune dépendance',
+            'depends_on' => 'Dépend de',
         ],
         'en' => [
             'settings' => 'Settings',
@@ -355,6 +358,9 @@ class Translation
             'edit_btn' => 'Edit',
             'delete_btn' => 'Delete',
             'new' => 'New',
+            'depends_on_milestone' => 'Depends on milestone',
+            'no_dependency' => 'No dependency',
+            'depends_on' => 'Depends on',
         ],
         'es' => [
             'settings' => 'Ajustes',
@@ -529,6 +535,9 @@ class Translation
             'edit_btn' => 'Editar',
             'delete_btn' => 'Eliminar',
             'new' => 'Nuevo',
+            'depends_on_milestone' => 'Depende del hito',
+            'no_dependency' => 'Sin dependencia',
+            'depends_on' => 'Depende de',
 
         ],
         'sl' => [
@@ -704,6 +713,9 @@ class Translation
             'edit_btn' => 'Uredi',
             'delete_btn' => 'Izbriši',
             'new' => 'Novo',
+            'depends_on_milestone' => 'Odvisno od mejnika',
+            'no_dependency' => 'Brez odvisnosti',
+            'depends_on' => 'Odvisno od',
 
         ],
     ];

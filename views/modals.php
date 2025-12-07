@@ -327,9 +327,14 @@
 
             <input type="date" name="date" id="milestoneDate" class="w-full border p-2 mb-2 rounded" required>
 
-            <select name="status" id="milestoneStatus" class="w-full border p-2 mb-4 rounded">
+            <select name="status" id="milestoneStatus" class="w-full border p-2 mb-2 rounded">
                 <option value="active"><?= $t->translate('wip') ?></option>
                 <option value="done"><?= $t->translate('done') ?></option>
+            </select>
+
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('depends_on_milestone') ?></label>
+            <select name="depends_on" id="milestoneDependsOn" class="w-full border p-2 mb-4 rounded">
+                <option value=""><?= $t->translate('no_dependency') ?></option>
             </select>
 
             <div class="flex justify-end gap-2">
