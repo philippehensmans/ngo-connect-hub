@@ -1160,11 +1160,6 @@ window.ONG = {
         };
 
         let html = `
-            <div class="mb-4">
-                <button onclick="ONG.openGroupModal()" class="bg-blue-600 text-white px-3 py-1 rounded shadow">
-                    + Nouveau Groupe
-                </button>
-            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 ${groups.map(g => {
                     const gTasks = tasks.filter(t => t.group_id == g.id);
@@ -1235,11 +1230,6 @@ window.ONG = {
         const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid);
 
         let html = `
-            <div class="mb-4">
-                <button onclick="ONG.openMilestoneModal()" class="bg-indigo-600 text-white px-3 py-1 rounded shadow">
-                    + Nouveau Jalon
-                </button>
-            </div>
             <div class="space-y-4">
                 ${milestones.map(m => {
                     const mTasks = tasks.filter(t => t.milestone_id == m.id);
