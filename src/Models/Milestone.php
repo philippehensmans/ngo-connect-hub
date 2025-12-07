@@ -8,5 +8,5 @@ namespace App\Models;
 class Milestone extends Model
 {
     protected string $table = 'milestones';
-    protected array $fillable = ['project_id', 'name', 'date', 'status'];
+    protected array $fillable = ['project_id', 'name', 'date', 'status', 'depends_on'];
 }
