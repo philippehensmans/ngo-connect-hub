@@ -2833,17 +2833,12 @@ window.ONG = {
      * Change la langue
      */
     setLang: (lang) => {
-        ONG.state.lang = lang;
-        const langSelect = ONG.el('langSelect');
-        if (langSelect) langSelect.value = lang;
-
-        // Re-rendre la vue actuelle avec la nouvelle langue
-        ONG.renderView();
-
-        // Mettre à jour l'URL sans recharger la page
+        // Construire l'URL avec la nouvelle langue
         const url = new URL(window.location);
         url.searchParams.set('lang', lang);
-        window.history.pushState({}, '', url);
+
+        // Recharger la page avec la nouvelle langue
+        window.location.href = url.toString();
     },
 
     /**
