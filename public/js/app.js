@@ -65,7 +65,10 @@ window.ONG = {
             export_calendar: 'Exporter calendrier',
             export_project_calendar: 'Exporter ce projet',
             export_team_calendar: 'Exporter tous les projets',
-            download_ics: 'Télécharger .ics'
+            download_ics: 'Télécharger .ics',
+            sort: 'Trier par',
+            name: 'Nom',
+            date: 'Date'
         },
         en: {
             todo: 'To Do',
@@ -104,7 +107,10 @@ window.ONG = {
             export_calendar: 'Export calendar',
             export_project_calendar: 'Export this project',
             export_team_calendar: 'Export all projects',
-            download_ics: 'Download .ics'
+            download_ics: 'Download .ics',
+            sort: 'Sort by',
+            name: 'Name',
+            date: 'Date'
         },
         es: {
             todo: 'Pendiente',
@@ -143,7 +149,10 @@ window.ONG = {
             export_calendar: 'Exportar calendario',
             export_project_calendar: 'Exportar este proyecto',
             export_team_calendar: 'Exportar todos los proyectos',
-            download_ics: 'Descargar .ics'
+            download_ics: 'Descargar .ics',
+            sort: 'Ordenar por',
+            name: 'Nombre',
+            date: 'Fecha'
         },
         sl: {
             todo: 'Za narediti',
@@ -182,7 +191,10 @@ window.ONG = {
             export_calendar: 'Izvozi koledar',
             export_project_calendar: 'Izvozi ta projekt',
             export_team_calendar: 'Izvozi vse projekte',
-            download_ics: 'Prenesi .ics'
+            download_ics: 'Prenesi .ics',
+            sort: 'Razvrsti po',
+            name: 'Ime',
+            date: 'Datum'
         }
     },
 
@@ -1229,9 +1241,39 @@ window.ONG = {
             return;
         }
 
-        const milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid);
+        // Initialiser le tri des jalons si pas défini
+        if (!ONG.state.milestoneSort) {
+            ONG.state.milestoneSort = { field: 'date', dir: 'asc' };
+        }
+
+        const dict = ONG.dict[ONG.state.lang] || ONG.dict.fr;
+        let milestones = ONG.data.milestones.filter(m => m.project_id == ONG.state.pid);
+
+        // Trier les milestones
+        milestones.sort((a, b) => {
+            const field = ONG.state.milestoneSort.field;
+            const dir = ONG.state.milestoneSort.dir === 'asc' ? 1 : -1;
+
+            if (field === 'name') {
+                return a.name.localeCompare(b.name) * dir;
+            } else if (field === 'date') {
+                return ((a.date || '').localeCompare(b.date || '')) * dir;
+            }
+            return 0;
+        });
 
         let html = `
+            <div class="mb-4 flex gap-2 items-center">
+                <span class="text-sm font-medium text-gray-700">${dict.sort || 'Trier par'} :</span>
+                <button onclick="ONG.toggleMilestoneSort('name')"
+                        class="px-3 py-1 text-sm border rounded ${ONG.state.milestoneSort.field === 'name' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-white hover:bg-gray-50'}">
+                    📝 ${dict.name || 'Nom'} ${ONG.state.milestoneSort.field === 'name' ? (ONG.state.milestoneSort.dir === 'asc' ? '↑' : '↓') : ''}
+                </button>
+                <button onclick="ONG.toggleMilestoneSort('date')"
+                        class="px-3 py-1 text-sm border rounded ${ONG.state.milestoneSort.field === 'date' ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-white hover:bg-gray-50'}">
+                    📅 ${dict.date || 'Date'} ${ONG.state.milestoneSort.field === 'date' ? (ONG.state.milestoneSort.dir === 'asc' ? '↑' : '↓') : ''}
+                </button>
+            </div>
             <div class="space-y-4">
                 ${milestones.map(m => {
                     const mTasks = tasks.filter(t => t.milestone_id == m.id);
@@ -2778,6 +2820,26 @@ window.ONG = {
             ONG.state.sort.col = col;
             ONG.state.sort.dir = 'asc';
         }
+        ONG.renderView();
+    },
+
+    /**
+     * Toggle le tri des jalons
+     */
+    toggleMilestoneSort: (field) => {
+        if (!ONG.state.milestoneSort) {
+            ONG.state.milestoneSort = { field: 'date', dir: 'asc' };
+        }
+
+        if (ONG.state.milestoneSort.field === field) {
+            // Inverser la direction si même champ
+            ONG.state.milestoneSort.dir = (ONG.state.milestoneSort.dir === 'asc') ? 'desc' : 'asc';
+        } else {
+            // Nouveau champ, commencer par ordre croissant
+            ONG.state.milestoneSort.field = field;
+            ONG.state.milestoneSort.dir = 'asc';
+        }
+
         ONG.renderView();
     },
 
