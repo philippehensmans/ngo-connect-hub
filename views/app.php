@@ -626,7 +626,7 @@
         <button id="btnSettings" class="hover:text-gray-800 text-lg text-gray-500" title="<?= $t->translate('settings') ?>">
             <i class="fas fa-cog"></i>
         </button>
-        <a href="MANUEL.md" target="_blank" class="hover:text-blue-600" title="Aide">
+        <a href="MANUEL.md" target="_blank" class="hover:text-blue-600" title="<?= $t->translate('help') ?>">
             <i class="fas fa-question-circle"></i>
         </a>
         <a href="?action=download_db" class="hover:text-green-600">
