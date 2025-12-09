@@ -614,7 +614,7 @@ window.ONG = {
     updateAdminUI: () => {
         const btnSettings = document.getElementById('btnSettings');
         if (btnSettings) {
-            btnSettings.style.display = ONG.isAdmin ? '' : 'none';
+            btnSettings.style.display = '';
         }
 
         // Afficher/masquer la section de gestion des membres dans les paramètres
