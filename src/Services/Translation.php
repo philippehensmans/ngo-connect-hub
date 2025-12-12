@@ -9,6 +9,7 @@ class Translation
 {
     private const TRANSLATIONS = [
         'fr' => [
+            'help' => 'Aide',
             'settings' => 'Paramètres',
             'org_name' => 'Nom Organisation',
             'current_pass' => 'Mot de passe actuel',
@@ -234,6 +235,7 @@ class Translation
             'assistant_api_prompt' => 'Tu es un assistant IA spécialisé dans la planification de projets pour des ONG. Accueille l\'utilisateur chaleureusement et demande-lui quel type de projet il souhaite réaliser. Propose-lui les catégories suivantes : Action humanitaire, Environnement et climat, Éducation, Santé, Développement local, Plaidoyer et advocacy, ou un projet personnalisé.',
         ],
         'en' => [
+            'help' => 'Help',
             'settings' => 'Settings',
             'org_name' => 'Organization Name',
             'current_pass' => 'Current Password',
@@ -459,6 +461,7 @@ class Translation
             'assistant_api_prompt' => 'You are an AI assistant specialized in project planning for NGOs. Welcome the user warmly and ask them what type of project they would like to undertake. Offer them the following categories: Humanitarian Action, Environment and Climate, Education, Health, Local Development, Advocacy, or a custom project.',
         ],
         'es' => [
+            'help' => 'Ayuda',
             'settings' => 'Ajustes',
             'org_name' => 'Nombre Org.',
             'current_pass' => 'Contraseña actual',
@@ -684,6 +687,7 @@ class Translation
             'assistant_api_prompt' => 'Eres un asistente de IA especializado en la planificación de proyectos para ONG. Da la bienvenida al usuario calurosamente y pregúntale qué tipo de proyecto le gustaría realizar. Ofrécele las siguientes categorías: Acción humanitaria, Medio ambiente y clima, Educación, Salud, Desarrollo local, Incidencia y defensa, o un proyecto personalizado.',
         ],
         'sl' => [
+            'help' => 'Pomoč',
             'settings' => 'Nastavitve',
             'org_name' => 'Ime organizacije',
             'current_pass' => 'Trenutno geslo',
