@@ -1,6 +1,6 @@
 # ONG Manager - Application de Gestion de Projets
 
-**Version**: 10.0
+**Version**: 10.0.1
 **Architecture**: MVC PHP + SQLite
 **Auteur**: Philippe Hensmans
 
