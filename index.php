@@ -94,6 +94,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     exit;
 }
 
+// Affichage de la page d'aide
+if (isset($_GET['action']) && $_GET['action'] === 'help') {
+    require __DIR__ . '/views/help.php';
+    exit;
+}
+
 // Affichage de la vue appropriée
 if (!Auth::check()) {
     // Afficher la page de login

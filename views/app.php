@@ -623,7 +623,7 @@
         <button id="btnExportCalendar" class="hover:text-purple-600" title="<?= $t->translate('export_calendar') ?>">
             <i class="fas fa-calendar-alt"></i>
         </button>
-        <a href="MANUEL.md" target="_blank" class="hover:text-blue-600" title="<?= $t->translate('help') ?>">
+        <a href="?action=help" target="_blank" class="hover:text-blue-600" title="<?= $t->translate('help') ?>">
             <i class="fas fa-question-circle"></i>
         </a>
         <button id="btnSettings" class="hover:text-gray-800 text-lg text-gray-500" title="<?= $t->translate('settings') ?>">
@@ -682,7 +682,7 @@
         <button id="btnExportCalendarMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
             <i class="fas fa-calendar-alt w-5"></i> <?= $t->translate('export_calendar') ?>
         </button>
-        <a href="MANUEL.md" target="_blank" class="block w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
+        <a href="?action=help" target="_blank" class="block w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
             <i class="fas fa-question-circle w-5"></i> <?= $t->translate('help') ?>
         </a>
         <button id="btnSettingsMobile" class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2">
