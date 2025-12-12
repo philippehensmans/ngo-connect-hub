@@ -176,7 +176,7 @@
         const manualFile = manualFiles[lang] || 'MANUEL.md';
 
         // Load and render markdown
-        fetch('../' + manualFile)
+        fetch(manualFile)
             .then(response => {
                 if (!response.ok) throw new Error('File not found');
                 return response.text();
