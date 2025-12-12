@@ -1,0 +1,71 @@
+name: Auto-merge Claude branches
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create and merge PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = context.ref.replace('refs/heads/', '');
+            console.log(`Processing branch: ${branchName}`);
+
+            // Check if PR already exists
+            const { data: existingPRs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branchName}`,
+              base: 'main',
+              state: 'open'
+            });
+
+            let pr;
+
+            if (existingPRs.length > 0) {
+              pr = existingPRs[0];
+              console.log(`Found existing PR #${pr.number}`);
+            } else {
+              // Create new PR
+              const { data: newPR } = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Auto-merge: ${context.payload.head_commit?.message || branchName}`,
+                head: branchName,
+                base: 'main',
+                body: `Automatic PR from Claude branch.\n\nCommit: ${context.sha}\nBranch: ${branchName}`
+              });
+              pr = newPR;
+              console.log(`Created PR #${pr.number}`);
+            }
+
+            // Wait a moment for GitHub to process
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Merge the PR
+            try {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                merge_method: 'merge'
+              });
+              console.log(`Successfully merged PR #${pr.number}`);
+            } catch (error) {
+              console.log(`Could not auto-merge: ${error.message}`);
+              // PR might have conflicts or other issues
+            }
