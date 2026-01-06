@@ -185,21 +185,43 @@ class AuthController extends Controller
         $memberId = Auth::getMemberId();
         $updateFields = [];
         $params = [];
+        $newFname = null;
+        $newLname = null;
+        $newEmail = null;
 
         if (!empty($data['fname'])) {
+            $newFname = $this->sanitize(['fname' => $data['fname']])['fname'];
             $updateFields[] = 'fname = ?';
-            $params[] = $this->sanitize(['fname' => $data['fname']])['fname'];
+            $params[] = $newFname;
         }
         if (!empty($data['lname'])) {
+            $newLname = $this->sanitize(['lname' => $data['lname']])['lname'];
             $updateFields[] = 'lname = ?';
-            $params[] = $this->sanitize(['lname' => $data['lname']])['lname'];
+            $params[] = $newLname;
+        }
+        if (!empty($data['email'])) {
+            $newEmail = trim(strtolower($data['email']));
+            $currentEmail = Auth::getMemberEmail();
+
+            // Vérifier si l'email a changé
+            if ($newEmail !== $currentEmail) {
+                // Vérifier que le nouvel email n'est pas déjà utilisé
+                $stmt = $this->db->prepare("SELECT id FROM members WHERE email = ? AND id != ?");
+                $stmt->execute([$newEmail, $memberId]);
+                if ($stmt->fetch()) {
+                    $this->error('Cet email est déjà utilisé par un autre membre', 400);
+                    return;
+                }
+                $updateFields[] = 'email = ?';
+                $params[] = $newEmail;
+            }
         }
         if (!empty($data['new_password']) && !empty($data['current_password'])) {
             // Vérifier l'ancien mot de passe
             $stmt = $this->db->prepare("SELECT password FROM members WHERE id = ?");
             $stmt->execute([$memberId]);
             if (!password_verify($data['current_password'], $stmt->fetchColumn())) {
-                $this->error('Current password is incorrect', 403);
+                $this->error('Mot de passe actuel incorrect', 403);
                 return;
             }
             $updateFields[] = 'password = ?';
@@ -207,7 +229,7 @@ class AuthController extends Controller
         }
 
         if (empty($updateFields)) {
-            $this->error('No fields to update');
+            $this->error('Aucun champ à mettre à jour');
             return;
         }
 
@@ -216,7 +238,21 @@ class AuthController extends Controller
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        $this->success(null, 'Profile updated successfully');
+        // Mettre à jour la session si nécessaire
+        if ($newEmail) {
+            Auth::setMemberEmail($newEmail);
+        }
+        if ($newFname || $newLname) {
+            // Récupérer le nom complet mis à jour
+            $stmt = $this->db->prepare("SELECT fname, lname FROM members WHERE id = ?");
+            $stmt->execute([$memberId]);
+            $member = $stmt->fetch();
+            if ($member) {
+                Auth::setMemberName($member['fname'] . ' ' . $member['lname']);
+            }
+        }
+
+        $this->success(null, 'Profil mis à jour avec succès');
     }
 
     /**
