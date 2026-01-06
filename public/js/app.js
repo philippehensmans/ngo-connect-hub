@@ -451,6 +451,7 @@ window.ONG = {
         });
         ONG.on('btnSettings', 'click', () => {
             ONG.openModal('modalSettings');
+            ONG.loadProfile();
             ONG.loadBackupsList();
             ONG.loadMembersList();
             ONG.loadAIConfig();
@@ -488,6 +489,35 @@ window.ONG = {
             const r = await ONG.post('update_settings', fd);
             alert(r.msg);
             if (r.ok) location.reload();
+        });
+
+        // Formulaire du profil utilisateur
+        ONG.onSubmit('formProfile', async (fd) => {
+            // Vérifier que le mot de passe actuel est fourni si un nouveau mot de passe est saisi
+            const newPassword = fd.get('new_password');
+            const currentPassword = fd.get('current_password');
+            if (newPassword && !currentPassword) {
+                ONG.toast('Veuillez entrer votre mot de passe actuel pour changer le mot de passe', 'error');
+                return;
+            }
+
+            const r = await ONG.post('update_profile', fd);
+            if (r.ok) {
+                ONG.toast('Profil mis à jour avec succès', 'success');
+                // Mettre à jour les données locales
+                if (ONG.currentMember) {
+                    ONG.currentMember.fname = fd.get('fname');
+                    ONG.currentMember.lname = fd.get('lname');
+                }
+                // Vider les champs de mot de passe et masquer le container
+                document.getElementById('profileNewPassword').value = '';
+                document.getElementById('profileCurrentPassword').value = '';
+                document.getElementById('currentPasswordContainer').style.display = 'none';
+                // Recharger les données pour rafraîchir l'affichage
+                ONG.loadData();
+            } else {
+                ONG.toast(r.msg || 'Erreur lors de la mise à jour du profil', 'error');
+            }
         });
 
         // Formulaire de projet
@@ -598,8 +628,11 @@ window.ONG = {
     loadData: async () => {
         const r = await ONG.post('load_all');
         if (r.ok) {
-            // Extraire isAdmin avant de stocker les données
-            ONG.isAdmin = r.data.isAdmin || false;
+            // Extraire les informations d'authentification
+            ONG.isAdmin = r.data.isAdmin || r.data.isOrgAdmin || false;
+            ONG.isSuperAdmin = r.data.isSuperAdmin || false;
+            ONG.currentMemberId = r.data.currentMemberId || null;
+            ONG.currentMember = r.data.currentMember || null;
             ONG.data = r.data;
             ONG.renderSidebar();
             ONG.fillFilters();
@@ -649,23 +682,48 @@ window.ONG = {
             console.log('✅ Members data:', r.data.members, 'Count:', r.data.members.length);
 
             container.innerHTML = r.data.members.map(member => {
-                const isAdmin = member.is_admin == 1;
+                const role = member.role || 'member';
+                const isCurrentUser = member.id == ONG.currentMemberId;
+                const isSuperAdmin = role === 'super_admin';
+                const isOrgAdmin = role === 'org_admin';
+
+                let roleLabel, roleClass, roleIcon;
+                if (isSuperAdmin) {
+                    roleLabel = 'Super Admin';
+                    roleClass = 'text-purple-600';
+                    roleIcon = '👑';
+                } else if (isOrgAdmin) {
+                    roleLabel = 'Admin';
+                    roleClass = 'text-green-600';
+                    roleIcon = '⭐';
+                } else {
+                    roleLabel = 'Membre';
+                    roleClass = 'text-gray-500';
+                    roleIcon = '👤';
+                }
+
                 const fullName = `${member.fname} ${member.lname}`;
+                const canEdit = !isSuperAdmin || ONG.isSuperAdmin;
+
                 return `
-                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded text-sm ${!member.is_active ? 'opacity-50' : ''}">
                         <div class="flex-1">
                             <span class="font-semibold">${ONG.escape(fullName)}</span>
+                            ${isCurrentUser ? '<span class="text-xs text-blue-500 ml-1">(vous)</span>' : ''}
+                            ${!member.is_active ? '<span class="text-xs text-red-500 ml-1">(désactivé)</span>' : ''}
                             <div class="text-xs text-gray-500">${ONG.escape(member.email)}</div>
                         </div>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <span class="text-xs ${isAdmin ? 'text-green-600' : 'text-gray-500'}">
-                                ${isAdmin ? '👑 Admin' : '👤 User'}
-                            </span>
-                            <input type="checkbox"
-                                   ${isAdmin ? 'checked' : ''}
-                                   onchange="ONG.toggleMemberRole(${member.id}, this.checked)"
-                                   class="toggle-checkbox">
-                        </label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs ${roleClass}">${roleIcon} ${roleLabel}</span>
+                            ${canEdit && !isCurrentUser ? `
+                                <select onchange="ONG.changeMemberRole(${member.id}, this.value)"
+                                        class="text-xs border rounded p-1">
+                                    <option value="member" ${role === 'member' ? 'selected' : ''}>Membre</option>
+                                    <option value="org_admin" ${role === 'org_admin' ? 'selected' : ''}>Admin</option>
+                                    ${ONG.isSuperAdmin ? `<option value="super_admin" ${role === 'super_admin' ? 'selected' : ''}>Super Admin</option>` : ''}
+                                </select>
+                            ` : ''}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -673,26 +731,73 @@ window.ONG = {
     },
 
     /**
-     * Bascule le rôle admin d'un membre
+     * Change le rôle d'un membre
      */
-    toggleMemberRole: async (memberId, isAdmin) => {
-        if (!confirm(`Êtes-vous sûr de vouloir ${isAdmin ? 'promouvoir' : 'rétrograder'} ce membre ?`)) {
-            // Recharger la liste pour réinitialiser la checkbox
+    changeMemberRole: async (memberId, newRole) => {
+        if (!confirm(`Êtes-vous sûr de vouloir changer le rôle de ce membre ?`)) {
             ONG.loadMembersList();
             return;
         }
 
-        const r = await ONG.post('update_member_role', {
+        const r = await ONG.post('update_member', {
             member_id: memberId,
-            is_admin: isAdmin ? 1 : 0
+            role: newRole
         });
 
         if (r.ok) {
-            ONG.toast(isAdmin ? 'Membre promu administrateur' : 'Droits admin retirés', 'success');
+            ONG.toast('Rôle mis à jour', 'success');
             ONG.loadMembersList();
         } else {
             ONG.toast(r.msg || 'Erreur lors de la mise à jour', 'error');
             ONG.loadMembersList();
+        }
+    },
+
+    /**
+     * Bascule le rôle admin d'un membre (compatibilité)
+     */
+    toggleMemberRole: async (memberId, isAdmin) => {
+        const newRole = isAdmin ? 'org_admin' : 'member';
+        await ONG.changeMemberRole(memberId, newRole);
+    },
+
+    /**
+     * Charge les données du profil de l'utilisateur connecté
+     */
+    loadProfile: () => {
+        // Remplir les champs du profil
+        const fnameInput = document.getElementById('profileFname');
+        const lnameInput = document.getElementById('profileLname');
+        const emailInput = document.getElementById('profileEmail');
+        const newPasswordInput = document.getElementById('profileNewPassword');
+        const currentPasswordContainer = document.getElementById('currentPasswordContainer');
+
+        if (ONG.currentMember) {
+            if (fnameInput) fnameInput.value = ONG.currentMember.fname || '';
+            if (lnameInput) lnameInput.value = ONG.currentMember.lname || '';
+            if (emailInput) emailInput.value = ONG.currentMember.email || '';
+        }
+
+        // Afficher/masquer le champ de mot de passe actuel selon si un nouveau mot de passe est saisi
+        if (newPasswordInput && currentPasswordContainer) {
+            newPasswordInput.oninput = () => {
+                currentPasswordContainer.style.display = newPasswordInput.value.length > 0 ? 'block' : 'none';
+            };
+            // Réinitialiser l'affichage
+            currentPasswordContainer.style.display = 'none';
+            newPasswordInput.value = '';
+            document.getElementById('profileCurrentPassword').value = '';
+        }
+
+        // Afficher/masquer la section des paramètres de l'organisation selon le rôle
+        const orgSettingsSection = document.getElementById('orgSettingsSection');
+        const memberManagementSection = document.getElementById('memberManagementSection');
+
+        if (orgSettingsSection) {
+            orgSettingsSection.style.display = ONG.isAdmin ? 'block' : 'none';
+        }
+        if (memberManagementSection) {
+            memberManagementSection.style.display = ONG.isAdmin ? 'block' : 'none';
         }
     },
 

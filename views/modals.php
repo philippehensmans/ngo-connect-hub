@@ -5,27 +5,69 @@
             <h3 class="font-bold"><?= $t->translate('settings') ?></h3>
         </div>
         <div class="flex-1 overflow-y-auto px-6 pb-6">
-            <form id="formSettings">
-            <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('org_name') ?></label>
-            <input name="org_name" class="w-full border p-2 mb-3 rounded" value="<?= htmlspecialchars($teamName) ?>" required>
 
-            <label class="block text-xs font-bold text-gray-500 mb-1">🎨 Thème de couleur</label>
-            <div class="grid grid-cols-5 gap-2 mb-3">
-                <button type="button" onclick="ONG.setTheme('blue')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #2563EB 0%, #DBEAFE 100%)" title="Bleu"></button>
-                <button type="button" onclick="ONG.setTheme('green')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #10B981 0%, #D1FAE5 100%)" title="Vert"></button>
-                <button type="button" onclick="ONG.setTheme('purple')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #8B5CF6 0%, #EDE9FE 100%)" title="Violet"></button>
-                <button type="button" onclick="ONG.setTheme('orange')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #F97316 0%, #FFEDD5 100%)" title="Orange"></button>
-                <button type="button" onclick="ONG.setTheme('red')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #EF4444 0%, #FEE2E2 100%)" title="Rouge"></button>
+            <!-- Section Mon Profil -->
+            <div class="mb-6 pb-6 border-b">
+                <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
+                    <i class="fas fa-user"></i>
+                    <?= $t->translate('my_profile') ?? 'Mon profil' ?>
+                </h4>
+                <form id="formProfile" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('firstname') ?? 'Prénom' ?></label>
+                            <input type="text" name="fname" id="profileFname" class="w-full border p-2 rounded" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('lastname') ?? 'Nom' ?></label>
+                            <input type="text" name="lname" id="profileLname" class="w-full border p-2 rounded" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('email') ?? 'Email' ?></label>
+                        <input type="email" id="profileEmail" class="w-full border p-2 rounded bg-gray-100" disabled>
+                        <p class="text-xs text-gray-400 mt-1">L'email ne peut pas être modifié</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('new_pass') ?? 'Nouveau mot de passe' ?></label>
+                        <input type="password" name="new_password" id="profileNewPassword" class="w-full border p-2 rounded" placeholder="Laisser vide pour ne pas changer">
+                    </div>
+                    <div id="currentPasswordContainer" style="display: none;">
+                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('current_pass') ?? 'Mot de passe actuel' ?> *</label>
+                        <input type="password" name="current_password" id="profileCurrentPassword" class="w-full border p-2 rounded border-red-200 bg-red-50">
+                        <p class="text-xs text-gray-400 mt-1">Requis pour changer le mot de passe</p>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-save mr-1"></i> <?= $t->translate('save_profile') ?? 'Enregistrer mon profil' ?>
+                    </button>
+                </form>
             </div>
 
-            <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('new_pass') ?></label>
-            <input type="password" name="new_password" class="w-full border p-2 mb-3 rounded">
+            <!-- Section Organisation (Admin uniquement) -->
+            <div id="orgSettingsSection" style="display: none;">
+                <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
+                    <i class="fas fa-building"></i>
+                    <?= $t->translate('org_settings') ?? "Paramètres de l'organisation" ?>
+                </h4>
+                <form id="formSettings">
+                    <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('org_name') ?></label>
+                    <input name="org_name" class="w-full border p-2 mb-3 rounded" value="<?= htmlspecialchars($teamName ?? $orgName ?? '') ?>" required>
 
-            <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('current_pass') ?></label>
-            <input type="password" name="current_password" class="w-full border p-2 mb-4 rounded border-red-200 bg-red-50" required>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">🎨 Thème de couleur</label>
+                    <div class="grid grid-cols-5 gap-2 mb-3">
+                        <button type="button" onclick="ONG.setTheme('blue')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #2563EB 0%, #DBEAFE 100%)" title="Bleu"></button>
+                        <button type="button" onclick="ONG.setTheme('green')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #10B981 0%, #D1FAE5 100%)" title="Vert"></button>
+                        <button type="button" onclick="ONG.setTheme('purple')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #8B5CF6 0%, #EDE9FE 100%)" title="Violet"></button>
+                        <button type="button" onclick="ONG.setTheme('orange')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #F97316 0%, #FFEDD5 100%)" title="Orange"></button>
+                        <button type="button" onclick="ONG.setTheme('red')" class="h-10 rounded border-2 hover:scale-110 transition" style="background: linear-gradient(135deg, #EF4444 0%, #FEE2E2 100%)" title="Rouge"></button>
+                    </div>
 
-            <button class="w-full bg-gray-800 text-white p-2 rounded"><?= $t->translate('save_settings') ?></button>
-        </form>
+                    <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('current_pass') ?></label>
+                    <input type="password" name="current_password" class="w-full border p-2 mb-4 rounded border-red-200 bg-red-50" required>
+
+                    <button class="w-full bg-gray-800 text-white p-2 rounded"><?= $t->translate('save_settings') ?></button>
+                </form>
+            </div>
 
         <!-- Section Backups -->
         <div class="mt-6 pt-6 border-t">
