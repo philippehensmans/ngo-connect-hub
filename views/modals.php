@@ -24,18 +24,18 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('email') ?? 'Email' ?></label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('email') ?></label>
                         <input type="email" name="email" id="profileEmail" class="w-full border p-2 rounded" required>
-                        <p class="text-xs text-gray-400 mt-1">Identifiant de connexion</p>
+                        <p class="text-xs text-gray-400 mt-1"><?= $t->translate('email_login_hint') ?></p>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('new_pass') ?? 'Nouveau mot de passe' ?></label>
-                        <input type="password" name="new_password" id="profileNewPassword" class="w-full border p-2 rounded" placeholder="Laisser vide pour ne pas changer">
+                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('new_pass') ?></label>
+                        <input type="password" name="new_password" id="profileNewPassword" class="w-full border p-2 rounded" placeholder="<?= $t->translate('leave_empty_no_change') ?>">
                     </div>
                     <div id="currentPasswordContainer" style="display: none;">
-                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('current_pass') ?? 'Mot de passe actuel' ?> *</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('current_pass') ?> *</label>
                         <input type="password" name="current_password" id="profileCurrentPassword" class="w-full border p-2 rounded border-red-200 bg-red-50">
-                        <p class="text-xs text-gray-400 mt-1">Requis pour changer le mot de passe</p>
+                        <p class="text-xs text-gray-400 mt-1"><?= $t->translate('password_change_hint') ?></p>
                     </div>
                     <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
                         <i class="fas fa-save mr-1"></i> <?= $t->translate('save_profile') ?? 'Enregistrer mon profil' ?>
