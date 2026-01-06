@@ -25,8 +25,8 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('email') ?? 'Email' ?></label>
-                        <input type="email" id="profileEmail" class="w-full border p-2 rounded bg-gray-100" disabled>
-                        <p class="text-xs text-gray-400 mt-1">L'email ne peut pas être modifié</p>
+                        <input type="email" name="email" id="profileEmail" class="w-full border p-2 rounded" required>
+                        <p class="text-xs text-gray-400 mt-1">Identifiant de connexion</p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1"><?= $t->translate('new_pass') ?? 'Nouveau mot de passe' ?></label>

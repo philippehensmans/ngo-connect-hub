@@ -81,6 +81,24 @@ class Auth
     }
 
     /**
+     * Met à jour l'email du membre dans la session
+     */
+    public static function setMemberEmail(string $email): void
+    {
+        self::startSession();
+        $_SESSION[self::SESSION_KEY_MEMBER_EMAIL] = $email;
+    }
+
+    /**
+     * Met à jour le nom du membre dans la session
+     */
+    public static function setMemberName(string $name): void
+    {
+        self::startSession();
+        $_SESSION[self::SESSION_KEY_MEMBER_NAME] = $name;
+    }
+
+    /**
      * Obtient le nom complet du membre connecté
      */
     public static function getMemberName(): ?string

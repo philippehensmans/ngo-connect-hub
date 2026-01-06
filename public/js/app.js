@@ -508,6 +508,7 @@ window.ONG = {
                 if (ONG.currentMember) {
                     ONG.currentMember.fname = fd.get('fname');
                     ONG.currentMember.lname = fd.get('lname');
+                    ONG.currentMember.email = fd.get('email');
                 }
                 // Vider les champs de mot de passe et masquer le container
                 document.getElementById('profileNewPassword').value = '';
