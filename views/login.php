@@ -34,13 +34,14 @@
                     <i class="fas fa-sign-in-alt mr-2"></i><?= $t->translate('login') ?>
                 </button>
             </form>
-            <div class="mt-4 text-center">
-                <p class="text-gray-600 text-sm">
-                    <?= $t->translate('no_account') ?? "Pas encore de compte ?" ?>
-                    <a href="#" onclick="showRegister()" class="text-blue-600 hover:underline font-medium">
-                        <?= $t->translate('register_org') ?? "Inscrire votre association" ?>
-                    </a>
+
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <p class="text-center text-gray-600 text-sm mb-3">
+                    <?= $t->translate('no_account') ?? "Vous n'avez pas encore de compte ?" ?>
                 </p>
+                <button onclick="showRegister()" class="w-full bg-green-600 text-white p-2 rounded font-bold hover:bg-green-700 transition">
+                    <i class="fas fa-building mr-2"></i><?= $t->translate('register_org') ?? "Inscrire votre association" ?>
+                </button>
             </div>
         </div>
 
@@ -100,11 +101,20 @@
 function showRegister() {
     document.getElementById('loginContainer').classList.add('hidden');
     document.getElementById('registerContainer').classList.remove('hidden');
+    // Mettre à jour l'URL sans recharger
+    history.pushState({}, '', '?register=1');
 }
 
 function showLogin() {
     document.getElementById('registerContainer').classList.add('hidden');
     document.getElementById('loginContainer').classList.remove('hidden');
+    // Mettre à jour l'URL sans recharger
+    history.pushState({}, '', window.location.pathname);
+}
+
+// Afficher le formulaire d'inscription si ?register=1 dans l'URL
+if (window.location.search.includes('register=1')) {
+    showRegister();
 }
 
 function showError(msg) {
