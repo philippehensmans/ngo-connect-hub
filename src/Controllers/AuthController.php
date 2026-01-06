@@ -276,6 +276,51 @@ class AuthController extends Controller
     }
 
     /**
+     * Supprime une organisation (super admin uniquement)
+     */
+    public function deleteOrganization(array $data): void
+    {
+        if (!Auth::check()) {
+            $this->error('Unauthorized', 401);
+            return;
+        }
+
+        if (!Auth::isSuperAdmin()) {
+            $this->error('Super admin access required', 403);
+            return;
+        }
+
+        if (!$this->validate($data, ['org_id'])) {
+            $this->error('Missing required fields');
+            return;
+        }
+
+        $orgId = (int)$data['org_id'];
+
+        // Empêcher de supprimer l'organisation courante
+        if ($orgId === Auth::getOrganizationId()) {
+            $this->error('Cannot delete your current organization', 403);
+            return;
+        }
+
+        // Vérifier que l'organisation existe
+        $stmt = $this->db->prepare("SELECT name FROM organizations WHERE id = ?");
+        $stmt->execute([$orgId]);
+        $org = $stmt->fetch();
+
+        if (!$org) {
+            $this->error('Organization not found', 404);
+            return;
+        }
+
+        // Supprimer l'organisation (les cascades supprimeront les données liées)
+        $stmt = $this->db->prepare("DELETE FROM organizations WHERE id = ?");
+        $stmt->execute([$orgId]);
+
+        $this->success(null, 'Organization deleted successfully');
+    }
+
+    /**
      * Switch vers une autre organisation (super admin uniquement)
      */
     public function switchOrganization(array $data): void

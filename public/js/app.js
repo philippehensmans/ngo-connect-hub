@@ -455,6 +455,8 @@ window.ONG = {
             ONG.loadMembersList();
             ONG.loadAIConfig();
         });
+        // Bouton Administration des Organisations (Super Admin)
+        ONG.on('btnOrganizations', 'click', () => ONG.openOrganizationsModal());
         ONG.on('btnAddProject', 'click', () => ONG.openModalProject());
         ONG.on('btnExport', 'click', () => ONG.exportExcel());
         ONG.on('btnResetFilters', 'click', () => ONG.resetFilters());
@@ -4293,6 +4295,136 @@ window.ONG = {
         if (r.ok) {
             ONG.toast(`Test envoyé (HTTP ${r.data.http_code})`, 'success');
         }
+    },
+
+    // ============ Gestion des Organisations (Super Admin) ============
+
+    /**
+     * Ouvre la modal de gestion des organisations
+     */
+    openOrganizationsModal: async () => {
+        ONG.openModal('modalOrganizations');
+        await ONG.loadOrganizations();
+    },
+
+    /**
+     * Charge la liste des organisations
+     */
+    loadOrganizations: async () => {
+        const container = document.getElementById('organizationsList');
+        if (!container) return;
+
+        container.innerHTML = '<div class="text-center text-gray-500 py-4"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>';
+
+        const r = await ONG.post('list_organizations', {});
+        if (!r.ok) {
+            container.innerHTML = '<div class="text-center text-red-500 py-4">Erreur de chargement</div>';
+            return;
+        }
+
+        const orgs = r.data.organizations || [];
+        if (orgs.length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-500 py-4">Aucune organisation</div>';
+            return;
+        }
+
+        container.innerHTML = orgs.map(org => `
+            <div class="flex items-center justify-between p-3 border rounded-lg ${org.is_active ? 'bg-white' : 'bg-gray-100 opacity-75'}">
+                <div class="flex-1">
+                    <div class="font-semibold ${!org.is_active ? 'text-gray-500' : ''}">${ONG.escapeHtml(org.name)}</div>
+                    <div class="text-xs text-gray-500">
+                        ${org.member_count || 0} membre(s) · ${org.project_count || 0} projet(s)
+                        ${!org.is_active ? '<span class="ml-2 text-red-500">(Désactivée)</span>' : ''}
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="ONG.switchToOrganization(${org.id}, '${ONG.escapeHtml(org.name)}')"
+                            class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" title="Voir cette organisation">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="ONG.toggleOrganization(${org.id}, ${org.is_active ? 0 : 1})"
+                            class="px-3 py-1 text-sm ${org.is_active ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'} text-white rounded"
+                            title="${org.is_active ? 'Désactiver' : 'Activer'}">
+                        <i class="fas fa-${org.is_active ? 'pause' : 'play'}"></i>
+                    </button>
+                    <button onclick="ONG.deleteOrganization(${org.id}, '${ONG.escapeHtml(org.name)}')"
+                            class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    /**
+     * Affiche le formulaire de création d'organisation
+     */
+    showCreateOrgForm: () => {
+        document.getElementById('createOrgForm').classList.remove('hidden');
+        document.getElementById('btnShowCreateOrg').classList.add('hidden');
+    },
+
+    /**
+     * Cache le formulaire de création d'organisation
+     */
+    hideCreateOrgForm: () => {
+        document.getElementById('createOrgForm').classList.add('hidden');
+        document.getElementById('btnShowCreateOrg').classList.remove('hidden');
+        document.getElementById('formCreateOrg').reset();
+    },
+
+    /**
+     * Crée une nouvelle organisation
+     */
+    createOrganization: async (data) => {
+        const r = await ONG.post('register', data);
+        if (r.ok) {
+            ONG.toast('Organisation créée avec succès', 'success');
+            ONG.hideCreateOrgForm();
+            await ONG.loadOrganizations();
+        }
+        return r;
+    },
+
+    /**
+     * Active/désactive une organisation
+     */
+    toggleOrganization: async (orgId, isActive) => {
+        const action = isActive ? 'activer' : 'désactiver';
+        if (!confirm(`Voulez-vous vraiment ${action} cette organisation ?`)) return;
+
+        const r = await ONG.post('toggle_organization', { org_id: orgId, is_active: isActive });
+        if (r.ok) {
+            ONG.toast(`Organisation ${isActive ? 'activée' : 'désactivée'}`, 'success');
+            await ONG.loadOrganizations();
+        }
+    },
+
+    /**
+     * Supprime une organisation
+     */
+    deleteOrganization: async (orgId, orgName) => {
+        if (!confirm(`ATTENTION: Voulez-vous vraiment supprimer l'organisation "${orgName}" ?\n\nCette action est IRRÉVERSIBLE et supprimera tous les projets, tâches et membres associés.`)) return;
+        if (!confirm(`Êtes-vous ABSOLUMENT certain de vouloir supprimer "${orgName}" ? Cette action ne peut pas être annulée.`)) return;
+
+        const r = await ONG.post('delete_organization', { org_id: orgId });
+        if (r.ok) {
+            ONG.toast('Organisation supprimée', 'success');
+            await ONG.loadOrganizations();
+        }
+    },
+
+    /**
+     * Bascule vers une autre organisation (Super Admin)
+     */
+    switchToOrganization: async (orgId, orgName) => {
+        const r = await ONG.post('switch_organization', { org_id: orgId });
+        if (r.ok) {
+            ONG.toast(`Basculé vers ${orgName}`, 'success');
+            ONG.closeModal('modalOrganizations');
+            // Recharger les données de la nouvelle organisation
+            await ONG.loadAll();
+        }
     }
 };
 
@@ -4386,5 +4518,23 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // Gérer la soumission du formulaire de création d'organisation (Super Admin)
+    const formCreateOrg = document.getElementById('formCreateOrg');
+    if (formCreateOrg) {
+        formCreateOrg.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                org_name: formCreateOrg.querySelector('[name="org_name"]').value.trim(),
+                fname: formCreateOrg.querySelector('[name="fname"]').value.trim(),
+                lname: formCreateOrg.querySelector('[name="lname"]').value.trim(),
+                email: formCreateOrg.querySelector('[name="email"]').value.trim(),
+                password: formCreateOrg.querySelector('[name="password"]').value
+            };
+
+            await ONG.createOrganization(data);
+        });
+    }
 });
-// Cache buster - version 1764791874
+// Cache buster - version 1764791875

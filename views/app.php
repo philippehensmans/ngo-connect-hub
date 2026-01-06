@@ -631,6 +631,11 @@
         <a href="?action=help" target="_blank" class="hover:text-blue-600" title="<?= $t->translate('help') ?>">
             <i class="fas fa-question-circle"></i>
         </a>
+        <?php if (isset($memberRole) && $memberRole === 'super_admin'): ?>
+        <button id="btnOrganizations" class="hover:text-purple-600 text-lg text-purple-500" title="Gérer les organisations">
+            <i class="fas fa-building"></i>
+        </button>
+        <?php endif; ?>
         <button id="btnSettings" class="hover:text-gray-800 text-lg text-gray-500" title="<?= $t->translate('settings') ?>">
             <i class="fas fa-cog"></i>
         </button>
