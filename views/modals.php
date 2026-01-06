@@ -607,3 +607,73 @@
         </form>
     </div>
 </div>
+
+<!-- Modal Administration des Organisations (Super Admin) -->
+<?php if (isset($memberRole) && $memberRole === 'super_admin'): ?>
+<div id="modalOrganizations" class="modal">
+    <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div class="p-6 pb-3 border-b flex justify-between items-center">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <i class="fas fa-building text-purple-600"></i>
+                Administration des Organisations
+            </h3>
+            <button class="btn-close text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6">
+            <!-- Bouton Créer une organisation -->
+            <div class="mb-4">
+                <button onclick="ONG.showCreateOrgForm()" id="btnShowCreateOrg" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                    <i class="fas fa-plus mr-2"></i>Créer une organisation
+                </button>
+            </div>
+
+            <!-- Formulaire de création (caché par défaut) -->
+            <div id="createOrgForm" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border">
+                <h4 class="font-bold mb-3">Nouvelle organisation</h4>
+                <form id="formCreateOrg" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Nom de l'organisation</label>
+                        <input type="text" name="org_name" class="w-full border p-2 rounded" required placeholder="Association XYZ">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">Prénom admin</label>
+                            <input type="text" name="fname" class="w-full border p-2 rounded" required placeholder="Jean">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">Nom admin</label>
+                            <input type="text" name="lname" class="w-full border p-2 rounded" required placeholder="Dupont">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Email admin</label>
+                        <input type="email" name="email" class="w-full border p-2 rounded" required placeholder="admin@organisation.org">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Mot de passe</label>
+                        <input type="password" name="password" class="w-full border p-2 rounded" required minlength="6" placeholder="Min. 6 caractères">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            <i class="fas fa-check mr-1"></i>Créer
+                        </button>
+                        <button type="button" onclick="ONG.hideCreateOrgForm()" class="border px-4 py-2 rounded hover:bg-gray-100">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Liste des organisations -->
+            <div id="organizationsList" class="space-y-2">
+                <div class="text-center text-gray-500 py-4">
+                    <i class="fas fa-spinner fa-spin"></i> Chargement...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>

@@ -49,6 +49,7 @@ class Router
         // Routes pour les organisations (super admin)
         $this->routes['list_organizations'] = [AuthController::class, 'listOrganizations'];
         $this->routes['toggle_organization'] = [AuthController::class, 'toggleOrganization'];
+        $this->routes['delete_organization'] = [AuthController::class, 'deleteOrganization'];
         $this->routes['switch_organization'] = [AuthController::class, 'switchOrganization'];
 
         // Routes pour les membres de l'organisation
