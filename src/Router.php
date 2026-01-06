@@ -42,6 +42,7 @@ class Router
         $this->routes['login'] = [AuthController::class, 'login'];
         $this->routes['logout'] = [AuthController::class, 'logout'];
         $this->routes['register'] = [AuthController::class, 'register'];
+        $this->routes['request_access'] = [AuthController::class, 'requestAccess'];
         $this->routes['update_settings'] = [AuthController::class, 'updateSettings'];
         $this->routes['update_profile'] = [AuthController::class, 'updateProfile'];
         $this->routes['update_ai_config'] = [AuthController::class, 'updateAIConfig'];

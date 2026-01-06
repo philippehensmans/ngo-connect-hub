@@ -116,6 +116,54 @@ class AuthController extends Controller
     }
 
     /**
+     * Gère une demande d'accès (envoi d'un email à l'administrateur)
+     */
+    public function requestAccess(array $data): void
+    {
+        if (!$this->validate($data, ['org_name', 'email', 'fname', 'lname'])) {
+            $this->error('Missing required fields');
+            return;
+        }
+
+        $data = $this->sanitize($data);
+
+        // Adresse email de l'administrateur
+        $adminEmail = 'phensmans@k1m.be';
+        $subject = '[ONG Manager] Demande d\'accès - ' . $data['org_name'];
+
+        // Construire le message
+        $message = "Nouvelle demande d'accès à ONG Manager\n";
+        $message .= "========================================\n\n";
+        $message .= "Organisation : " . $data['org_name'] . "\n";
+        $message .= "Contact : " . $data['fname'] . " " . $data['lname'] . "\n";
+        $message .= "Email : " . $data['email'] . "\n";
+
+        if (!empty($data['message'])) {
+            $message .= "\nMessage :\n" . $data['message'] . "\n";
+        }
+
+        $message .= "\n========================================\n";
+        $message .= "Date de la demande : " . date('d/m/Y H:i:s') . "\n";
+
+        // Headers pour l'email
+        $headers = "From: noreply@ong-manager.local\r\n";
+        $headers .= "Reply-To: " . $data['email'] . "\r\n";
+        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+        // Envoyer l'email
+        $sent = @mail($adminEmail, $subject, $message, $headers);
+
+        if ($sent) {
+            $this->success(null, 'Demande envoyée avec succès');
+        } else {
+            // En cas d'échec d'envoi, on log la demande et on retourne quand même un succès
+            // pour ne pas bloquer l'utilisateur (l'email pourrait être configuré différemment en prod)
+            error_log("Access request from {$data['email']} for org {$data['org_name']}");
+            $this->success(null, 'Demande enregistrée');
+        }
+    }
+
+    /**
      * Gère la déconnexion
      */
     public function logout(): void

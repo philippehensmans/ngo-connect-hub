@@ -23,7 +23,7 @@
         <div id="loginContainer">
             <form id="loginForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('email') ?? 'Email' ?></label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('email') ?></label>
                     <input type="email" name="email" placeholder="votre@email.org" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                 </div>
                 <div>
@@ -37,55 +37,67 @@
 
             <div class="mt-6 pt-6 border-t border-gray-200">
                 <p class="text-center text-gray-600 text-sm mb-3">
-                    <?= $t->translate('no_account') ?? "Vous n'avez pas encore de compte ?" ?>
+                    <?= $t->translate('no_account') ?>
                 </p>
-                <button onclick="showRegister()" class="w-full bg-green-600 text-white p-2 rounded font-bold hover:bg-green-700 transition">
-                    <i class="fas fa-building mr-2"></i><?= $t->translate('register_org') ?? "Inscrire votre association" ?>
+                <button onclick="showRequestForm()" class="w-full bg-green-600 text-white p-2 rounded font-bold hover:bg-green-700 transition">
+                    <i class="fas fa-envelope mr-2"></i><?= $t->translate('request_access') ?>
                 </button>
             </div>
         </div>
 
-        <!-- Formulaire d'inscription -->
-        <div id="registerContainer" class="hidden">
-            <form id="registerForm" class="space-y-4">
+        <!-- Formulaire de demande d'accès -->
+        <div id="requestContainer" class="hidden">
+            <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                <i class="fas fa-info-circle mr-1"></i>
+                <?= $t->translate('request_access_info') ?>
+            </div>
+            <form id="requestForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('org_name') ?? "Nom de l'association" ?></label>
-                    <input type="text" name="org_name" placeholder="Ma Super Association" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('org_name') ?></label>
+                    <input type="text" name="org_name" placeholder="<?= $t->translate('org_name_placeholder') ?>" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('fname') ?? 'Prénom' ?></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('firstname') ?></label>
                         <input type="text" name="fname" placeholder="Marie" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('lname') ?? 'Nom' ?></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('lastname') ?></label>
                         <input type="text" name="lname" placeholder="Dupont" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('email') ?? 'Email' ?></label>
-                    <input type="email" name="email" placeholder="admin@association.org" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('email') ?></label>
+                    <input type="email" name="email" placeholder="contact@association.org" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('pass') ?></label>
-                    <input type="password" name="password" placeholder="Mot de passe sécurisé" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required minlength="6">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('confirm_pass') ?? 'Confirmer le mot de passe' ?></label>
-                    <input type="password" name="password_confirm" placeholder="Confirmer le mot de passe" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required minlength="6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('request_message') ?></label>
+                    <textarea name="message" rows="3" placeholder="<?= $t->translate('request_message_placeholder') ?>" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
                 </div>
                 <button type="submit" class="w-full bg-green-600 text-white p-2 rounded font-bold hover:bg-green-700 transition">
-                    <i class="fas fa-building mr-2"></i><?= $t->translate('register') ?? "Créer l'association" ?>
+                    <i class="fas fa-paper-plane mr-2"></i><?= $t->translate('send_request') ?>
                 </button>
             </form>
             <div class="mt-4 text-center">
                 <p class="text-gray-600 text-sm">
-                    <?= $t->translate('already_account') ?? "Déjà inscrit ?" ?>
+                    <?= $t->translate('already_account') ?>
                     <a href="#" onclick="showLogin()" class="text-blue-600 hover:underline font-medium">
                         <?= $t->translate('login') ?>
                     </a>
                 </p>
             </div>
+        </div>
+
+        <!-- Message de confirmation -->
+        <div id="confirmationContainer" class="hidden text-center">
+            <div class="mb-4">
+                <i class="fas fa-check-circle text-green-500 text-5xl"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2"><?= $t->translate('request_sent') ?></h2>
+            <p class="text-gray-600 mb-4"><?= $t->translate('request_sent_info') ?></p>
+            <button onclick="showLogin()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                <i class="fas fa-arrow-left mr-2"></i><?= $t->translate('back_to_login') ?>
+            </button>
         </div>
 
         <div class="flex gap-2 justify-center mt-6">
@@ -98,23 +110,29 @@
 </div>
 
 <script>
-function showRegister() {
+function showRequestForm() {
     document.getElementById('loginContainer').classList.add('hidden');
-    document.getElementById('registerContainer').classList.remove('hidden');
-    // Mettre à jour l'URL sans recharger
-    history.pushState({}, '', '?register=1');
+    document.getElementById('confirmationContainer').classList.add('hidden');
+    document.getElementById('requestContainer').classList.remove('hidden');
+    history.pushState({}, '', '?request=1');
 }
 
 function showLogin() {
-    document.getElementById('registerContainer').classList.add('hidden');
+    document.getElementById('requestContainer').classList.add('hidden');
+    document.getElementById('confirmationContainer').classList.add('hidden');
     document.getElementById('loginContainer').classList.remove('hidden');
-    // Mettre à jour l'URL sans recharger
     history.pushState({}, '', window.location.pathname);
 }
 
-// Afficher le formulaire d'inscription si ?register=1 dans l'URL
-if (window.location.search.includes('register=1')) {
-    showRegister();
+function showConfirmation() {
+    document.getElementById('loginContainer').classList.add('hidden');
+    document.getElementById('requestContainer').classList.add('hidden');
+    document.getElementById('confirmationContainer').classList.remove('hidden');
+}
+
+// Afficher le formulaire de demande si ?request=1 dans l'URL
+if (window.location.search.includes('request=1')) {
+    showRequestForm();
 }
 
 function showError(msg) {
@@ -157,19 +175,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     }
 });
 
-// Inscription
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
+// Demande d'accès
+document.getElementById('requestForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
 
-    // Vérifier que les mots de passe correspondent
-    if (formData.get('password') !== formData.get('password_confirm')) {
-        showError('Les mots de passe ne correspondent pas');
-        return;
-    }
-
     try {
-        const response = await fetch('?action=register', {
+        const response = await fetch('?action=request_access', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -177,16 +189,15 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
                 fname: formData.get('fname'),
                 lname: formData.get('lname'),
                 email: formData.get('email'),
-                password: formData.get('password')
+                message: formData.get('message')
             })
         });
         const data = await response.json();
 
         if (data.ok) {
-            showSuccess('Association créée ! Redirection...');
-            setTimeout(() => window.location.reload(), 1500);
+            showConfirmation();
         } else {
-            showError(data.msg || "Erreur lors de l'inscription");
+            showError(data.msg || "Erreur lors de l'envoi de la demande");
         }
     } catch (err) {
         showError('Erreur de connexion au serveur');
