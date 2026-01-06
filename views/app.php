@@ -566,13 +566,18 @@
             // Afficher le logo s'il existe
             echo '<img src="images/logo.png" alt="Logo" class="h-10 w-auto object-contain">';
         } else {
-            // Afficher le carré avec l'initiale si pas de logo
+            // Afficher le carré avec l'initiale de l'organisation
             echo '<div class="bg-blue-100 text-blue-700 w-8 h-8 rounded flex items-center justify-center font-bold">';
-            echo substr($teamName, 0, 1);
+            echo substr($orgName ?? $teamName, 0, 1);
             echo '</div>';
         }
         ?>
-        <span class="font-bold text-gray-700 hidden sm:inline"><?= htmlspecialchars($teamName) ?></span>
+        <div class="hidden sm:flex flex-col">
+            <span class="font-bold text-gray-700 text-sm"><?= htmlspecialchars($orgName ?? $teamName) ?></span>
+            <?php if (isset($memberName)): ?>
+            <span class="text-xs text-gray-500"><?= htmlspecialchars($memberName) ?><?= isset($memberRole) && $memberRole !== 'member' ? ' (' . ($memberRole === 'super_admin' ? 'Super Admin' : 'Admin') . ')' : '' ?></span>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Desktop Navigation -->

@@ -86,12 +86,27 @@ if (isset($_GET['action']) && $_GET['action'] === 'download_db' && Auth::check()
     }
 }
 
-// Gestion des requêtes API (POST)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+// Gestion des requêtes API
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ob_clean();
     $router = new Router($db);
-    $router->dispatch($_POST['action'], $_POST);
-    exit;
+
+    // Supporter les requêtes JSON
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    if (strpos($contentType, 'application/json') !== false) {
+        $jsonData = json_decode(file_get_contents('php://input'), true) ?? [];
+        $action = $_GET['action'] ?? $jsonData['action'] ?? null;
+        if ($action) {
+            $router->dispatch($action, $jsonData);
+            exit;
+        }
+    }
+
+    // Requêtes POST traditionnelles
+    if (isset($_POST['action'])) {
+        $router->dispatch($_POST['action'], $_POST);
+        exit;
+    }
 }
 
 // Affichage de la page d'aide
@@ -106,6 +121,10 @@ if (!Auth::check()) {
     require __DIR__ . '/views/login.php';
 } else {
     // Afficher l'application principale
-    $teamName = Auth::getTeamName();
+    $orgName = Auth::getOrganizationName();
+    $memberName = Auth::getMemberName();
+    $memberRole = Auth::getRole();
+    // Compatibilité avec l'ancien code
+    $teamName = $orgName;
     require __DIR__ . '/views/app.php';
 }

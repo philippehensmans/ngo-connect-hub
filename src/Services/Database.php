@@ -62,31 +62,62 @@ class Database
     {
         $db = self::$instance;
 
-        // Table des équipes
-        $db->exec("CREATE TABLE IF NOT EXISTS teams (
+        // Exécuter la migration vers le nouveau schéma si nécessaire
+        $this->migrateToOrganizationSchema($db);
+
+        // Table des organisations (associations)
+        $db->exec("CREATE TABLE IF NOT EXISTS organizations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            password TEXT NOT NULL,
-            is_admin INTEGER DEFAULT 1,
+            name TEXT NOT NULL UNIQUE,
+            slug TEXT NOT NULL UNIQUE,
+            is_active INTEGER DEFAULT 1,
+            ai_use_api INTEGER DEFAULT 0,
+            ai_api_provider TEXT DEFAULT 'rules',
+            ai_api_key TEXT,
+            ai_api_model TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )");
 
-        // Table des membres
+        // Table des membres (avec authentification individuelle)
         $db->exec("CREATE TABLE IF NOT EXISTS members (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            team_id INTEGER NOT NULL,
+            organization_id INTEGER NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
             fname TEXT NOT NULL,
             lname TEXT NOT NULL,
-            email TEXT NOT NULL,
-            is_admin INTEGER DEFAULT 0,
+            role TEXT DEFAULT 'member',
+            is_active INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
+            FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
         )");
 
-        // Table des projets
-        $db->exec("CREATE TABLE IF NOT EXISTS projects (
+        // Table des équipes internes
+        $db->exec("CREATE TABLE IF NOT EXISTS internal_teams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            organization_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT,
+            color TEXT DEFAULT '#3B82F6',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+        )");
+
+        // Table de liaison équipes-membres
+        $db->exec("CREATE TABLE IF NOT EXISTS team_members (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             team_id INTEGER NOT NULL,
+            member_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(team_id) REFERENCES internal_teams(id) ON DELETE CASCADE,
+            FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE,
+            UNIQUE(team_id, member_id)
+        )");
+
+        // Table des projets (appartiennent à l'organisation)
+        $db->exec("CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            organization_id INTEGER NOT NULL,
             name TEXT NOT NULL,
             desc TEXT,
             owner_id INTEGER,
@@ -94,7 +125,7 @@ class Database
             end_date DATE,
             status TEXT DEFAULT 'active',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE,
+            FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
             FOREIGN KEY(owner_id) REFERENCES members(id) ON DELETE SET NULL
         )");
 
@@ -111,59 +142,6 @@ class Database
             FOREIGN KEY(owner_id) REFERENCES members(id) ON DELETE SET NULL
         )");
 
-        // Migration: Ajouter le champ description aux groupes s'il n'existe pas
-        try {
-            $result = $db->query("PRAGMA table_info(groups)")->fetchAll();
-            $hasDescription = false;
-            foreach ($result as $column) {
-                if ($column['name'] === 'description') {
-                    $hasDescription = true;
-                    break;
-                }
-            }
-            if (!$hasDescription) {
-                $db->exec("ALTER TABLE groups ADD COLUMN description TEXT");
-            }
-        } catch (\Exception $e) {
-            // Colonne déjà existante ou autre erreur, on continue
-        }
-
-        // Migration: Ajouter le champ is_admin aux équipes s'il n'existe pas
-        try {
-            $result = $db->query("PRAGMA table_info(teams)")->fetchAll();
-            $hasIsAdmin = false;
-            foreach ($result as $column) {
-                if ($column['name'] === 'is_admin') {
-                    $hasIsAdmin = true;
-                    break;
-                }
-            }
-            if (!$hasIsAdmin) {
-                // Ajouter le champ et mettre toutes les équipes existantes comme admin
-                $db->exec("ALTER TABLE teams ADD COLUMN is_admin INTEGER DEFAULT 1");
-            }
-        } catch (\Exception $e) {
-            // Colonne déjà existante ou autre erreur, on continue
-        }
-
-        // Migration: Ajouter le champ is_admin aux membres s'il n'existe pas
-        try {
-            $result = $db->query("PRAGMA table_info(members)")->fetchAll();
-            $hasIsAdmin = false;
-            foreach ($result as $column) {
-                if ($column['name'] === 'is_admin') {
-                    $hasIsAdmin = true;
-                    break;
-                }
-            }
-            if (!$hasIsAdmin) {
-                // Ajouter le champ (par défaut non-admin)
-                $db->exec("ALTER TABLE members ADD COLUMN is_admin INTEGER DEFAULT 0");
-            }
-        } catch (\Exception $e) {
-            // Colonne déjà existante ou autre erreur, on continue
-        }
-
         // Migration: Ajouter le champ member_ids aux groupes s'il n'existe pas
         try {
             $result = $db->query("PRAGMA table_info(groups)")->fetchAll();
@@ -175,32 +153,10 @@ class Database
                 }
             }
             if (!$hasMemberIds) {
-                // Ajouter le champ pour stocker les IDs des membres assignés (format JSON)
                 $db->exec("ALTER TABLE groups ADD COLUMN member_ids TEXT");
             }
         } catch (\Exception $e) {
-            // Colonne déjà existante ou autre erreur, on continue
-        }
-
-        // Migration: Ajouter les champs de configuration AI à la table teams
-        try {
-            $result = $db->query("PRAGMA table_info(teams)")->fetchAll();
-            $columns = array_column($result, 'name');
-
-            if (!in_array('ai_use_api', $columns)) {
-                $db->exec("ALTER TABLE teams ADD COLUMN ai_use_api INTEGER DEFAULT 0");
-            }
-            if (!in_array('ai_api_provider', $columns)) {
-                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_provider TEXT DEFAULT 'rules'");
-            }
-            if (!in_array('ai_api_key', $columns)) {
-                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_key TEXT");
-            }
-            if (!in_array('ai_api_model', $columns)) {
-                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_model TEXT");
-            }
-        } catch (\Exception $e) {
-            // Colonnes déjà existantes ou autre erreur, on continue
+            // Colonne déjà existante, on continue
         }
 
         // Table des jalons
@@ -259,14 +215,14 @@ class Database
         // Table des templates de projets
         $db->exec("CREATE TABLE IF NOT EXISTS project_templates (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            team_id INTEGER NOT NULL,
+            organization_id INTEGER NOT NULL,
             name TEXT NOT NULL,
             desc TEXT,
             category TEXT DEFAULT 'custom',
             template_data TEXT NOT NULL,
             is_predefined BOOLEAN DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
+            FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
         )");
 
         // Table des commentaires sur les tâches
@@ -283,52 +239,238 @@ class Database
         // Table des webhooks
         $db->exec("CREATE TABLE IF NOT EXISTS webhooks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            team_id INTEGER NOT NULL,
+            organization_id INTEGER NOT NULL,
             name TEXT NOT NULL,
             url TEXT NOT NULL,
             events TEXT DEFAULT '*',
             secret TEXT NOT NULL,
             is_active BOOLEAN DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE
+            FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
         )");
 
         // Table des conversations de l'assistant IA
         $db->exec("CREATE TABLE IF NOT EXISTS ai_conversations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            team_id INTEGER NOT NULL,
+            organization_id INTEGER NOT NULL,
             project_id INTEGER,
             messages TEXT NOT NULL,
             context TEXT,
             status TEXT DEFAULT 'active',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(team_id) REFERENCES teams(id) ON DELETE CASCADE,
+            FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
             FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE SET NULL
         )");
 
-        // Migration: Ajouter les champs de configuration API aux équipes
-        try {
-            $result = $db->query("PRAGMA table_info(teams)")->fetchAll();
-            $hasApiKey = false;
-            foreach ($result as $column) {
-                if ($column['name'] === 'ai_api_key') {
-                    $hasApiKey = true;
-                    break;
-                }
-            }
-            if (!$hasApiKey) {
-                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_key TEXT");
-                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_provider TEXT DEFAULT 'rules'");
-                $db->exec("ALTER TABLE teams ADD COLUMN ai_api_model TEXT");
-                $db->exec("ALTER TABLE teams ADD COLUMN ai_use_api BOOLEAN DEFAULT 0");
-            }
-        } catch (\Exception $e) {
-            // Colonnes déjà existantes ou autre erreur, on continue
-        }
-
         // Créer des données de démo si la base est vide
         $this->createDemoDataIfNeeded();
+    }
+
+    /**
+     * Migration depuis l'ancien schéma (teams) vers le nouveau (organizations)
+     */
+    private function migrateToOrganizationSchema(\PDO $db): void
+    {
+        // Vérifier si l'ancienne table teams existe et si la nouvelle n'existe pas encore
+        $tables = $db->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(\PDO::FETCH_COLUMN);
+
+        $hasOldTeams = in_array('teams', $tables);
+        $hasOrganizations = in_array('organizations', $tables);
+
+        // Si on a l'ancien schéma et pas le nouveau, migrer
+        if ($hasOldTeams && !$hasOrganizations) {
+            $db->beginTransaction();
+            try {
+                // 1. Créer la table organizations
+                $db->exec("CREATE TABLE organizations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    slug TEXT NOT NULL UNIQUE,
+                    is_active INTEGER DEFAULT 1,
+                    ai_use_api INTEGER DEFAULT 0,
+                    ai_api_provider TEXT DEFAULT 'rules',
+                    ai_api_key TEXT,
+                    ai_api_model TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )");
+
+                // 2. Migrer les données des teams vers organizations
+                $teams = $db->query("SELECT * FROM teams")->fetchAll();
+                foreach ($teams as $team) {
+                    $slug = $this->generateSlug($team['name']);
+                    $stmt = $db->prepare("INSERT INTO organizations (id, name, slug, is_active, ai_use_api, ai_api_provider, ai_api_key, ai_api_model, created_at) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $team['id'],
+                        $team['name'],
+                        $slug,
+                        $team['ai_use_api'] ?? 0,
+                        $team['ai_api_provider'] ?? 'rules',
+                        $team['ai_api_key'] ?? null,
+                        $team['ai_api_model'] ?? null,
+                        $team['created_at']
+                    ]);
+                }
+
+                // 3. Créer la nouvelle table members avec authentification
+                $db->exec("CREATE TABLE members_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NOT NULL,
+                    email TEXT NOT NULL UNIQUE,
+                    password TEXT NOT NULL,
+                    fname TEXT NOT NULL,
+                    lname TEXT NOT NULL,
+                    role TEXT DEFAULT 'member',
+                    is_active INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+                )");
+
+                // 4. Migrer les membres existants (le premier de chaque org devient admin)
+                $members = $db->query("SELECT * FROM members ORDER BY team_id, id")->fetchAll();
+                $orgAdmins = [];
+                $defaultPassword = password_hash('changeme', PASSWORD_DEFAULT);
+
+                foreach ($members as $member) {
+                    $orgId = $member['team_id'];
+                    $role = 'member';
+
+                    // Le premier membre de chaque org devient admin
+                    if (!isset($orgAdmins[$orgId])) {
+                        $role = 'org_admin';
+                        $orgAdmins[$orgId] = true;
+                    }
+
+                    // Si le membre était marqué is_admin dans l'ancien système
+                    if (!empty($member['is_admin'])) {
+                        $role = 'org_admin';
+                    }
+
+                    $stmt = $db->prepare("INSERT INTO members_new (id, organization_id, email, password, fname, lname, role, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)");
+                    $stmt->execute([
+                        $member['id'],
+                        $orgId,
+                        $member['email'],
+                        $defaultPassword,
+                        $member['fname'],
+                        $member['lname'],
+                        $role,
+                        $member['created_at']
+                    ]);
+                }
+
+                // 5. Créer la table internal_teams
+                $db->exec("CREATE TABLE internal_teams (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    color TEXT DEFAULT '#3B82F6',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+                )");
+
+                // 6. Créer la table team_members
+                $db->exec("CREATE TABLE team_members (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    team_id INTEGER NOT NULL,
+                    member_id INTEGER NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(team_id) REFERENCES internal_teams(id) ON DELETE CASCADE,
+                    FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE,
+                    UNIQUE(team_id, member_id)
+                )");
+
+                // 7. Mettre à jour les projets : renommer team_id en organization_id
+                $db->exec("CREATE TABLE projects_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    desc TEXT,
+                    owner_id INTEGER,
+                    start_date DATE,
+                    end_date DATE,
+                    status TEXT DEFAULT 'active',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+                    FOREIGN KEY(owner_id) REFERENCES members(id) ON DELETE SET NULL
+                )");
+                $db->exec("INSERT INTO projects_new SELECT id, team_id, name, desc, owner_id, start_date, end_date, status, created_at FROM projects");
+
+                // 8. Mettre à jour les templates
+                $db->exec("CREATE TABLE project_templates_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    desc TEXT,
+                    category TEXT DEFAULT 'custom',
+                    template_data TEXT NOT NULL,
+                    is_predefined BOOLEAN DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+                )");
+                $db->exec("INSERT INTO project_templates_new SELECT id, team_id, name, desc, category, template_data, is_predefined, created_at FROM project_templates");
+
+                // 9. Mettre à jour les webhooks
+                $db->exec("CREATE TABLE webhooks_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NOT NULL,
+                    name TEXT NOT NULL,
+                    url TEXT NOT NULL,
+                    events TEXT DEFAULT '*',
+                    secret TEXT NOT NULL,
+                    is_active BOOLEAN DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+                )");
+                $db->exec("INSERT INTO webhooks_new SELECT id, team_id, name, url, events, secret, is_active, created_at FROM webhooks");
+
+                // 10. Mettre à jour ai_conversations
+                $db->exec("CREATE TABLE ai_conversations_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    organization_id INTEGER NOT NULL,
+                    project_id INTEGER,
+                    messages TEXT NOT NULL,
+                    context TEXT,
+                    status TEXT DEFAULT 'active',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+                    FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE SET NULL
+                )");
+                $db->exec("INSERT INTO ai_conversations_new SELECT id, team_id, project_id, messages, context, status, created_at, updated_at FROM ai_conversations");
+
+                // 11. Supprimer les anciennes tables et renommer les nouvelles
+                $db->exec("DROP TABLE teams");
+                $db->exec("DROP TABLE members");
+                $db->exec("DROP TABLE projects");
+                $db->exec("DROP TABLE project_templates");
+                $db->exec("DROP TABLE webhooks");
+                $db->exec("DROP TABLE ai_conversations");
+
+                $db->exec("ALTER TABLE members_new RENAME TO members");
+                $db->exec("ALTER TABLE projects_new RENAME TO projects");
+                $db->exec("ALTER TABLE project_templates_new RENAME TO project_templates");
+                $db->exec("ALTER TABLE webhooks_new RENAME TO webhooks");
+                $db->exec("ALTER TABLE ai_conversations_new RENAME TO ai_conversations");
+
+                $db->commit();
+            } catch (\Exception $e) {
+                $db->rollBack();
+                throw new \RuntimeException("Migration failed: " . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Génère un slug à partir d'un nom
+     */
+    private function generateSlug(string $name): string
+    {
+        $slug = strtolower($name);
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+        $slug = trim($slug, '-');
+        return $slug ?: 'org-' . time();
     }
 
     /**
@@ -350,10 +492,16 @@ class Database
             "CREATE INDEX IF NOT EXISTS idx_comments_member ON comments(member_id)",
             "CREATE INDEX IF NOT EXISTS idx_groups_project ON groups(project_id)",
             "CREATE INDEX IF NOT EXISTS idx_milestones_project ON milestones(project_id)",
-            "CREATE INDEX IF NOT EXISTS idx_members_team ON members(team_id)",
-            "CREATE INDEX IF NOT EXISTS idx_projects_team ON projects(team_id)",
-            "CREATE INDEX IF NOT EXISTS idx_webhooks_team ON webhooks(team_id)",
+            "CREATE INDEX IF NOT EXISTS idx_members_org ON members(organization_id)",
+            "CREATE INDEX IF NOT EXISTS idx_members_email ON members(email)",
+            "CREATE INDEX IF NOT EXISTS idx_members_role ON members(role)",
+            "CREATE INDEX IF NOT EXISTS idx_projects_org ON projects(organization_id)",
+            "CREATE INDEX IF NOT EXISTS idx_webhooks_org ON webhooks(organization_id)",
             "CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(is_active)",
+            "CREATE INDEX IF NOT EXISTS idx_internal_teams_org ON internal_teams(organization_id)",
+            "CREATE INDEX IF NOT EXISTS idx_team_members_team ON team_members(team_id)",
+            "CREATE INDEX IF NOT EXISTS idx_team_members_member ON team_members(member_id)",
+            "CREATE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug)",
         ];
 
         foreach ($indexes as $index) {
@@ -367,17 +515,23 @@ class Database
     private function createDemoDataIfNeeded(): void
     {
         $db = self::$instance;
-        $count = $db->query("SELECT COUNT(*) FROM teams")->fetchColumn();
+        $count = $db->query("SELECT COUNT(*) FROM organizations")->fetchColumn();
 
         if ($count == 0) {
+            // Créer une organisation démo
+            $stmt = $db->prepare("INSERT INTO organizations (name, slug) VALUES (?, ?)");
+            $stmt->execute(['ONG Démo', 'ong-demo']);
+            $orgId = $db->lastInsertId();
+
+            // Créer un admin pour cette organisation
             $hashedPassword = password_hash('demo', PASSWORD_DEFAULT);
-            $stmt = $db->prepare("INSERT INTO teams (name, password) VALUES (?, ?)");
-            $stmt->execute(['ONG Démo', $hashedPassword]);
+            $stmt = $db->prepare("INSERT INTO members (organization_id, email, password, fname, lname, role) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$orgId, 'admin@ong-demo.org', $hashedPassword, 'Admin', 'Démo', 'org_admin']);
 
-            $teamId = $db->lastInsertId();
-
-            $stmt = $db->prepare("INSERT INTO members (team_id, fname, lname, email) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$teamId, 'Admin', 'System', 'admin@ong.org']);
+            // Créer un super admin global
+            $superAdminPassword = password_hash('superadmin', PASSWORD_DEFAULT);
+            $stmt = $db->prepare("INSERT INTO members (organization_id, email, password, fname, lname, role) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$orgId, 'superadmin@system.org', $superAdminPassword, 'Super', 'Admin', 'super_admin']);
         }
     }
 

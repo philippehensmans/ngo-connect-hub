@@ -41,11 +41,33 @@ class Router
         // Routes d'authentification
         $this->routes['login'] = [AuthController::class, 'login'];
         $this->routes['logout'] = [AuthController::class, 'logout'];
+        $this->routes['register'] = [AuthController::class, 'register'];
         $this->routes['update_settings'] = [AuthController::class, 'updateSettings'];
+        $this->routes['update_profile'] = [AuthController::class, 'updateProfile'];
         $this->routes['update_ai_config'] = [AuthController::class, 'updateAIConfig'];
+
+        // Routes pour les organisations (super admin)
+        $this->routes['list_organizations'] = [AuthController::class, 'listOrganizations'];
+        $this->routes['toggle_organization'] = [AuthController::class, 'toggleOrganization'];
+        $this->routes['switch_organization'] = [AuthController::class, 'switchOrganization'];
+
+        // Routes pour les membres de l'organisation
+        $this->routes['list_members'] = [AuthController::class, 'listMembers'];
+        $this->routes['add_member'] = [AuthController::class, 'addMember'];
+        $this->routes['update_member'] = [AuthController::class, 'updateMember'];
+        $this->routes['delete_member'] = [AuthController::class, 'deleteMember'];
+
+        // Routes pour les équipes internes
+        $this->routes['list_internal_teams'] = [AuthController::class, 'listInternalTeams'];
+        $this->routes['create_internal_team'] = [AuthController::class, 'createInternalTeam'];
+        $this->routes['update_internal_team'] = [AuthController::class, 'updateInternalTeam'];
+        $this->routes['delete_internal_team'] = [AuthController::class, 'deleteInternalTeam'];
+        $this->routes['add_team_member'] = [AuthController::class, 'addTeamMember'];
+        $this->routes['remove_team_member'] = [AuthController::class, 'removeTeamMember'];
+
+        // Routes de compatibilité (deprecated)
         $this->routes['list_teams'] = [AuthController::class, 'listTeams'];
         $this->routes['update_team_role'] = [AuthController::class, 'updateTeamRole'];
-        $this->routes['list_members'] = [AuthController::class, 'listMembers'];
         $this->routes['update_member_role'] = [AuthController::class, 'updateMemberRole'];
 
         // Route pour charger toutes les données
