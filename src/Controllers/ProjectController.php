@@ -27,10 +27,10 @@ class ProjectController extends Controller
 
         $data = $this->sanitize($data);
         $projectModel = new Project($this->db);
-        $teamId = Auth::getTeamId();
+        $orgId = Auth::getOrganizationId();
 
         $projectData = [
-            'team_id' => $teamId,
+            'organization_id' => $orgId,
             'name' => $data['name'],
             'desc' => $data['desc'] ?? '',
             'start_date' => $data['start'] ?? null,
@@ -44,8 +44,16 @@ class ProjectController extends Controller
                 $id = $projectModel->create($projectData);
                 $this->success(['id' => $id], 'Project created successfully');
             } else {
-                // Mise à jour
-                $projectModel->update((int)$data['id'], $projectData);
+                // Mise à jour - vérifier que le projet appartient à l'organisation
+                $projectId = (int)$data['id'];
+                $stmt = $this->db->prepare("SELECT id FROM projects WHERE id = ? AND organization_id = ?");
+                $stmt->execute([$projectId, $orgId]);
+                if (!$stmt->fetch()) {
+                    $this->error('Project not found or access denied', 404);
+                    return;
+                }
+
+                $projectModel->update($projectId, $projectData);
                 $this->success(null, 'Project updated successfully');
             }
         } catch (\Exception $e) {

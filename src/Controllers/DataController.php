@@ -15,7 +15,7 @@ use App\Services\Auth;
 class DataController extends Controller
 {
     /**
-     * Charge toutes les données de l'équipe
+     * Charge toutes les données de l'organisation
      */
     public function loadAll(): void
     {
@@ -24,15 +24,27 @@ class DataController extends Controller
             return;
         }
 
-        $teamId = Auth::getTeamId();
+        $orgId = Auth::getOrganizationId();
+        $memberId = Auth::getMemberId();
 
-        // Charger les membres
-        $memberModel = new Member($this->db);
-        $members = $memberModel->all(['team_id' => $teamId]);
+        // Charger les membres de l'organisation
+        $stmt = $this->db->prepare("
+            SELECT id, organization_id, email, fname, lname, role, is_active, created_at
+            FROM members
+            WHERE organization_id = ? AND is_active = 1
+            ORDER BY lname, fname
+        ");
+        $stmt->execute([$orgId]);
+        $members = $stmt->fetchAll();
 
-        // Charger les projets
-        $projectModel = new Project($this->db);
-        $projects = $projectModel->all(['team_id' => $teamId]);
+        // Charger les projets de l'organisation
+        $stmt = $this->db->prepare("
+            SELECT * FROM projects
+            WHERE organization_id = ?
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$orgId]);
+        $projects = $stmt->fetchAll();
 
         $projectIds = array_column($projects, 'id');
 
@@ -59,13 +71,38 @@ class DataController extends Controller
             $tasks = $stmt->fetchAll();
         }
 
-        // Récupérer le membre actuel (premier membre de l'équipe pour la démo)
-        $currentMember = !empty($members) ? $members[0] : null;
+        // Charger les équipes internes
+        $stmt = $this->db->prepare("
+            SELECT t.*,
+                   (SELECT COUNT(*) FROM team_members WHERE team_id = t.id) as member_count
+            FROM internal_teams t
+            WHERE t.organization_id = ?
+            ORDER BY t.name
+        ");
+        $stmt->execute([$orgId]);
+        $internalTeams = $stmt->fetchAll();
 
-        // Récupérer les données de l'équipe (pour la configuration IA)
-        $stmt = $this->db->prepare("SELECT * FROM teams WHERE id = ?");
-        $stmt->execute([$teamId]);
-        $team = $stmt->fetch();
+        // Ajouter les membres de chaque équipe interne
+        foreach ($internalTeams as &$team) {
+            $stmt = $this->db->prepare("
+                SELECT m.id, m.fname, m.lname, m.email
+                FROM members m
+                JOIN team_members tm ON m.id = tm.member_id
+                WHERE tm.team_id = ?
+            ");
+            $stmt->execute([$team['id']]);
+            $team['members'] = $stmt->fetchAll();
+        }
+
+        // Récupérer le membre actuel
+        $stmt = $this->db->prepare("SELECT * FROM members WHERE id = ?");
+        $stmt->execute([$memberId]);
+        $currentMember = $stmt->fetch();
+
+        // Récupérer les données de l'organisation
+        $stmt = $this->db->prepare("SELECT * FROM organizations WHERE id = ?");
+        $stmt->execute([$orgId]);
+        $organization = $stmt->fetch();
 
         $this->success([
             'members' => $members,
@@ -73,10 +110,17 @@ class DataController extends Controller
             'groups' => $groups,
             'milestones' => $milestones,
             'tasks' => $tasks,
+            'internalTeams' => $internalTeams,
             'currentMember' => $currentMember,
-            'currentTeamId' => $teamId,
+            'currentMemberId' => $memberId,
+            'currentOrganizationId' => $orgId,
+            'isOrgAdmin' => Auth::isOrgAdmin(),
+            'isSuperAdmin' => Auth::isSuperAdmin(),
+            'organization' => $organization,
+            // Compatibilité avec l'ancien code
+            'currentTeamId' => $orgId,
             'isAdmin' => Auth::isAdmin(),
-            'team' => $team,
+            'team' => $organization,
         ]);
     }
 }
