@@ -47,6 +47,16 @@ use App\Router;
 // Démarrer la session
 Auth::startSession();
 
+// Diagnostic temporaire : voir les jalons
+if (isset($_GET['debug_milestones'])) {
+    $dbService = new Database($config);
+    $db = $dbService->getConnection();
+    $milestones = $db->query("SELECT * FROM milestones ORDER BY project_id, id")->fetchAll(\PDO::FETCH_ASSOC);
+    header('Content-Type: application/json');
+    echo json_encode(['milestones' => $milestones], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Diagnostic temporaire : voir les comptes existants
 if (isset($_GET['debug_accounts'])) {
     $dbService = new Database($config);
