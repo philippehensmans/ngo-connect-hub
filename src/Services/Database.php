@@ -549,6 +549,38 @@ class Database
             $stmt = $db->prepare("INSERT INTO members (organization_id, email, password, fname, lname, role) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->execute([$orgId, 'superadmin@system.org', $superAdminPassword, 'Super', 'Admin', 'super_admin']);
         }
+
+        // Toujours vérifier qu'un super_admin existe (important après migration)
+        $this->ensureSuperAdminExists();
+    }
+
+    /**
+     * S'assure qu'un compte super_admin existe
+     * Nécessaire après migration depuis l'ancien schéma (teams → organizations)
+     */
+    private function ensureSuperAdminExists(): void
+    {
+        $db = self::$instance;
+        $superAdmin = $db->query("SELECT id FROM members WHERE role = 'super_admin' LIMIT 1")->fetch();
+
+        if (!$superAdmin) {
+            // Trouver la première organisation pour y rattacher le super admin
+            $org = $db->query("SELECT id FROM organizations LIMIT 1")->fetch();
+            if ($org) {
+                // Vérifier si l'email existe déjà (promouvoir en super_admin)
+                $existing = $db->prepare("SELECT id FROM members WHERE email = ?");
+                $existing->execute(['superadmin@system.org']);
+                if ($existing->fetch()) {
+                    $superAdminPassword = password_hash('superadmin', PASSWORD_DEFAULT);
+                    $stmt = $db->prepare("UPDATE members SET role = 'super_admin', password = ? WHERE email = ?");
+                    $stmt->execute([$superAdminPassword, 'superadmin@system.org']);
+                } else {
+                    $superAdminPassword = password_hash('superadmin', PASSWORD_DEFAULT);
+                    $stmt = $db->prepare("INSERT INTO members (organization_id, email, password, fname, lname, role) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$org['id'], 'superadmin@system.org', $superAdminPassword, 'Super', 'Admin', 'super_admin']);
+                }
+            }
+        }
     }
 
     /**
