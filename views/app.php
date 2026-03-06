@@ -573,7 +573,12 @@
         }
         ?>
         <div class="hidden sm:flex flex-col">
-            <span class="font-bold text-gray-700 text-sm"><?= htmlspecialchars($orgName ?? $teamName) ?></span>
+            <div class="flex items-center gap-1">
+                <span class="font-bold text-gray-700 text-sm"><?= htmlspecialchars($orgName ?? $teamName) ?></span>
+                <button id="btnSwitchOrg" class="hidden text-gray-400 hover:text-blue-600 text-xs" title="Changer d'organisation">
+                    <i class="fas fa-exchange-alt"></i>
+                </button>
+            </div>
             <?php if (isset($memberName)): ?>
             <span class="text-xs text-gray-500"><?= htmlspecialchars($memberName) ?><?= isset($memberRole) && $memberRole !== 'member' ? ' (' . ($memberRole === 'super_admin' ? 'Super Admin' : 'Admin') . ')' : '' ?></span>
             <?php endif; ?>

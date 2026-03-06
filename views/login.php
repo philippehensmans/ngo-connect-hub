@@ -134,6 +134,20 @@
             </div>
         </div>
 
+        <!-- Choix de l'organisation -->
+        <div id="orgChoiceContainer" class="hidden">
+            <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                <i class="fas fa-building mr-1"></i>
+                Vous avez des comptes dans plusieurs organisations. Choisissez celle à laquelle vous souhaitez vous connecter.
+            </div>
+            <div id="orgList" class="space-y-2 mb-4"></div>
+            <div class="mt-4 text-center">
+                <a href="#" onclick="showLogin()" class="text-gray-500 hover:underline text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i>Retour
+                </a>
+            </div>
+        </div>
+
         <!-- Message de confirmation -->
         <div id="confirmationContainer" class="hidden text-center">
             <div class="mb-4">
@@ -176,7 +190,9 @@ function showLogin() {
     document.getElementById('requestContainer').classList.add('hidden');
     document.getElementById('confirmationContainer').classList.add('hidden');
     document.getElementById('registerContainer').classList.add('hidden');
+    document.getElementById('orgChoiceContainer').classList.add('hidden');
     document.getElementById('loginContainer').classList.remove('hidden');
+    pendingCredentials = null;
     history.pushState({}, '', window.location.pathname);
 }
 
@@ -208,24 +224,82 @@ function showSuccess(msg) {
     setTimeout(() => toast.classList.add('hidden'), 4000);
 }
 
-// Connexion
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
+// Variables pour le choix d'organisation
+let pendingCredentials = null;
 
+function showOrgChoice(organizations, email) {
+    document.getElementById('loginContainer').classList.add('hidden');
+    document.getElementById('registerContainer').classList.add('hidden');
+    document.getElementById('requestContainer').classList.add('hidden');
+    document.getElementById('confirmationContainer').classList.add('hidden');
+    document.getElementById('orgChoiceContainer').classList.remove('hidden');
+
+    const orgList = document.getElementById('orgList');
+    orgList.innerHTML = '';
+    organizations.forEach(org => {
+        const roleLabel = org.role === 'super_admin' ? 'Super Admin' :
+                          org.role === 'org_admin' ? 'Admin' : 'Membre';
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left p-3 border rounded hover:bg-blue-50 hover:border-blue-300 transition flex items-center justify-between';
+        btn.innerHTML = `
+            <div>
+                <div class="font-medium text-gray-800"><i class="fas fa-building mr-2 text-blue-500"></i>${org.name}</div>
+                <div class="text-xs text-gray-500 ml-6">${roleLabel}</div>
+            </div>
+            <i class="fas fa-chevron-right text-gray-400"></i>
+        `;
+        btn.onclick = () => loginWithOrg(org.id);
+        orgList.appendChild(btn);
+    });
+}
+
+async function loginWithOrg(orgId) {
+    if (!pendingCredentials) return;
     try {
         const response = await fetch('?action=login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                email: formData.get('email'),
-                password: formData.get('password')
+                email: pendingCredentials.email,
+                password: pendingCredentials.password,
+                org_id: orgId
             })
+        });
+        const data = await response.json();
+        if (data.ok) {
+            pendingCredentials = null;
+            window.location.reload();
+        } else {
+            showError(data.msg || 'Erreur de connexion');
+        }
+    } catch (err) {
+        showError('Erreur de connexion au serveur');
+    }
+}
+
+// Connexion
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const email = formData.get('email');
+    const password = formData.get('password');
+
+    try {
+        const response = await fetch('?action=login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
         });
         const data = await response.json();
 
         if (data.ok) {
-            window.location.reload();
+            if (data.data && data.data.choose_org) {
+                // Stocker les credentials et afficher le choix
+                pendingCredentials = { email, password };
+                showOrgChoice(data.data.organizations, email);
+            } else {
+                window.location.reload();
+            }
         } else {
             showError(data.msg || 'Erreur de connexion');
         }

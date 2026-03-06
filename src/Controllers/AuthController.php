@@ -21,52 +21,103 @@ class AuthController extends Controller
         }
 
         $data = $this->sanitize($data);
+        $email = $data['email'];
+        $password = $data['password'];
 
-        // Diagnostic : vérifier d'abord si le membre existe
-        $stmt = $this->db->prepare("SELECT m.id, m.email, m.is_active, m.password, m.role, o.is_active as org_active, o.name as org_name FROM members m LEFT JOIN organizations o ON m.organization_id = o.id WHERE m.email = ?");
-        $stmt->execute([$data['email']]);
-        $debugMember = $stmt->fetch();
+        // Trouver tous les comptes actifs pour cet email
+        $accounts = Auth::findAllAccounts($this->db, $email);
 
-        if (!$debugMember) {
+        if (empty($accounts)) {
             $this->error('Aucun compte trouvé avec cet email', 401);
             return;
         }
 
-        if (!$debugMember['is_active']) {
-            $this->error('Ce compte est désactivé', 401);
-            return;
+        // Vérifier le mot de passe (on prend le premier compte dont le mdp correspond)
+        $passwordHash = null;
+        foreach ($accounts as $account) {
+            if (password_verify($password, $account['password'])) {
+                $passwordHash = $account['password'];
+                break;
+            }
         }
 
-        if (!$debugMember['org_active'] && $debugMember['role'] !== 'super_admin') {
-            $this->error('L\'organisation "' . $debugMember['org_name'] . '" est désactivée', 401);
-            return;
-        }
-
-        if (!password_verify($data['password'], $debugMember['password'])) {
+        if (!$passwordHash) {
             $this->error('Mot de passe incorrect', 401);
             return;
         }
 
-        $member = Auth::attempt($this->db, $data['email'], $data['password']);
-
-        if ($member) {
-            $organization = [
-                'id' => $member['org_id'],
-                'name' => $member['org_name']
-            ];
-            Auth::login($member, $organization);
-            $this->success([
-                'member' => [
-                    'id' => $member['id'],
-                    'email' => $member['email'],
-                    'name' => $member['fname'] . ' ' . $member['lname'],
-                    'role' => $member['role']
-                ],
-                'organization' => $organization
-            ], 'Login successful');
-        } else {
-            $this->error('Erreur de connexion inattendue', 401);
+        // Filtrer les comptes actifs avec mot de passe valide et org active
+        $activeAccounts = [];
+        foreach ($accounts as $a) {
+            if ($a['password'] === $passwordHash && ($a['org_active'] || $a['role'] === 'super_admin')) {
+                $activeAccounts[] = $a;
+            }
         }
+
+        if (empty($activeAccounts)) {
+            $this->error('Aucune organisation active pour ce compte', 401);
+            return;
+        }
+
+        // Si un org_id spécifique est demandé (choix de l'utilisateur)
+        if (!empty($data['org_id'])) {
+            $chosenOrgId = (int)$data['org_id'];
+            $chosen = null;
+            foreach ($activeAccounts as $a) {
+                if ((int)$a['org_id'] === $chosenOrgId) {
+                    $chosen = $a;
+                    break;
+                }
+            }
+            if (!$chosen) {
+                $this->error('Vous n\'avez pas accès à cette organisation', 403);
+                return;
+            }
+            $this->loginMember($chosen);
+            return;
+        }
+
+        // Si un seul compte actif, connexion directe
+        if (count($activeAccounts) === 1) {
+            $this->loginMember($activeAccounts[0]);
+            return;
+        }
+
+        // Plusieurs organisations : renvoyer la liste pour que l'utilisateur choisisse
+        $orgs = array_map(function($a) {
+            return [
+                'id' => $a['org_id'],
+                'name' => $a['org_name'],
+                'role' => $a['role']
+            ];
+        }, $activeAccounts);
+
+        $this->success([
+            'choose_org' => true,
+            'organizations' => $orgs,
+            'email' => $email
+        ], 'Choisissez votre organisation');
+    }
+
+    /**
+     * Connecte un membre avec ses infos complètes
+     */
+    private function loginMember(array $account): void
+    {
+        $organization = [
+            'id' => $account['org_id'],
+            'name' => $account['org_name']
+        ];
+        Auth::login($account, $organization);
+        $this->success([
+            'member' => [
+                'id' => $account['id'],
+                'email' => $account['email'],
+                'name' => $account['fname'] . ' ' . $account['lname'],
+                'role' => $account['role']
+            ],
+            'organization' => $organization
+        ], 'Login successful');
     }
 
     /**
@@ -558,11 +609,6 @@ class AuthController extends Controller
             return;
         }
 
-        if (!Auth::isSuperAdmin()) {
-            $this->error('Super admin access required', 403);
-            return;
-        }
-
         if (!$this->validate($data, ['org_id'])) {
             $this->error('Missing required fields');
             return;
@@ -576,9 +622,44 @@ class AuthController extends Controller
             return;
         }
 
-        Auth::switchOrganization($org);
+        // Super admin peut switcher vers n'importe quelle org
+        if (Auth::isSuperAdmin()) {
+            Auth::switchOrganization($org);
+            $this->success(['organization' => $org], 'Switched to ' . $org['name']);
+            return;
+        }
 
-        $this->success(['organization' => $org], 'Switched to ' . $org['name']);
+        // Membre multi-orgs : vérifier qu'il a un compte dans cette org
+        $email = Auth::getMemberEmail();
+        $stmt = $this->db->prepare("
+            SELECT m.id, m.fname, m.lname, m.role, m.email
+            FROM members m
+            WHERE m.email = ? AND m.organization_id = ? AND m.is_active = 1
+        ");
+        $stmt->execute([$email, $orgId]);
+        $memberInOrg = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$memberInOrg) {
+            $this->error('Vous n\'avez pas de compte dans cette organisation', 403);
+            return;
+        }
+
+        Auth::switchOrganization($org, $memberInOrg);
+        $this->success(['organization' => $org], 'Basculé vers ' . $org['name']);
+    }
+
+    /**
+     * Liste les organisations accessibles pour le membre connecté
+     */
+    public function myOrganizations(): void
+    {
+        if (!Auth::check()) {
+            $this->error('Unauthorized', 401);
+            return;
+        }
+
+        $orgs = Auth::getAccessibleOrganizations($this->db);
+        $this->success(['organizations' => $orgs, 'current_org_id' => Auth::getOrganizationId()]);
     }
 
     /**

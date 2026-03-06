@@ -430,6 +430,81 @@ window.ONG = {
 
         // Attacher les événements
         ONG.attachEvents();
+
+        // Vérifier si l'utilisateur a accès à plusieurs organisations
+        ONG.checkMultiOrg();
+    },
+
+    /**
+     * Vérifie si l'utilisateur a des comptes dans plusieurs organisations
+     * et affiche le bouton de switch si c'est le cas
+     */
+    checkMultiOrg: async () => {
+        try {
+            const fd = new FormData();
+            fd.append('action', 'my_organizations');
+            const r = await fetch('', { method: 'POST', body: fd });
+            const res = await r.json();
+            if (res.ok && res.data && res.data.organizations && res.data.organizations.length > 1) {
+                const btn = document.getElementById('btnSwitchOrg');
+                if (btn) {
+                    btn.classList.remove('hidden');
+                    btn.onclick = () => ONG.showOrgSwitcher(res.data.organizations, res.data.current_org_id);
+                }
+            }
+        } catch (e) {
+            // Silencieux - pas critique
+        }
+    },
+
+    /**
+     * Affiche un sélecteur d'organisation dans un modal simple
+     */
+    showOrgSwitcher: (orgs, currentOrgId) => {
+        let html = '<div class="space-y-2">';
+        orgs.forEach(org => {
+            const isCurrent = org.id == currentOrgId;
+            const cls = isCurrent
+                ? 'bg-blue-50 border-blue-300 text-blue-700'
+                : 'bg-white hover:bg-gray-50 border-gray-200';
+            const roleLabel = org.role === 'super_admin' ? 'Super Admin' :
+                              org.role === 'org_admin' ? 'Admin' : org.role === 'member' ? 'Membre' : '';
+            html += `<button onclick="ONG.switchToOrg(${org.id})" class="w-full text-left p-3 border rounded ${cls} flex items-center justify-between transition" ${isCurrent ? 'disabled' : ''}>
+                <div>
+                    <div class="font-medium"><i class="fas fa-building mr-2"></i>${org.name}</div>
+                    ${roleLabel ? `<div class="text-xs text-gray-500 ml-6">${roleLabel}</div>` : ''}
+                </div>
+                ${isCurrent ? '<span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">Actuel</span>' : '<i class="fas fa-chevron-right text-gray-400"></i>'}
+            </button>`;
+        });
+        html += '</div>';
+
+        // Utiliser un modal simple
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        modal.id = 'modalOrgSwitcher';
+        modal.innerHTML = `<div class="bg-white rounded-lg w-full max-w-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg"><i class="fas fa-exchange-alt mr-2 text-blue-600"></i>Changer d'organisation</h3>
+                <button onclick="document.getElementById('modalOrgSwitcher').remove()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            ${html}
+        </div>`;
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        document.body.appendChild(modal);
+    },
+
+    /**
+     * Bascule vers une autre organisation
+     */
+    switchToOrg: async (orgId) => {
+        const res = await ONG.post('switch_organization', { org_id: orgId });
+        if (res.ok) {
+            location.reload();
+        } else {
+            ONG.toast(res.msg || 'Erreur', 'error');
+        }
     },
 
     /**
