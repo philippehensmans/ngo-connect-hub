@@ -47,6 +47,17 @@ use App\Router;
 // Démarrer la session
 Auth::startSession();
 
+// Diagnostic temporaire : voir les comptes existants
+if (isset($_GET['debug_accounts'])) {
+    $dbService = new Database($config);
+    $db = $dbService->getConnection();
+    $members = $db->query("SELECT m.id, m.email, m.fname, m.lname, m.role, m.is_active, o.name as org_name, o.is_active as org_active FROM members m LEFT JOIN organizations o ON m.organization_id = o.id ORDER BY m.role, m.email")->fetchAll(\PDO::FETCH_ASSOC);
+    $tables = $db->query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")->fetchAll(\PDO::FETCH_COLUMN);
+    header('Content-Type: application/json');
+    echo json_encode(['tables' => $tables, 'members' => $members], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // Gestion du reset de l'application
 if (isset($_GET['reset_app'])) {
     $dbService = new Database($config);

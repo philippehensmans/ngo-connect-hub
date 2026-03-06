@@ -21,6 +21,32 @@ class AuthController extends Controller
         }
 
         $data = $this->sanitize($data);
+
+        // Diagnostic : vérifier d'abord si le membre existe
+        $stmt = $this->db->prepare("SELECT m.id, m.email, m.is_active, m.password, m.role, o.is_active as org_active, o.name as org_name FROM members m LEFT JOIN organizations o ON m.organization_id = o.id WHERE m.email = ?");
+        $stmt->execute([$data['email']]);
+        $debugMember = $stmt->fetch();
+
+        if (!$debugMember) {
+            $this->error('Aucun compte trouvé avec cet email', 401);
+            return;
+        }
+
+        if (!$debugMember['is_active']) {
+            $this->error('Ce compte est désactivé', 401);
+            return;
+        }
+
+        if (!$debugMember['org_active'] && $debugMember['role'] !== 'super_admin') {
+            $this->error('L\'organisation "' . $debugMember['org_name'] . '" est désactivée', 401);
+            return;
+        }
+
+        if (!password_verify($data['password'], $debugMember['password'])) {
+            $this->error('Mot de passe incorrect', 401);
+            return;
+        }
+
         $member = Auth::attempt($this->db, $data['email'], $data['password']);
 
         if ($member) {
@@ -39,7 +65,7 @@ class AuthController extends Controller
                 'organization' => $organization
             ], 'Login successful');
         } else {
-            $this->error('Invalid credentials or account disabled', 401);
+            $this->error('Erreur de connexion inattendue', 401);
         }
     }
 

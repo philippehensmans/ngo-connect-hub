@@ -551,7 +551,11 @@ class Database
         }
 
         // Toujours vérifier qu'un super_admin existe (important après migration)
-        $this->ensureSuperAdminExists();
+        try {
+            $this->ensureSuperAdminExists();
+        } catch (\Exception $e) {
+            error_log("ensureSuperAdminExists error: " . $e->getMessage());
+        }
     }
 
     /**
