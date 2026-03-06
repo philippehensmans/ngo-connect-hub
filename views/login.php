@@ -39,9 +39,55 @@
                 <p class="text-center text-gray-600 text-sm mb-3">
                     <?= $t->translate('no_account') ?>
                 </p>
-                <button onclick="showRequestForm()" class="w-full bg-green-600 text-white p-2 rounded font-bold hover:bg-green-700 transition">
+                <button onclick="showRegisterForm()" class="w-full bg-green-600 text-white p-2 rounded font-bold hover:bg-green-700 transition mb-2">
+                    <i class="fas fa-user-plus mr-2"></i><?= $t->translate('register') ?? 'Créer mon organisation' ?>
+                </button>
+                <button onclick="showRequestForm()" class="w-full bg-gray-100 text-gray-700 p-2 rounded font-bold hover:bg-gray-200 transition text-sm">
                     <i class="fas fa-envelope mr-2"></i><?= $t->translate('request_access') ?>
                 </button>
+            </div>
+        </div>
+
+        <!-- Formulaire d'inscription -->
+        <div id="registerContainer" class="hidden">
+            <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                <i class="fas fa-info-circle mr-1"></i>
+                <?= $t->translate('register_info') ?? 'Créez votre organisation et votre compte administrateur. Vous pourrez ensuite inviter vos collaborateurs.' ?>
+            </div>
+            <form id="registerForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('org_name') ?></label>
+                    <input type="text" name="org_name" placeholder="<?= $t->translate('org_name_placeholder') ?? 'Mon Association' ?>" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('firstname') ?></label>
+                        <input type="text" name="fname" placeholder="Marie" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('lastname') ?></label>
+                        <input type="text" name="lname" placeholder="Dupont" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('email') ?></label>
+                    <input type="email" name="email" placeholder="contact@association.org" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= $t->translate('pass') ?></label>
+                    <input type="password" name="password" placeholder="Min. 6 caractères" minlength="6" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white p-2 rounded font-bold hover:bg-green-700 transition">
+                    <i class="fas fa-rocket mr-2"></i><?= $t->translate('create_org') ?? 'Créer mon organisation' ?>
+                </button>
+            </form>
+            <div class="mt-4 text-center">
+                <p class="text-gray-600 text-sm">
+                    <?= $t->translate('already_account') ?>
+                    <a href="#" onclick="showLogin()" class="text-blue-600 hover:underline font-medium">
+                        <?= $t->translate('login') ?>
+                    </a>
+                </p>
             </div>
         </div>
 
@@ -110,9 +156,18 @@
 </div>
 
 <script>
+function showRegisterForm() {
+    document.getElementById('loginContainer').classList.add('hidden');
+    document.getElementById('confirmationContainer').classList.add('hidden');
+    document.getElementById('requestContainer').classList.add('hidden');
+    document.getElementById('registerContainer').classList.remove('hidden');
+    history.pushState({}, '', '?register=1');
+}
+
 function showRequestForm() {
     document.getElementById('loginContainer').classList.add('hidden');
     document.getElementById('confirmationContainer').classList.add('hidden');
+    document.getElementById('registerContainer').classList.add('hidden');
     document.getElementById('requestContainer').classList.remove('hidden');
     history.pushState({}, '', '?request=1');
 }
@@ -120,6 +175,7 @@ function showRequestForm() {
 function showLogin() {
     document.getElementById('requestContainer').classList.add('hidden');
     document.getElementById('confirmationContainer').classList.add('hidden');
+    document.getElementById('registerContainer').classList.add('hidden');
     document.getElementById('loginContainer').classList.remove('hidden');
     history.pushState({}, '', window.location.pathname);
 }
@@ -127,11 +183,14 @@ function showLogin() {
 function showConfirmation() {
     document.getElementById('loginContainer').classList.add('hidden');
     document.getElementById('requestContainer').classList.add('hidden');
+    document.getElementById('registerContainer').classList.add('hidden');
     document.getElementById('confirmationContainer').classList.remove('hidden');
 }
 
-// Afficher le formulaire de demande si ?request=1 dans l'URL
-if (window.location.search.includes('request=1')) {
+// Afficher le bon formulaire selon l'URL
+if (window.location.search.includes('register=1')) {
+    showRegisterForm();
+} else if (window.location.search.includes('request=1')) {
     showRequestForm();
 }
 
@@ -169,6 +228,36 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
             window.location.reload();
         } else {
             showError(data.msg || 'Erreur de connexion');
+        }
+    } catch (err) {
+        showError('Erreur de connexion au serveur');
+    }
+});
+
+// Inscription (création d'organisation)
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
+    try {
+        const response = await fetch('?action=register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                org_name: formData.get('org_name'),
+                fname: formData.get('fname'),
+                lname: formData.get('lname'),
+                email: formData.get('email'),
+                password: formData.get('password')
+            })
+        });
+        const data = await response.json();
+
+        if (data.ok) {
+            showSuccess(data.msg || 'Organisation créée avec succès !');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showError(data.msg || "Erreur lors de la création");
         }
     } catch (err) {
         showError('Erreur de connexion au serveur');

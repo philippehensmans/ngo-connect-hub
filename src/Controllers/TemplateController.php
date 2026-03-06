@@ -15,7 +15,7 @@ use App\Services\Auth;
 class TemplateController extends Controller
 {
     /**
-     * Liste tous les templates de l'équipe
+     * Liste tous les templates de l'organisation
      */
     public function list(): void
     {
@@ -24,14 +24,12 @@ class TemplateController extends Controller
             return;
         }
 
-        $templateModel = new ProjectTemplate($this->db);
-        $teamId = Auth::getTeamId();
+        $orgId = Auth::getOrganizationId();
 
         try {
-            $templates = $templateModel->all([
-                'where' => ['team_id' => $teamId],
-                'order' => 'created_at DESC'
-            ]);
+            $stmt = $this->db->prepare("SELECT * FROM project_templates WHERE organization_id = ? ORDER BY created_at DESC");
+            $stmt->execute([$orgId]);
+            $templates = $stmt->fetchAll();
 
             $this->success(['templates' => $templates]);
         } catch (\Exception $e) {
@@ -55,25 +53,30 @@ class TemplateController extends Controller
         }
 
         $projectId = (int)$data['project_id'];
-        $teamId = Auth::getTeamId();
+        $orgId = Auth::getOrganizationId();
 
         $projectModel = new Project($this->db);
-        $groupModel = new Group($this->db);
-        $milestoneModel = new Milestone($this->db);
-        $taskModel = new Task($this->db);
 
         try {
             // Récupérer le projet
             $project = $projectModel->find($projectId);
-            if (!$project || $project['team_id'] != $teamId) {
+            if (!$project || $project['organization_id'] != $orgId) {
                 $this->error('Project not found');
                 return;
             }
 
             // Récupérer toutes les données du projet
-            $groups = $groupModel->all(['where' => ['project_id' => $projectId]]);
-            $milestones = $milestoneModel->all(['where' => ['project_id' => $projectId]]);
-            $tasks = $taskModel->all(['where' => ['project_id' => $projectId]]);
+            $stmt = $this->db->prepare("SELECT * FROM groups WHERE project_id = ?");
+            $stmt->execute([$projectId]);
+            $groups = $stmt->fetchAll();
+
+            $stmt = $this->db->prepare("SELECT * FROM milestones WHERE project_id = ?");
+            $stmt->execute([$projectId]);
+            $milestones = $stmt->fetchAll();
+
+            $stmt = $this->db->prepare("SELECT * FROM tasks WHERE project_id = ?");
+            $stmt->execute([$projectId]);
+            $tasks = $stmt->fetchAll();
 
             // Créer les données du template
             $templateData = json_encode([
@@ -105,7 +108,7 @@ class TemplateController extends Controller
             // Sauvegarder le template
             $templateModel = new ProjectTemplate($this->db);
             $templateId = $templateModel->create([
-                'team_id' => $teamId,
+                'organization_id' => $orgId,
                 'name' => $data['template_name'],
                 'desc' => $data['template_desc'] ?? '',
                 'category' => $data['category'] ?? 'custom',
@@ -135,7 +138,7 @@ class TemplateController extends Controller
         }
 
         $templateId = (int)$data['template_id'];
-        $teamId = Auth::getTeamId();
+        $orgId = Auth::getOrganizationId();
 
         $templateModel = new ProjectTemplate($this->db);
         $projectModel = new Project($this->db);
@@ -146,7 +149,7 @@ class TemplateController extends Controller
         try {
             // Récupérer le template
             $template = $templateModel->find($templateId);
-            if (!$template || $template['team_id'] != $teamId) {
+            if (!$template || $template['organization_id'] != $orgId) {
                 $this->error('Template not found');
                 return;
             }
@@ -156,7 +159,7 @@ class TemplateController extends Controller
 
             // Créer le nouveau projet
             $projectId = $projectModel->create([
-                'team_id' => $teamId,
+                'organization_id' => $orgId,
                 'name' => $data['project_name'],
                 'desc' => $data['project_desc'] ?? $templateData['project']['desc'],
                 'start_date' => $data['start_date'] ?? null,
@@ -225,13 +228,13 @@ class TemplateController extends Controller
         }
 
         $templateId = (int)$data['id'];
-        $teamId = Auth::getTeamId();
+        $orgId = Auth::getOrganizationId();
 
         $templateModel = new ProjectTemplate($this->db);
 
         try {
             $template = $templateModel->find($templateId);
-            if (!$template || $template['team_id'] != $teamId) {
+            if (!$template || $template['organization_id'] != $orgId) {
                 $this->error('Template not found');
                 return;
             }
