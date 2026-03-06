@@ -58,6 +58,26 @@ if (isset($_GET['debug_accounts'])) {
     exit;
 }
 
+// Réinitialisation du mot de passe d'un compte
+if (isset($_GET['reset_password']) && !empty($_GET['reset_password'])) {
+    $dbService = new Database($config);
+    $db = $dbService->getConnection();
+    $email = $_GET['reset_password'];
+    $newPassword = $_GET['new_password'] ?? 'changeme';
+    $stmt = $db->prepare("SELECT id, email, role FROM members WHERE email = ?");
+    $stmt->execute([$email]);
+    $member = $stmt->fetch(\PDO::FETCH_ASSOC);
+    header('Content-Type: application/json');
+    if ($member) {
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        $db->prepare("UPDATE members SET password = ? WHERE id = ?")->execute([$hashed, $member['id']]);
+        echo json_encode(['ok' => true, 'msg' => "Mot de passe réinitialisé pour {$email}. Nouveau mot de passe : {$newPassword}"], JSON_UNESCAPED_UNICODE);
+    } else {
+        echo json_encode(['ok' => false, 'msg' => "Aucun compte trouvé avec l'email {$email}"], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
 // Gestion du reset de l'application
 if (isset($_GET['reset_app'])) {
     $dbService = new Database($config);
