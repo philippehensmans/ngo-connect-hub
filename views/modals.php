@@ -361,7 +361,7 @@
     <div class="bg-white p-6 rounded w-96">
         <h3 class="font-bold text-lg mb-4" id="modalMilestoneTitle"><?= $t->translate('milestones') ?></h3>
         <form id="formMilestone">
-            <input type="hidden" name="id" id="milestoneId">
+            <input type="hidden" name="id" id="milestoneId" value="">
             <input type="hidden" name="project_id" id="milestoneProjectId">
 
             <input name="name" id="milestoneName" class="w-full border p-2 mb-2 rounded"
