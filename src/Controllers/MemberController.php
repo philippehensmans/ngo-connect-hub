@@ -46,9 +46,18 @@ class MemberController extends Controller
                     return;
                 }
 
-                // Générer un mot de passe temporaire
-                $tempPassword = bin2hex(random_bytes(8));
-                $hashedPassword = password_hash($tempPassword, PASSWORD_DEFAULT);
+                // Si l'email existe dans une autre org, réutiliser son mot de passe
+                $existingStmt = $this->db->prepare("SELECT password FROM members WHERE email = ? LIMIT 1");
+                $existingStmt->execute([$data['email']]);
+                $existingMember = $existingStmt->fetch();
+
+                if ($existingMember) {
+                    $hashedPassword = $existingMember['password'];
+                    $tempPassword = null;
+                } else {
+                    $tempPassword = bin2hex(random_bytes(8));
+                    $hashedPassword = password_hash($tempPassword, PASSWORD_DEFAULT);
+                }
 
                 $stmt = $this->db->prepare("
                     INSERT INTO members (organization_id, email, password, fname, lname, role)
@@ -57,10 +66,14 @@ class MemberController extends Controller
                 $stmt->execute([$orgId, $data['email'], $hashedPassword, $data['fname'], $data['lname']]);
                 $id = $this->db->lastInsertId();
 
-                $this->success([
-                    'id' => $id,
-                    'temporary_password' => $tempPassword
-                ], 'Member added successfully');
+                $result = ['id' => $id];
+                if ($tempPassword) {
+                    $result['temporary_password'] = $tempPassword;
+                }
+                $msg = $existingMember
+                    ? 'Membre ajouté (utilise son mot de passe existant)'
+                    : 'Member added successfully';
+                $this->success($result, $msg);
             } else {
                 // Mise à jour - vérifier que le membre appartient à l'organisation
                 $memberId = (int)$data['id'];
