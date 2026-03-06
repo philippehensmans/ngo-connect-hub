@@ -3038,7 +3038,12 @@ window.ONG = {
         const form = document.querySelector('#modalMilestone form');
         if (form) form.reset();
 
+        ONG.setVal('milestoneId', '');
         ONG.setVal('milestoneProjectId', ONG.state.pid);
+        ONG.setVal('milestoneName', '');
+        ONG.setVal('milestoneDate', '');
+        ONG.setVal('milestoneStatus', 'active');
+        ONG.setVal('milestoneDependsOn', '');
         ONG.fillMilestoneDependencies();
         ONG.openModal('modalMilestone');
     },
