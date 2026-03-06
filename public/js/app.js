@@ -617,6 +617,9 @@ window.ONG = {
 
         // Formulaire de jalon
         ONG.onSubmit('formMilestone', async (fd) => {
+            // Debug : afficher le contenu du formulaire
+            const idVal = fd.get('id');
+            console.log('save_milestone - id field:', JSON.stringify(idVal), 'empty?', !idVal);
             await ONG.post('save_milestone', fd);
             ONG.closeModal('modalMilestone');
             ONG.loadData();
@@ -3035,6 +3038,13 @@ window.ONG = {
             return;
         }
 
+        // Vider explicitement le champ id pour forcer la création
+        const idField = document.getElementById('milestoneId');
+        if (idField) {
+            idField.value = '';
+            idField.setAttribute('value', '');
+        }
+
         const form = document.querySelector('#modalMilestone form');
         if (form) form.reset();
 
@@ -3046,6 +3056,7 @@ window.ONG = {
         ONG.setVal('milestoneDependsOn', '');
         ONG.fillMilestoneDependencies();
         ONG.openModal('modalMilestone');
+        console.log('openMilestoneModal: milestoneId =', document.getElementById('milestoneId')?.value);
     },
 
     /**
