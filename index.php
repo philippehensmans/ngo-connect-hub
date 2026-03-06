@@ -88,7 +88,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'download_db' && Auth::check()
 
 // Gestion des requêtes API
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    ob_clean();
+    if (ob_get_level() > 0) {
+        ob_clean();
+    }
     $router = new Router($db);
 
     // Supporter les requêtes JSON
