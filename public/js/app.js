@@ -4410,7 +4410,89 @@ window.ONG = {
      */
     openOrganizationsModal: async () => {
         ONG.openModal('modalOrganizations');
-        await ONG.loadOrganizations();
+        await Promise.all([ONG.loadOrganizations(), ONG.loadPendingRegistrations()]);
+    },
+
+    /**
+     * Charge les demandes d'inscription en attente
+     */
+    loadPendingRegistrations: async () => {
+        const container = document.getElementById('pendingRegistrationsList');
+        const badge = document.getElementById('pendingCount');
+        if (!container) return;
+
+        const r = await ONG.post('list_pending_registrations', {});
+        if (!r.ok) {
+            container.innerHTML = '<div class="text-xs text-red-500">Erreur de chargement</div>';
+            return;
+        }
+
+        const regs = (r.data.registrations || []).filter(reg => reg.status === 'pending');
+        if (badge) {
+            if (regs.length > 0) {
+                badge.textContent = regs.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        if (regs.length === 0) {
+            container.innerHTML = '<div class="text-xs text-gray-500 italic">Aucune demande en attente</div>';
+            return;
+        }
+
+        container.innerHTML = regs.map(reg => `
+            <div class="p-3 border rounded-lg bg-orange-50 border-orange-200">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="font-semibold text-sm">${ONG.escapeHtml(reg.org_name)}</div>
+                        <div class="text-xs text-gray-600">
+                            ${ONG.escapeHtml(reg.fname)} ${ONG.escapeHtml(reg.lname)} &middot;
+                            <a href="mailto:${ONG.escapeHtml(reg.email)}" class="text-blue-600">${ONG.escapeHtml(reg.email)}</a>
+                        </div>
+                        ${reg.message ? `<div class="text-xs text-gray-500 mt-1 italic">"${ONG.escapeHtml(reg.message)}"</div>` : ''}
+                        <div class="text-xs text-gray-400 mt-1">${new Date(reg.created_at).toLocaleDateString('fr-FR')}</div>
+                    </div>
+                    <div class="flex gap-2 ml-3">
+                        <button onclick="ONG.approveRegistration(${reg.id})"
+                                class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700" title="Approuver">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button onclick="ONG.rejectRegistration(${reg.id})"
+                                class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600" title="Refuser">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    /**
+     * Approuve une demande d'inscription
+     */
+    approveRegistration: async (regId) => {
+        if (!confirm('Approuver cette demande et créer l\'organisation ?')) return;
+
+        const r = await ONG.post('approve_registration', { registration_id: regId });
+        if (r.ok) {
+            ONG.toast('Organisation créée avec succès', 'success');
+            await Promise.all([ONG.loadOrganizations(), ONG.loadPendingRegistrations()]);
+        }
+    },
+
+    /**
+     * Rejette une demande d'inscription
+     */
+    rejectRegistration: async (regId) => {
+        if (!confirm('Refuser cette demande ?')) return;
+
+        const r = await ONG.post('reject_registration', { registration_id: regId });
+        if (r.ok) {
+            ONG.toast('Demande refusée', 'success');
+            await ONG.loadPendingRegistrations();
+        }
     },
 
     /**
@@ -4435,29 +4517,36 @@ window.ONG = {
         }
 
         container.innerHTML = orgs.map(org => `
-            <div class="flex items-center justify-between p-3 border rounded-lg ${org.is_active ? 'bg-white' : 'bg-gray-100 opacity-75'}">
-                <div class="flex-1">
-                    <div class="font-semibold ${!org.is_active ? 'text-gray-500' : ''}">${ONG.escapeHtml(org.name)}</div>
-                    <div class="text-xs text-gray-500">
-                        ${org.member_count || 0} membre(s) · ${org.project_count || 0} projet(s)
-                        ${!org.is_active ? '<span class="ml-2 text-red-500">(Désactivée)</span>' : ''}
+            <div class="p-3 border rounded-lg ${org.is_active ? 'bg-white' : 'bg-gray-100 opacity-75'}">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <div class="font-semibold ${!org.is_active ? 'text-gray-500' : ''}">${ONG.escapeHtml(org.name)}</div>
+                        <div class="text-xs text-gray-500">
+                            ${org.member_count || 0} membre(s) · ${org.project_count || 0} projet(s)
+                            ${!org.is_active ? '<span class="ml-2 text-red-500">(Désactivée)</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="ONG.switchToOrganization(${org.id}, '${ONG.escapeHtml(org.name)}')"
+                                class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" title="Voir cette organisation">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="ONG.manageOrgMembers(${org.id}, '${ONG.escapeHtml(org.name)}')"
+                                class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700" title="Gérer les membres">
+                            <i class="fas fa-users-cog"></i>
+                        </button>
+                        <button onclick="ONG.toggleOrganization(${org.id}, ${org.is_active ? 0 : 1})"
+                                class="px-3 py-1 text-sm ${org.is_active ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'} text-white rounded"
+                                title="${org.is_active ? 'Désactiver' : 'Activer'}">
+                            <i class="fas fa-${org.is_active ? 'pause' : 'play'}"></i>
+                        </button>
+                        <button onclick="ONG.deleteOrganization(${org.id}, '${ONG.escapeHtml(org.name)}')"
+                                class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600" title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="ONG.switchToOrganization(${org.id}, '${ONG.escapeHtml(org.name)}')"
-                            class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" title="Voir cette organisation">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button onclick="ONG.toggleOrganization(${org.id}, ${org.is_active ? 0 : 1})"
-                            class="px-3 py-1 text-sm ${org.is_active ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'} text-white rounded"
-                            title="${org.is_active ? 'Désactiver' : 'Activer'}">
-                        <i class="fas fa-${org.is_active ? 'pause' : 'play'}"></i>
-                    </button>
-                    <button onclick="ONG.deleteOrganization(${org.id}, '${ONG.escapeHtml(org.name)}')"
-                            class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600" title="Supprimer">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+                <div id="orgMembers_${org.id}" class="hidden mt-3 pt-3 border-t"></div>
             </div>
         `).join('');
     },
@@ -4480,7 +4569,122 @@ window.ONG = {
     },
 
     /**
-     * Crée une nouvelle organisation
+     * Affiche/masque les membres d'une organisation pour gérer les rôles
+     */
+    manageOrgMembers: async (orgId, orgName) => {
+        const container = document.getElementById(`orgMembers_${orgId}`);
+        if (!container) return;
+
+        // Toggle
+        if (!container.classList.contains('hidden')) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        container.classList.remove('hidden');
+        container.innerHTML = '<div class="text-xs text-gray-500"><i class="fas fa-spinner fa-spin"></i> Chargement...</div>';
+
+        // Basculer temporairement vers cette org pour lister ses membres
+        const switchR = await ONG.post('switch_organization', { org_id: orgId });
+        if (!switchR.ok) {
+            container.innerHTML = '<div class="text-xs text-red-500">Erreur</div>';
+            return;
+        }
+
+        const r = await ONG.post('list_members', {});
+
+        // Revenir à l'org d'origine
+        const currentOrgId = ONG.data?.currentOrganizationId;
+        if (currentOrgId && currentOrgId !== orgId) {
+            await ONG.post('switch_organization', { org_id: currentOrgId });
+        }
+
+        if (!r.ok || !r.data.members) {
+            container.innerHTML = '<div class="text-xs text-red-500">Erreur de chargement</div>';
+            return;
+        }
+
+        const members = r.data.members;
+        if (members.length === 0) {
+            container.innerHTML = '<div class="text-xs text-gray-500 italic">Aucun membre</div>';
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="text-xs font-bold text-gray-600 mb-2">Membres de ${ONG.escapeHtml(orgName)}</div>
+            ${members.map(m => `
+                <div class="flex items-center justify-between py-1 text-sm">
+                    <div>
+                        <span class="font-medium">${ONG.escapeHtml(m.fname)} ${ONG.escapeHtml(m.lname)}</span>
+                        <span class="text-xs text-gray-500 ml-1">${ONG.escapeHtml(m.email)}</span>
+                        ${m.role === 'super_admin' ? '<span class="ml-1 text-xs bg-red-100 text-red-700 px-1 rounded">Super Admin</span>' : ''}
+                        ${m.role === 'org_admin' ? '<span class="ml-1 text-xs bg-purple-100 text-purple-700 px-1 rounded">Admin</span>' : ''}
+                        ${!m.is_active ? '<span class="ml-1 text-xs bg-gray-100 text-gray-500 px-1 rounded">Inactif</span>' : ''}
+                    </div>
+                    <div class="flex gap-1">
+                        ${m.role !== 'super_admin' ? `
+                            <button onclick="ONG.toggleMemberRole(${orgId}, ${m.id}, '${m.role}', '${ONG.escapeHtml(orgName)}')"
+                                    class="px-2 py-0.5 text-xs ${m.role === 'org_admin' ? 'bg-gray-200 text-gray-700' : 'bg-purple-600 text-white'} rounded"
+                                    title="${m.role === 'org_admin' ? 'Retirer le rôle admin' : 'Promouvoir admin'}">
+                                ${m.role === 'org_admin' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-user-shield"></i>'}
+                            </button>
+                            <button onclick="ONG.toggleMemberActive(${orgId}, ${m.id}, ${m.is_active ? 0 : 1}, '${ONG.escapeHtml(orgName)}')"
+                                    class="px-2 py-0.5 text-xs ${m.is_active ? 'bg-yellow-500' : 'bg-green-500'} text-white rounded"
+                                    title="${m.is_active ? 'Désactiver' : 'Activer'}">
+                                <i class="fas fa-${m.is_active ? 'ban' : 'check'}"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('')}
+        `;
+    },
+
+    /**
+     * Change le rôle d'un membre (admin <-> membre)
+     */
+    toggleMemberRole: async (orgId, memberId, currentRole, orgName) => {
+        const newRole = currentRole === 'org_admin' ? 'member' : 'org_admin';
+        const action = newRole === 'org_admin' ? 'promouvoir admin' : 'retirer le rôle admin de';
+
+        // Basculer vers l'org cible
+        await ONG.post('switch_organization', { org_id: orgId });
+        const r = await ONG.post('update_member', { member_id: memberId, role: newRole });
+
+        // Revenir à l'org d'origine
+        const currentOrgId = ONG.data?.currentOrganizationId;
+        if (currentOrgId && currentOrgId !== orgId) {
+            await ONG.post('switch_organization', { org_id: currentOrgId });
+        }
+
+        if (r.ok) {
+            ONG.toast(`Rôle mis à jour`, 'success');
+            await ONG.manageOrgMembers(orgId, orgName);
+        }
+    },
+
+    /**
+     * Active/désactive un membre
+     */
+    toggleMemberActive: async (orgId, memberId, isActive, orgName) => {
+        // Basculer vers l'org cible
+        await ONG.post('switch_organization', { org_id: orgId });
+        const r = await ONG.post('update_member', { member_id: memberId, is_active: isActive });
+
+        // Revenir à l'org d'origine
+        const currentOrgId = ONG.data?.currentOrganizationId;
+        if (currentOrgId && currentOrgId !== orgId) {
+            await ONG.post('switch_organization', { org_id: currentOrgId });
+        }
+
+        if (r.ok) {
+            ONG.toast(`Membre ${isActive ? 'activé' : 'désactivé'}`, 'success');
+            await ONG.manageOrgMembers(orgId, orgName);
+        }
+    },
+
+    /**
+     * Crée une nouvelle organisation (super admin - création directe)
      */
     createOrganization: async (data) => {
         const r = await ONG.post('register', data);

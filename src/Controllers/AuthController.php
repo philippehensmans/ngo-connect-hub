@@ -44,7 +44,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Inscription d'une nouvelle organisation avec son admin
+     * Inscription d'une nouvelle organisation (crée une demande en attente)
      */
     public function register(array $data): void
     {
@@ -59,7 +59,7 @@ class AuthController extends Controller
         $stmt = $this->db->prepare("SELECT id FROM members WHERE email = ?");
         $stmt->execute([$data['email']]);
         if ($stmt->fetch()) {
-            $this->error('Email already exists', 409);
+            $this->error('Cet email est déjà utilisé', 409);
             return;
         }
 
@@ -67,56 +67,172 @@ class AuthController extends Controller
         $stmt = $this->db->prepare("SELECT id FROM organizations WHERE name = ?");
         $stmt->execute([$data['org_name']]);
         if ($stmt->fetch()) {
-            $this->error('Organization name already exists', 409);
+            $this->error('Ce nom d\'organisation existe déjà', 409);
+            return;
+        }
+
+        $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+
+        // Si c'est un super admin, créer directement l'organisation
+        if (Auth::check() && Auth::isSuperAdmin()) {
+            $this->db->beginTransaction();
+            try {
+                $slug = $this->generateSlug($data['org_name']);
+                $stmt = $this->db->prepare("INSERT INTO organizations (name, slug) VALUES (?, ?)");
+                $stmt->execute([$data['org_name'], $slug]);
+                $orgId = $this->db->lastInsertId();
+
+                $stmt = $this->db->prepare("
+                    INSERT INTO members (organization_id, email, password, fname, lname, role)
+                    VALUES (?, ?, ?, ?, ?, 'org_admin')
+                ");
+                $stmt->execute([$orgId, $data['email'], $hashedPassword, $data['fname'], $data['lname']]);
+
+                $this->db->commit();
+                $this->success(['org_id' => $orgId], 'Organisation créée avec succès');
+            } catch (\Exception $e) {
+                $this->db->rollBack();
+                $this->error('Erreur lors de la création: ' . $e->getMessage());
+            }
+            return;
+        }
+
+        // Sinon, créer une demande en attente
+        $stmt = $this->db->prepare("SELECT id FROM pending_registrations WHERE email = ? AND status = 'pending'");
+        $stmt->execute([$data['email']]);
+        if ($stmt->fetch()) {
+            $this->error('Une demande est déjà en cours pour cet email', 409);
+            return;
+        }
+
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO pending_registrations (org_name, fname, lname, email, password, message)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $data['org_name'],
+                $data['fname'],
+                $data['lname'],
+                $data['email'],
+                $hashedPassword,
+                $data['message'] ?? ''
+            ]);
+
+            $this->success(null, 'Votre demande a été envoyée. Un administrateur va la valider.');
+        } catch (\Exception $e) {
+            $this->error('Erreur lors de l\'envoi de la demande: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Liste les demandes d'inscription en attente (super admin uniquement)
+     */
+    public function listPendingRegistrations(): void
+    {
+        if (!Auth::check() || !Auth::isSuperAdmin()) {
+            $this->error('Super admin access required', 403);
+            return;
+        }
+
+        $stmt = $this->db->query("
+            SELECT id, org_name, fname, lname, email, message, status, created_at
+            FROM pending_registrations
+            ORDER BY
+                CASE status WHEN 'pending' THEN 0 ELSE 1 END,
+                created_at DESC
+        ");
+        $this->success(['registrations' => $stmt->fetchAll()]);
+    }
+
+    /**
+     * Approuve une demande d'inscription (super admin uniquement)
+     */
+    public function approveRegistration(array $data): void
+    {
+        if (!Auth::check() || !Auth::isSuperAdmin()) {
+            $this->error('Super admin access required', 403);
+            return;
+        }
+
+        if (!$this->validate($data, ['registration_id'])) {
+            $this->error('Missing required fields');
+            return;
+        }
+
+        $regId = (int)$data['registration_id'];
+
+        $stmt = $this->db->prepare("SELECT * FROM pending_registrations WHERE id = ? AND status = 'pending'");
+        $stmt->execute([$regId]);
+        $reg = $stmt->fetch();
+
+        if (!$reg) {
+            $this->error('Demande non trouvée ou déjà traitée', 404);
             return;
         }
 
         $this->db->beginTransaction();
         try {
             // Créer l'organisation
-            $slug = $this->generateSlug($data['org_name']);
+            $slug = $this->generateSlug($reg['org_name']);
             $stmt = $this->db->prepare("INSERT INTO organizations (name, slug) VALUES (?, ?)");
-            $stmt->execute([$data['org_name'], $slug]);
+            $stmt->execute([$reg['org_name'], $slug]);
             $orgId = $this->db->lastInsertId();
 
-            // Créer l'admin de l'organisation
-            $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+            // Créer l'admin de l'organisation (le mot de passe est déjà hashé)
             $stmt = $this->db->prepare("
                 INSERT INTO members (organization_id, email, password, fname, lname, role)
                 VALUES (?, ?, ?, ?, ?, 'org_admin')
             ");
-            $stmt->execute([$orgId, $data['email'], $hashedPassword, $data['fname'], $data['lname']]);
-            $memberId = $this->db->lastInsertId();
+            $stmt->execute([$orgId, $reg['email'], $reg['password'], $reg['fname'], $reg['lname']]);
+
+            // Marquer la demande comme approuvée
+            $stmt = $this->db->prepare("
+                UPDATE pending_registrations SET status = 'approved', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?
+            ");
+            $stmt->execute([Auth::getMemberId(), $regId]);
 
             $this->db->commit();
-
-            // Connecter automatiquement l'utilisateur
-            $member = [
-                'id' => $memberId,
-                'email' => $data['email'],
-                'fname' => $data['fname'],
-                'lname' => $data['lname'],
-                'role' => 'org_admin'
-            ];
-            $organization = [
-                'id' => $orgId,
-                'name' => $data['org_name']
-            ];
-            Auth::login($member, $organization);
-
-            $this->success([
-                'member' => $member,
-                'organization' => $organization
-            ], 'Registration successful');
-
+            $this->success(['org_id' => $orgId], 'Organisation créée avec succès');
         } catch (\Exception $e) {
             $this->db->rollBack();
-            $this->error('Registration failed: ' . $e->getMessage());
+            $this->error('Erreur lors de l\'approbation: ' . $e->getMessage());
         }
     }
 
     /**
-     * Gère une demande d'accès (envoi d'un email à l'administrateur)
+     * Rejette une demande d'inscription (super admin uniquement)
+     */
+    public function rejectRegistration(array $data): void
+    {
+        if (!Auth::check() || !Auth::isSuperAdmin()) {
+            $this->error('Super admin access required', 403);
+            return;
+        }
+
+        if (!$this->validate($data, ['registration_id'])) {
+            $this->error('Missing required fields');
+            return;
+        }
+
+        $regId = (int)$data['registration_id'];
+
+        $stmt = $this->db->prepare("
+            UPDATE pending_registrations SET status = 'rejected', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'pending'
+        ");
+        $stmt->execute([Auth::getMemberId(), $regId]);
+
+        if ($stmt->rowCount() === 0) {
+            $this->error('Demande non trouvée ou déjà traitée', 404);
+            return;
+        }
+
+        $this->success(null, 'Demande refusée');
+    }
+
+    /**
+     * Gère une demande d'accès (enregistrée en base pour approbation par le super admin)
      */
     public function requestAccess(array $data): void
     {
@@ -127,39 +243,41 @@ class AuthController extends Controller
 
         $data = $this->sanitize($data);
 
-        // Adresse email de l'administrateur
-        $adminEmail = 'phensmans@k1m.be';
-        $subject = '[ONG Manager] Demande d\'accès - ' . $data['org_name'];
-
-        // Construire le message
-        $message = "Nouvelle demande d'accès à ONG Manager\n";
-        $message .= "========================================\n\n";
-        $message .= "Organisation : " . $data['org_name'] . "\n";
-        $message .= "Contact : " . $data['fname'] . " " . $data['lname'] . "\n";
-        $message .= "Email : " . $data['email'] . "\n";
-
-        if (!empty($data['message'])) {
-            $message .= "\nMessage :\n" . $data['message'] . "\n";
+        // Vérifier que l'email n'existe pas déjà
+        $stmt = $this->db->prepare("SELECT id FROM members WHERE email = ?");
+        $stmt->execute([$data['email']]);
+        if ($stmt->fetch()) {
+            $this->error('Cet email est déjà utilisé', 409);
+            return;
         }
 
-        $message .= "\n========================================\n";
-        $message .= "Date de la demande : " . date('d/m/Y H:i:s') . "\n";
+        $stmt = $this->db->prepare("SELECT id FROM pending_registrations WHERE email = ? AND status = 'pending'");
+        $stmt->execute([$data['email']]);
+        if ($stmt->fetch()) {
+            $this->error('Une demande est déjà en cours pour cet email', 409);
+            return;
+        }
 
-        // Headers pour l'email
-        $headers = "From: noreply@ong-manager.local\r\n";
-        $headers .= "Reply-To: " . $data['email'] . "\r\n";
-        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        try {
+            // Générer un mot de passe temporaire (le super admin pourra le réinitialiser)
+            $tempPassword = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
 
-        // Envoyer l'email
-        $sent = @mail($adminEmail, $subject, $message, $headers);
+            $stmt = $this->db->prepare("
+                INSERT INTO pending_registrations (org_name, fname, lname, email, password, message)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([
+                $data['org_name'],
+                $data['fname'],
+                $data['lname'],
+                $data['email'],
+                $tempPassword,
+                $data['message'] ?? ''
+            ]);
 
-        if ($sent) {
-            $this->success(null, 'Demande envoyée avec succès');
-        } else {
-            // En cas d'échec d'envoi, on log la demande et on retourne quand même un succès
-            // pour ne pas bloquer l'utilisateur (l'email pourrait être configuré différemment en prod)
-            error_log("Access request from {$data['email']} for org {$data['org_name']}");
-            $this->success(null, 'Demande enregistrée');
+            $this->success(null, 'Votre demande a été envoyée. Un administrateur va la valider.');
+        } catch (\Exception $e) {
+            $this->error('Erreur lors de l\'envoi de la demande: ' . $e->getMessage());
         }
     }
 

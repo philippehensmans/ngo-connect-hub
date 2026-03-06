@@ -254,8 +254,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
         const data = await response.json();
 
         if (data.ok) {
-            showSuccess(data.msg || 'Organisation créée avec succès !');
-            setTimeout(() => window.location.reload(), 1000);
+            showConfirmation();
         } else {
             showError(data.msg || "Erreur lors de la création");
         }

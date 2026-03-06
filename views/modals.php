@@ -665,6 +665,20 @@
         </div>
 
         <div class="flex-1 overflow-y-auto p-6">
+            <!-- Demandes en attente -->
+            <div id="pendingRegistrationsSection" class="mb-6">
+                <h4 class="font-bold text-sm mb-3 flex items-center gap-2">
+                    <i class="fas fa-clock text-orange-500"></i>
+                    Demandes en attente
+                    <span id="pendingCount" class="bg-orange-500 text-white text-xs rounded-full px-2 py-0.5 hidden">0</span>
+                </h4>
+                <div id="pendingRegistrationsList" class="space-y-2">
+                    <div class="text-xs text-gray-500 italic">Chargement...</div>
+                </div>
+            </div>
+
+            <hr class="mb-6">
+
             <!-- Bouton Créer une organisation -->
             <div class="mb-4">
                 <button onclick="ONG.showCreateOrgForm()" id="btnShowCreateOrg" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
