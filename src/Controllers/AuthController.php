@@ -713,17 +713,26 @@ class AuthController extends Controller
         $data = $this->sanitize($data);
         $orgId = Auth::getOrganizationId();
 
-        // Vérifier que l'email n'existe pas déjà
-        $stmt = $this->db->prepare("SELECT id FROM members WHERE email = ?");
-        $stmt->execute([$data['email']]);
+        // Vérifier que l'email n'existe pas déjà dans cette organisation
+        $stmt = $this->db->prepare("SELECT id FROM members WHERE email = ? AND organization_id = ?");
+        $stmt->execute([$data['email'], $orgId]);
         if ($stmt->fetch()) {
             $this->error('Email already exists', 409);
             return;
         }
 
-        // Mot de passe par défaut ou généré
-        $password = $data['password'] ?? bin2hex(random_bytes(8));
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        // Si l'email existe dans une autre org, réutiliser son mot de passe
+        $existingMember = $this->db->prepare("SELECT password FROM members WHERE email = ? LIMIT 1");
+        $existingMember->execute([$data['email']]);
+        $existing = $existingMember->fetch();
+
+        if ($existing) {
+            $hashedPassword = $existing['password'];
+            $password = null; // Le membre utilise son mot de passe existant
+        } else {
+            $password = $data['password'] ?? bin2hex(random_bytes(8));
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        }
         $role = $data['role'] ?? 'member';
 
         // Seul un super admin peut créer un autre super admin
@@ -737,10 +746,14 @@ class AuthController extends Controller
         ");
         $stmt->execute([$orgId, $data['email'], $hashedPassword, $data['fname'], $data['lname'], $role]);
 
-        $this->success([
-            'member_id' => $this->db->lastInsertId(),
-            'temporary_password' => $password
-        ], 'Member added successfully');
+        $result = ['member_id' => $this->db->lastInsertId()];
+        if ($password) {
+            $result['temporary_password'] = $password;
+        }
+        $msg = $existing
+            ? 'Membre ajouté (utilise son mot de passe existant)'
+            : 'Member added successfully';
+        $this->success($result, $msg);
     }
 
     /**

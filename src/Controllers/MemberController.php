@@ -38,9 +38,9 @@ class MemberController extends Controller
                     return;
                 }
 
-                // Vérifier que l'email n'existe pas déjà
-                $stmt = $this->db->prepare("SELECT id FROM members WHERE email = ?");
-                $stmt->execute([$data['email']]);
+                // Vérifier que l'email n'existe pas déjà dans cette organisation
+                $stmt = $this->db->prepare("SELECT id FROM members WHERE email = ? AND organization_id = ?");
+                $stmt->execute([$data['email'], $orgId]);
                 if ($stmt->fetch()) {
                     $this->error('Email already exists', 409);
                     return;
