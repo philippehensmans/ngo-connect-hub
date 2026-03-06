@@ -598,6 +598,7 @@ window.ONG = {
 
         // Formulaire de projet
         ONG.onSubmit('formProject', async (fd) => {
+            if (!fd.get('id')) fd.delete('id');
             await ONG.post('save_project', fd);
             ONG.closeModal('modalProject');
             ONG.loadData();
@@ -605,6 +606,7 @@ window.ONG = {
 
         // Formulaire de groupe
         ONG.onSubmit('formGroup', async (fd) => {
+            if (!fd.get('id')) fd.delete('id');
             // Collecter les IDs des membres sélectionnés
             const selectedMembers = Array.from(document.querySelectorAll('#groupMembersList input[type="checkbox"]:checked'))
                 .map(cb => parseInt(cb.value));
@@ -617,9 +619,10 @@ window.ONG = {
 
         // Formulaire de jalon
         ONG.onSubmit('formMilestone', async (fd) => {
-            // Debug : afficher le contenu du formulaire
-            const idVal = fd.get('id');
-            console.log('save_milestone - id field:', JSON.stringify(idVal), 'empty?', !idVal);
+            // Supprimer le champ id s'il est vide pour forcer la création
+            if (!fd.get('id')) {
+                fd.delete('id');
+            }
             await ONG.post('save_milestone', fd);
             ONG.closeModal('modalMilestone');
             ONG.loadData();
@@ -627,6 +630,7 @@ window.ONG = {
 
         // Formulaire de membre
         ONG.onSubmit('formMember', async (fd) => {
+            if (!fd.get('id')) fd.delete('id');
             await ONG.post('save_member', fd);
             ONG.cancelEditMember();
             ONG.loadData();
@@ -634,6 +638,7 @@ window.ONG = {
 
         // Formulaire de tâche
         ONG.onSubmit('formTask', async (fd) => {
+            if (!fd.get('id')) fd.delete('id');
             const deps = Array.from(document.querySelectorAll('.dep-check:checked'))
                 .map(c => c.value)
                 .join(',');
