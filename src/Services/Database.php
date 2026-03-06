@@ -263,6 +263,22 @@ class Database
             FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE SET NULL
         )");
 
+        // Table des demandes d'inscription en attente
+        $db->exec("CREATE TABLE IF NOT EXISTS pending_registrations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            org_name TEXT NOT NULL,
+            fname TEXT NOT NULL,
+            lname TEXT NOT NULL,
+            email TEXT NOT NULL,
+            password TEXT NOT NULL,
+            message TEXT,
+            status TEXT DEFAULT 'pending',
+            reviewed_by INTEGER,
+            reviewed_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(reviewed_by) REFERENCES members(id) ON DELETE SET NULL
+        )");
+
         // Créer des données de démo si la base est vide
         $this->createDemoDataIfNeeded();
     }

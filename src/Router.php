@@ -53,6 +53,11 @@ class Router
         $this->routes['delete_organization'] = [AuthController::class, 'deleteOrganization'];
         $this->routes['switch_organization'] = [AuthController::class, 'switchOrganization'];
 
+        // Routes pour les demandes d'inscription (super admin)
+        $this->routes['list_pending_registrations'] = [AuthController::class, 'listPendingRegistrations'];
+        $this->routes['approve_registration'] = [AuthController::class, 'approveRegistration'];
+        $this->routes['reject_registration'] = [AuthController::class, 'rejectRegistration'];
+
         // Routes pour les membres de l'organisation
         $this->routes['list_members'] = [AuthController::class, 'listMembers'];
         $this->routes['add_member'] = [AuthController::class, 'addMember'];
