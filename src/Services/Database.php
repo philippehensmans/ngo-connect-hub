@@ -47,6 +47,7 @@ class Database
 
                 $this->initializeTables();
                 $this->createIndexes();
+                $this->migrateEmailUniqueConstraint();
             } catch (PDOException $e) {
                 throw new \RuntimeException("Erreur de connexion à la base de données: " . $e->getMessage());
             }
@@ -82,14 +83,15 @@ class Database
         $db->exec("CREATE TABLE IF NOT EXISTS members (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             organization_id INTEGER NOT NULL,
-            email TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL,
             password TEXT NOT NULL,
             fname TEXT NOT NULL,
             lname TEXT NOT NULL,
             role TEXT DEFAULT 'member',
             is_active INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+            FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+            UNIQUE(email, organization_id)
         )");
 
         // Table des équipes internes
@@ -332,14 +334,15 @@ class Database
                 $db->exec("CREATE TABLE members_new (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     organization_id INTEGER NOT NULL,
-                    email TEXT NOT NULL UNIQUE,
+                    email TEXT NOT NULL,
                     password TEXT NOT NULL,
                     fname TEXT NOT NULL,
                     lname TEXT NOT NULL,
                     role TEXT DEFAULT 'member',
                     is_active INTEGER DEFAULT 1,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+                    FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+                    UNIQUE(email, organization_id)
                 )");
 
                 // 4. Migrer les membres existants (le premier de chaque org devient admin)
@@ -584,6 +587,52 @@ class Database
                     $stmt->execute([$org['id'], 'superadmin@system.org', $superAdminPassword, 'Super', 'Admin', 'super_admin']);
                 }
             }
+        }
+    }
+
+    /**
+     * Migre la contrainte UNIQUE sur email de globale à (email, organization_id)
+     * pour permettre le même email dans plusieurs organisations
+     */
+    private function migrateEmailUniqueConstraint(): void
+    {
+        $db = self::$instance;
+
+        // Vérifier si la contrainte actuelle est UNIQUE sur email seul
+        $tableInfo = $db->query("SELECT sql FROM sqlite_master WHERE type='table' AND name='members'")->fetchColumn();
+        if (!$tableInfo || strpos($tableInfo, 'email TEXT NOT NULL UNIQUE') === false) {
+            return; // Déjà migré ou table inexistante
+        }
+
+        try {
+            $db->exec("BEGIN TRANSACTION");
+
+            $db->exec("CREATE TABLE members_migrate (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                organization_id INTEGER NOT NULL,
+                email TEXT NOT NULL,
+                password TEXT NOT NULL,
+                fname TEXT NOT NULL,
+                lname TEXT NOT NULL,
+                role TEXT DEFAULT 'member',
+                is_active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+                UNIQUE(email, organization_id)
+            )");
+
+            $db->exec("INSERT INTO members_migrate SELECT * FROM members");
+            $db->exec("DROP TABLE members");
+            $db->exec("ALTER TABLE members_migrate RENAME TO members");
+
+            $db->exec("CREATE INDEX IF NOT EXISTS idx_members_org ON members(organization_id)");
+            $db->exec("CREATE INDEX IF NOT EXISTS idx_members_email ON members(email)");
+            $db->exec("CREATE INDEX IF NOT EXISTS idx_members_role ON members(role)");
+
+            $db->exec("COMMIT");
+        } catch (\Exception $e) {
+            $db->exec("ROLLBACK");
+            error_log("migrateEmailUniqueConstraint error: " . $e->getMessage());
         }
     }
 
