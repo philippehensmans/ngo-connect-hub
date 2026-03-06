@@ -172,16 +172,18 @@ class Auth
     }
 
     /**
-     * Change temporairement l'organisation active (pour super admin)
+     * Change l'organisation active (super admin ou membre multi-orgs)
      */
-    public static function switchOrganization(array $organization): void
+    public static function switchOrganization(array $organization, ?array $memberOverride = null): void
     {
-        if (!self::isSuperAdmin()) {
-            throw new \RuntimeException('Only super admins can switch organizations');
-        }
         self::startSession();
         $_SESSION[self::SESSION_KEY_ORG_ID] = $organization['id'];
         $_SESSION[self::SESSION_KEY_ORG_NAME] = $organization['name'];
+        if ($memberOverride) {
+            $_SESSION[self::SESSION_KEY_MEMBER_ID] = $memberOverride['id'];
+            $_SESSION[self::SESSION_KEY_MEMBER_NAME] = $memberOverride['fname'] . ' ' . $memberOverride['lname'];
+            $_SESSION[self::SESSION_KEY_ROLE] = $memberOverride['role'];
+        }
     }
 
     /**
@@ -213,6 +215,46 @@ class Auth
         }
 
         return null;
+    }
+
+    /**
+     * Retourne tous les comptes actifs pour un email (multi-orgs)
+     */
+    public static function findAllAccounts(\PDO $db, string $email): array
+    {
+        $stmt = $db->prepare("
+            SELECT m.id, m.email, m.password, m.fname, m.lname, m.role, m.organization_id,
+                   o.id as org_id, o.name as org_name, o.is_active as org_active
+            FROM members m
+            JOIN organizations o ON m.organization_id = o.id
+            WHERE m.email = ? AND m.is_active = 1
+        ");
+        $stmt->execute([$email]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Retourne les organisations accessibles pour le membre connecté
+     */
+    public static function getAccessibleOrganizations(\PDO $db): array
+    {
+        $email = self::getMemberEmail();
+        if (!$email) return [];
+
+        if (self::isSuperAdmin()) {
+            $stmt = $db->query("SELECT id, name FROM organizations WHERE is_active = 1 ORDER BY name");
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
+
+        $stmt = $db->prepare("
+            SELECT o.id, o.name, m.id as member_id, m.role
+            FROM members m
+            JOIN organizations o ON m.organization_id = o.id
+            WHERE m.email = ? AND m.is_active = 1 AND o.is_active = 1
+            ORDER BY o.name
+        ");
+        $stmt->execute([$email]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     /**
